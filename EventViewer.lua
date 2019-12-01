@@ -301,20 +301,23 @@ function CalendarEventViewer_UpdateControlsFromEvent(pEvent, pSkipAttendanceFiel
 		local	vIsAttending = false;
 		local	vIsNotAttending = false;
 		local	vAttendanceComment = "";
-		
+		local	vRoleCode = "U";
+
+		if gGroupCalendar_PlayerSettings.UI.DefaultRole then
+			vRoleCode = gGroupCalendar_PlayerSettings.UI.DefaultRole;
+		end
+
+		-- Check for an RSVP
+		local RSVP_str = EventDatabase_FindEventRSVPString(pEvent, gCalendarEventViewer_SelectedPlayerDatabase.UserName);
+		if RSVP_str then
+			local RSVP = EventDatabase_UnpackEventRSVP(nill, nill, nill, RSVP_str);
+			vRoleCode = RSVP.mRole;
+		end
 
 		CalendarEventViewer_SetAttendanceVisible(true);
 		
 		if not pSkipAttendanceFields then
 			CalendarDropDown_SetSelectedValue(CalendarEventViewerCharacterMenu, gCalendarEventViewer_SelectedPlayerDatabase.UserName);
-
-			local RSVP_str = EventDatabase_FindEventRSVPString(pEvent, gCalendarEventViewer_SelectedPlayerDatabase.UserName);
-			if RSVP_str then
-				local RSVP = EventDatabase_UnpackEventRSVP(nill, nill, nill, RSVP_str)
-				CalendarDropDown_SetSelectedValue(CalendarEventViewerRoleMenu, EventDatabase_GetRoleByRoleCode(RSVP.mRole))	
-			else
-				CalendarDropDown_SetSelectedValue(CalendarEventViewerRoleMenu, EventDatabase_GetRoleByRoleCode(gGroupCalendar_PlayerSettings.UI.DefaultRole)); 
-			end
 		end
 		
 		if EventDatabase_PlayerIsQualifiedForEvent(gCalendarEventViewer_Event, gCalendarEventViewer_SelectedPlayerDatabase.PlayerLevel) then
@@ -362,6 +365,8 @@ function CalendarEventViewer_UpdateControlsFromEvent(pEvent, pSkipAttendanceFiel
 			CalendarEventViewerComment:SetText(vAttendanceComment);			
 			CalendarEventViewer_UpdateCommentEnable();
 		end
+
+		CalendarDropDown_SetSelectedValue(CalendarEventViewerRoleMenu, EventDatabase_GetRoleByRoleCode(vRoleCode))
 	else
 		CalendarEventViewer_SetAttendanceVisible(false);
 	end
