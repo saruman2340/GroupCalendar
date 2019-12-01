@@ -18,12 +18,12 @@ if GetLocale() == "ruRU" then
 	GroupCalendar_cFriday = "Пятница";
 	GroupCalendar_cSaturday = "Суббота";
 
-	GroupCalendar_Settings_ShowDebug = "Display Debug Messages";
-	GroupCalendar_Settings_ShowDebugTip = "Show/Hide debug messages.";
-	GroupCalendar_Settings_ShowMinimap = "Show Minimap";
-	GroupCalendar_Settings_ShowMinimapTip = "Show/Hide the minimap icon.";
-	GroupCalendar_Settings_MondayFirstDay = "Monday first day of week";
-	GroupCalendar_Settings_MondayFirstDayTip = "Display Monday as the first day in the calendar.";
+	GroupCalendar_Settings_ShowDebug = "Показать отладочные сообщения";
+	GroupCalendar_Settings_ShowDebugTip = "Показать отладочные сообщения";
+	GroupCalendar_Settings_ShowMinimap = "Показать миникарту";
+	GroupCalendar_Settings_ShowMinimapTip = "Показать миникарту";
+	GroupCalendar_Settings_MondayFirstDay = "Понедельник первый день недели";
+	GroupCalendar_Settings_MondayFirstDayTip = "Понедельник первый день недели";
 
 	GroupCalendar_cSelfWillAttend = "%s будет присутствовать";
 
