@@ -205,7 +205,7 @@ end
 function CalendarEventViewer_UpdateControlsFromEvent(pEvent, pSkipAttendanceFields)
 	-- Update the title
 
-	CalendarDropDown_SetSelectedValue(CalendarEventViewerRoleMenu, gGroupCalendar_PlayerSettings.UI.DefaultRole);
+	--CalendarDropDown_SetSelectedValue(CalendarEventViewerRoleMenu, gGroupCalendar_PlayerSettings.UI.DefaultRole);
 	CalendarEventViewerEventFrameEventTitle:SetText(EventDatabase_GetEventDisplayName(pEvent));
 	
 	-- Update the date and time
@@ -301,12 +301,20 @@ function CalendarEventViewer_UpdateControlsFromEvent(pEvent, pSkipAttendanceFiel
 		local	vIsAttending = false;
 		local	vIsNotAttending = false;
 		local	vAttendanceComment = "";
-		local	vRoleCode = gGroupCalendar_PlayerSettings.UI.DefaultRole;
+		
 
 		CalendarEventViewer_SetAttendanceVisible(true);
 		
 		if not pSkipAttendanceFields then
 			CalendarDropDown_SetSelectedValue(CalendarEventViewerCharacterMenu, gCalendarEventViewer_SelectedPlayerDatabase.UserName);
+
+			local RSVP_str = EventDatabase_FindEventRSVPString(pEvent, gCalendarEventViewer_SelectedPlayerDatabase.UserName);
+			if RSVP_str then
+				local RSVP = EventDatabase_UnpackEventRSVP(nill, nill, nill, RSVP_str)
+				CalendarDropDown_SetSelectedValue(CalendarEventViewerRoleMenu, EventDatabase_GetRoleByRoleCode(RSVP.mRole))	
+			else
+				CalendarDropDown_SetSelectedValue(CalendarEventViewerRoleMenu, EventDatabase_GetRoleByRoleCode(gGroupCalendar_PlayerSettings.UI.DefaultRole)); 
+			end
 		end
 		
 		if EventDatabase_PlayerIsQualifiedForEvent(gCalendarEventViewer_Event, gCalendarEventViewer_SelectedPlayerDatabase.PlayerLevel) then
@@ -351,8 +359,7 @@ function CalendarEventViewer_UpdateControlsFromEvent(pEvent, pSkipAttendanceFiel
 		if not pSkipAttendanceFields then
 			CalendarEventViewerYes:SetChecked(vIsAttending);
 			CalendarEventViewerNo:SetChecked(vIsNotAttending);
-			CalendarEventViewerComment:SetText(vAttendanceComment);
-			CalendarDropDown_SetSelectedValue(CalendarEventViewerRoleMenu, EventDatabase_GetRoleByRoleCode(vRoleCode));  
+			CalendarEventViewerComment:SetText(vAttendanceComment);			
 			CalendarEventViewer_UpdateCommentEnable();
 		end
 	else
