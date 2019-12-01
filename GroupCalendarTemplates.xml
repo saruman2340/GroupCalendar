@@ -643,29 +643,29 @@
 							</Layer>
 							<Layer level="OVERLAY">
                 <FontString name="$parentTanksLabel" text="GroupCalendar_cTanksLabel" inherits="GameFontNormalSmall">
-									<Anchors>
-										<Anchor point="TOPRIGHT" relativePoint="BOTTOMLEFT">
-											<Offset>
-												<AbsDimension x="75" y="62"/>
-											</Offset>
-										</Anchor>
-									</Anchors>
-								</FontString>                
-								<FontString name="$parentTanks" text="0" inherits="GameFontNormalSmall">
-									<Anchors>
-										<Anchor point="LEFT" relativeTo="$parentTanksLabel" relativePoint="RIGHT">
-											<Offset>
-												<AbsDimension x="2" y="0"/>
-											</Offset>
-										</Anchor>
-									</Anchors>
-								</FontString>
-
-                <FontString name="$parentHealersLabel" text="GroupCalendar_cHealersLabel" inherits="GameFontNormalSmall">
+                  <Anchors>
+                    <Anchor point="TOPRIGHT" relativePoint="BOTTOMLEFT">
+                      <Offset>
+                        <AbsDimension x="75" y="62"/>
+                      </Offset>
+                    </Anchor>
+                  </Anchors>
+                </FontString>
+                <FontString name="$parentTanks" text="0" inherits="GameFontNormalSmall">
                   <Anchors>
                     <Anchor point="LEFT" relativeTo="$parentTanksLabel" relativePoint="RIGHT">
                       <Offset>
-                        <AbsDimension x="35" y="0"/>
+                        <AbsDimension x="2" y="0"/>
+                      </Offset>
+                    </Anchor>
+                  </Anchors>
+                </FontString>
+
+                <FontString name="$parentHealersLabel" text="GroupCalendar_cHealersLabel" inherits="GameFontNormalSmall">
+                  <Anchors>
+                    <Anchor point="RIGHT" relativeTo="$parentTanksLabel" relativePoint="RIGHT">
+                      <Offset>
+                        <AbsDimension x="67" y="0"/>
                       </Offset>
                     </Anchor>
                   </Anchors>
@@ -682,9 +682,9 @@
 
                 <FontString name="$parentDpssLabel" text="GroupCalendar_cDpssLabel" inherits="GameFontNormalSmall">
                   <Anchors>
-                    <Anchor point="LEFT" relativeTo="$parentHealersLabel" relativePoint="RIGHT">
+                    <Anchor point="RIGHT" relativeTo="$parentHealersLabel" relativePoint="RIGHT">
                       <Offset>
-                        <AbsDimension x="35" y="0"/>
+                        <AbsDimension x="67" y="0"/>
                       </Offset>
                     </Anchor>
                   </Anchors>
@@ -701,9 +701,9 @@
 
                 <FontString name="$parentUnknownsLabel" text="GroupCalendar_cUnknownsRoleLabel" inherits="GameFontNormalSmall">
                   <Anchors>
-                    <Anchor point="LEFT" relativeTo="$parentDpssLabel" relativePoint="RIGHT">
+                    <Anchor point="RIGHT" relativeTo="$parentDpssLabel" relativePoint="RIGHT">
                       <Offset>
-                        <AbsDimension x="38" y="0"/>
+                        <AbsDimension x="66" y="0"/>
                       </Offset>
                     </Anchor>
                   </Anchors>
