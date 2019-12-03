@@ -233,17 +233,17 @@ gGroupCalendar_RoleTypes =
 	T = {name = GroupCalendar_cTankLabel, element = "Tank"},
 	H = {name = GroupCalendar_cHealerLabel, element = "Healer"},
 	D = {name = GroupCalendar_cDpsLabel, element = "DPS"},
-	U = {name = GroupCalendar_cUnknownRoleLabel, element = "Unknown"},	
+	U = {name = GroupCalendar_cUnknownRoleLabel, element = "Unknown"},
 };
 
 gGroupCalendar_RaceNamesByRaceCode =
 {
-	A = {name = GroupCalendar_cDraeneiRaceName, faction="Alliance"},
+	--A = {name = GroupCalendar_cDraeneiRaceName, faction="Alliance"},
 	D = {name = GroupCalendar_cDwarfRaceName, faction="Alliance"},
 	G = {name = GroupCalendar_cGnomeRaceName, faction="Alliance"},
 	H = {name = GroupCalendar_cHumanRaceName, faction="Alliance"},
 	N = {name = GroupCalendar_cNightElfRaceName, faction="Alliance"},
-	B = {name = GroupCalendar_cBloodElfRaceName, faction="Horde"},
+	--B = {name = GroupCalendar_cBloodElfRaceName, faction="Horde"},
 	O = {name = GroupCalendar_cOrcRaceName, faction="Horde"},
 	T = {name = GroupCalendar_cTaurenRaceName, faction="Horde"},
 	R = {name = GroupCalendar_cTrollRaceName, faction="Horde"},
