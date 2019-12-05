@@ -290,6 +290,9 @@ if GetLocale() == "zhTW" then
 	CalendarEditor_cNewEvent = "新活動...";
 	CalendarEditor_cEventsTitle = "活動";
 
+	CalendarEventEditor_cNotTrustedMsg = "由於信任設置而無法創建事件";
+	CalendarEventEditor_cOk = "好的";
+
 	GroupCalendar_cGermanTranslation = "德文翻譯由 Silver Hand 的 Palyr 提供";
 	GroupCalendar_cFrenchTranslation = "法文翻譯由 Dalaran (EU) 的 Kisanth 提供";
 	GroupCalendar_cChineseTranslation = "中文翻譯由 Royaltia (HK) 的 Aska 提供";

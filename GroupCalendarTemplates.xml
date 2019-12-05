@@ -643,23 +643,23 @@
 							</Layer>
 							<Layer level="OVERLAY">
                 <FontString name="$parentTanksLabel" text="GroupCalendar_cTanksLabel" inherits="GameFontNormalSmall">
-                  <Anchors>
-                    <Anchor point="TOPRIGHT" relativePoint="BOTTOMLEFT">
-                      <Offset>
-                        <AbsDimension x="75" y="62"/>
-                      </Offset>
-                    </Anchor>
-                  </Anchors>
-                </FontString>
-                <FontString name="$parentTanks" text="0" inherits="GameFontNormalSmall">
-                  <Anchors>
-                    <Anchor point="LEFT" relativeTo="$parentTanksLabel" relativePoint="RIGHT">
-                      <Offset>
-                        <AbsDimension x="2" y="0"/>
-                      </Offset>
-                    </Anchor>
-                  </Anchors>
-                </FontString>
+									<Anchors>
+										<Anchor point="TOPRIGHT" relativePoint="BOTTOMLEFT">
+											<Offset>
+												<AbsDimension x="75" y="62"/>
+											</Offset>
+										</Anchor>
+									</Anchors>
+								</FontString>                
+								<FontString name="$parentTanks" text="0" inherits="GameFontNormalSmall">
+									<Anchors>
+										<Anchor point="LEFT" relativeTo="$parentTanksLabel" relativePoint="RIGHT">
+											<Offset>
+												<AbsDimension x="2" y="0"/>
+											</Offset>
+										</Anchor>
+									</Anchors>
+								</FontString>
 
                 <FontString name="$parentHealersLabel" text="GroupCalendar_cHealersLabel" inherits="GameFontNormalSmall">
                   <Anchors>

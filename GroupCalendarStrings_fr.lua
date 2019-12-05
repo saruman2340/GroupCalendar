@@ -285,6 +285,9 @@ if GetLocale() == "frFR" then
 	CalendarEditor_cNewEvent = "Nouvel Event...";
 	CalendarEditor_cEventsTitle = "Events";
 
+	CalendarEventEditor_cNotTrustedMsg = "Impossible de créer des événements en raison des paramètres de confiance";
+	CalendarEventEditor_cOk = "d'accord";
+
 	GroupCalendar_cGermanTranslation = "Traduction allemande: Palyr de Silver Hand";
 	GroupCalendar_cFrenchTranslation = "Traduction fran\195\167aise: Kisanth de Dalaran (EU)";
 	GroupCalendar_cChineseTranslation = "Chinese translation by Aska of Royaltia (HK)";

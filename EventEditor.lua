@@ -25,6 +25,15 @@ gCalendarEventEditor_PanelFrames =
 	"CalendarEventEditorAttendanceFrame",
 };
 
+StaticPopupDialogs["CALENDAR_NOT_TRUSTED"] = {
+	text = CalendarEventEditor_cNotTrustedMsg,
+	button1 = CalendarEventEditor_cOk,	
+	timeout = 10,
+	whileDead = 1,
+	hideOnEscape = 1,
+	showAlert = 1,
+};
+
 StaticPopupDialogs["CONFIRM_CALENDAR_EVENT_DELETE"] = {
 	text = CalendarEventEditor_cConfirmDeleteMsg,
 	button1 = CalendarEventEditor_cDelete,
@@ -576,7 +585,6 @@ function CalendarEventEditor_SaveRSVP(pEvent)
 		else
 			recreateRSVP = true;
 		end
-
 		-- Delete then re-add the RSVP	
 		if recreateRSVP then
 

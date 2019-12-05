@@ -714,7 +714,6 @@ function EventDatabase_EventChanged(pDatabase, pEvent, pChangedFields)
 					-- Remove any older (or same) RSVP for self person
 					
 					local	vRSVP = EventDatabase_UnpackEventRSVP(pDatabase.UserName, vAttendeeName, pEvent.mID, vRSVPString);
-					
 					EventDatabase_RemoveOlderRSVP(vDatabase, vRSVP)
 				end
 			end
@@ -1825,7 +1824,6 @@ function EventDatabase_AddEventRSVP(pDatabase, pEvent, pAttendeeName, pRSVP)
 	end
 	
 	local	vEventRSVPString = EventDatabase_PackEventRSVP(pRSVP);
-	
 	pEvent.mAttendance[pAttendeeName] = vEventRSVPString;
 
 	-- Notify the network of the change
@@ -2252,7 +2250,6 @@ function EventDatabase_PackRSVPRequest(pRSVP)
 	end
 	
 	vRequest = vRequest..",".. pRSVP.mRole
-
 	return vRequest;
 end
 
@@ -2293,8 +2290,8 @@ end
 function EventDatabase_UnpackRSVPFieldArray(pArray, pAttendee)
 
 	local pRole = "U";
-
-	if tablelength(pArray) >= 10 then
+	local pLength = tablelength(pArray);
+	if pLength >= 10 then
 		pRole = pArray[10]
 	end
 
@@ -2347,6 +2344,7 @@ function EventDatabase_PackEventRSVP(pEventRSVP)
 	end
 
 	vEventRSVPString = vEventRSVPString..","..pEventRSVP.mRole;
+
 	return vEventRSVPString;
 end
 

@@ -285,6 +285,9 @@ if GetLocale() == "koKR" then
 	CalendarEditor_cNewEvent = "새로운 이벤트...";
 	CalendarEditor_cEventsTitle = "이벤트";
 
+	CalendarEventEditor_cNotTrustedMsg = "트러스트 설정으로 인해 이벤트를 만들 수 없습니다";
+	CalendarEventEditor_cOk = "괜찮아";
+
 	GroupCalendar_cGermanTranslation = "German translation by Palyr of Silver Hand";
 	GroupCalendar_cFrenchTranslation = "French translation by Kisanth of Dalaran (EU)";
 	GroupCalendar_cChineseTranslation = "Chinese translation by Aska of Royaltia (HK)";

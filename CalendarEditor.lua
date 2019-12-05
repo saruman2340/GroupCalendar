@@ -134,10 +134,14 @@ function CalendarEditor_OnHide()
 end
 
 function CalendarEditor_NewEvent()
-	local	vDatabase = EventDatabase_GetDatabase(gGroupCalendar_PlayerName, true);
-	local	vEvent = EventDatabase_NewEvent(vDatabase, gCalendarEditor_SelectedDate);
-	vEvent.mType = "Act"; -- Default to general event type
-	CalendarEventEditor_EditEvent(vDatabase, vEvent, true);
+	if CalendarTrust_CalcUserTrust2(gGroupCalendar_PlayerName) >= 2 then
+		local	vDatabase = EventDatabase_GetDatabase(gGroupCalendar_PlayerName, true);
+		local	vEvent = EventDatabase_NewEvent(vDatabase, gCalendarEditor_SelectedDate);
+		vEvent.mType = "Act"; -- Default to general event type
+		CalendarEventEditor_EditEvent(vDatabase, vEvent, true);
+	else
+		StaticPopup_Show("CALENDAR_NOT_TRUSTED");
+	end
 end
 
 function CalendarEditor_EditIndexedEvent(pIndex)

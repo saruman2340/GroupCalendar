@@ -285,6 +285,9 @@
     CalendarEditor_cNewEvent = "Neues Event...";
     CalendarEditor_cEventsTitle = "Events";
 
+	CalendarEventEditor_cNotTrustedMsg = "Ereignisse können aufgrund von Vertrauenseinstellungen nicht erstellt werden";
+	CalendarEventEditor_cOk = "in Ordnung";
+
     GroupCalendar_cGermanTranslation = "Deutsche \195\156bersetzung: Palyr - Silberne Hand (EU)";
     GroupCalendar_cFrenchTranslation = "Franz\195\182sische \195\156bersetzung: Kisanth of Dalaran (EU)";
 	GroupCalendar_cChineseTranslation = "Chinesische \195\156bersetzung von Aska of Royaltia (HK)";

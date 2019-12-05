@@ -1,4 +1,4 @@
-﻿gGroupCalendar_VersionString = "1.13.2.1.11";
+﻿gGroupCalendar_VersionString = "1.13.2.1.12";
 
 GroupCalendar_cTitle = "Group Calendar v%s";
 
@@ -291,6 +291,9 @@ GroupCalendar_cCommentLabel = "Comment:";
 
 CalendarEditor_cNewEvent = "New Event...";
 CalendarEditor_cEventsTitle = "Events";
+
+CalendarEventEditor_cNotTrustedMsg = "Cannot create events due to trust settings.";
+CalendarEventEditor_cOk = "OKAY";
 
 CalendarEventEditor_cNotAttending = "Not attending";
 CalendarEventEditor_cConfirmed = "Confirmed";

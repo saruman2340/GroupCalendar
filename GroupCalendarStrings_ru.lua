@@ -292,6 +292,9 @@ if GetLocale() == "ruRU" then
 	CalendarEditor_cNewEvent = "Новое событие...";
 	CalendarEditor_cEventsTitle = "События";
 
+	CalendarEventEditor_cNotTrustedMsg = "Не удается создать события из-за настроек доверия";
+	CalendarEventEditor_cOk = "Хорошо";
+
 	CalendarEventEditor_cNotAttending = "Не посещает";
 	CalendarEventEditor_cConfirmed = "Подтверждено";
 	CalendarEventEditor_cDeclined = "Отклонено";
