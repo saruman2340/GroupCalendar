@@ -3505,72 +3505,10 @@ function CalendarTrust_CalcUserTrust(pUserName)
 		return 2;
 	end
 
-	local	vPlayerSecurity = gGroupCalendar_PlayerSettings.Security.Player[pUserName];
-	
-	-- See if they're explicity allowed/forbidden
-	
-	if vPlayerSecurity ~= nil then
-		if vPlayerSecurity == 1 then
-			-- Trusted
-			
-			if gGroupCalendar_Settings.DebugTrust then
-				Calendar_DebugMessage("CalendarTrust_CalcUserTrust: Explicit trust for "..pUserName);
-			end
-			
-			return 2;
-		elseif vPlayerSecurity == 2 then
-			-- Excluded
-			
-			if gGroupCalendar_Settings.DebugTrust then
-				Calendar_DebugMessage("CalendarTrust_CalcUserTrust: "..pUserName.." explicity excluded");
-			end
-			
-			return 0;
-		else
-			Calendar_DebugMessage("GroupCalendar: Unknown player security setting of "..vPlayerSecurity.." for "..pUserName);
-		end
-	end
-	
-	-- Return true if we'll allow anyone in the channel
-	
-	if gGroupCalendar_PlayerSettings.Security.TrustAnyone then
-		if gGroupCalendar_Settings.DebugTrust then
-			Calendar_DebugMessage("CalendarTrust_CalcUserTrust: "..pUserName.." trusted (all trusted)");
-		end
-		
-		return 2;
-	end
-	
-	-- Return true if they're in the same guild and of sufficient rank
-	
-	if gGroupCalendar_PlayerSettings.Security.TrustGuildies then
-		local	vIsInGuild, vGuildRank = CalendarNetwork_UserIsInSameGuild(pUserName);
-		if vIsInGuild then
-			if not gGroupCalendar_PlayerSettings.Security.MinTrustedRank
-			or vGuildRank <= gGroupCalendar_PlayerSettings.Security.MinTrustedRank then
-				if gGroupCalendar_Settings.DebugTrust then
-					Calendar_DebugMessage("CalendarTrust_CalcUserTrust: "..pUserName.." trusted (guild member)");
-				end
-				return 2;
-			else
-				if gGroupCalendar_Settings.DebugTrust then
-					Calendar_DebugMessage("CalendarTrust_CalcUserTrust: "..pUserName.." partially trusted (guild member)");
-				end
-				return 1;
-			end
-		end
-	end
-	
-	-- Failed all tests
-		
-	if gGroupCalendar_Settings.DebugTrust then
-		Calendar_DebugMessage("CalendarTrust_CalcUserTrust: "..pUserName.." not trusted (all tests failed)");
-	end
-	
-	return 0;
+	return CalendarTrust_CalcUserTrustExplicit(pUserName);
 end
 
-function CalendarTrust_CalcUserTrust2(pUserName)	
+function CalendarTrust_CalcUserTrustExplicit(pUserName)	
 
 	local	vPlayerSecurity = gGroupCalendar_PlayerSettings.Security.Player[pUserName];
 	

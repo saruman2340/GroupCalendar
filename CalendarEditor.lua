@@ -134,7 +134,7 @@ function CalendarEditor_OnHide()
 end
 
 function CalendarEditor_NewEvent()
-	if CalendarTrust_CalcUserTrust2(gGroupCalendar_PlayerName) >= 2 then
+	if CalendarTrust_CalcUserTrustExplicit(gGroupCalendar_PlayerName) >= 2 then
 		local	vDatabase = EventDatabase_GetDatabase(gGroupCalendar_PlayerName, true);
 		local	vEvent = EventDatabase_NewEvent(vDatabase, gCalendarEditor_SelectedDate);
 		vEvent.mType = "Act"; -- Default to general event type
