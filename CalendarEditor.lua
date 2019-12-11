@@ -9,8 +9,6 @@ function CalendarEditor_ShowCompiledSchedule(pDate, pCompiledSchedule)
 	CalendarEventEditor_DoneEditing();
 	CalendarEventViewer_DoneViewing();
 	
-	--
-	
 	gCalendarEditor_SelectedDate = pDate;
 	gCalendarEditor_CompiledSchedule = pCompiledSchedule;
 	

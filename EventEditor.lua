@@ -94,7 +94,7 @@ function CalendarEventEditor_EditEvent(pDatabase, pEvent, pIsNewEvent)
 	end
 	
 	CalendarEventEditorFrameSubTitle:SetText(Calendar_GetLongDateString(gCalendarEventEditor_EventDate));
-	
+
 	CalendarEventEditor_UpdateControlsFromEvent(pEvent);
 	
 	ShowUIPanel(CalendarEventEditorFrame);
@@ -255,7 +255,6 @@ function CalendarEventEditor_UpdateEventFromControls(rEvent, rChangedFields)
 	-- Type
 	
 	vValue = UIDropDownMenu_GetSelectedValue(CalendarEventTypeEventType);
-	
 	if rEvent.mType ~= vValue then
 		rEvent.mType = vValue;
 		rChangedFields.mType = {op = "UPD", val = vValue};
@@ -523,7 +522,6 @@ end
 
 function CalendarEventEditor_SaveEvent()
 	-- Update the event
-
 	local	vChangedFields = {};
 	
 	CalendarEventEditor_UpdateEventFromControls(gCalendarEventEditor_Event, vChangedFields);
@@ -531,7 +529,9 @@ function CalendarEventEditor_SaveEvent()
 	if Calendar_ArrayIsEmpty(vChangedFields) then	
 		-- Delete then re-add the RSVP		
 		CalendarEventEditor_SaveRSVP(gCalendarEventEditor_Event);
-		return;
+		if not gCalendarEventEditor_IsNewEvent then
+			return;
+		end
 	end
 	
 	-- Save the event if it's new
@@ -646,9 +646,11 @@ end
 function CalendarEventEditor_EventTypeChanged(pMenuFrame, pValue)
 	CalendarEventEditor_SetEventType(pValue);
 	
+	--gCalendarEventEditor_Event.mType = pValue;
 	-- Set the templated field values if available
 	
 	if gCalendarEventEditor_IsNewEvent then
+		
 		-- Set the default limits for self dungeon (the template will
 		-- override self if it's present)
 		
@@ -669,7 +671,7 @@ function CalendarEventEditor_EventTypeChanged(pMenuFrame, pValue)
 				end
 				
 				gCalendarEventEditor_EventTime = gCalendarEventEditor_Event.mTime;
-				
+				gCalendarEventEditor_Event.mType = pValue;
 				CalendarEventEditor_UpdateControlsFromEvent(gCalendarEventEditor_Event, true);
 				
 				if vEventTemplate.mSelfAttend then
@@ -677,6 +679,7 @@ function CalendarEventEditor_EventTypeChanged(pMenuFrame, pValue)
 				end
 			end
 		end
+		
 	end
 end
 

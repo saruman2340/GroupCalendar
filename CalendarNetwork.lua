@@ -99,53 +99,53 @@ function CalendarNetwork_GetChannelStatus()
 	return gGroupCalendar_Channel.Status;
 end
 
-function CalendarNetwork_SetChannel(pChannel, pPassword)
+--function CalendarNetwork_SetChannel(pChannel, pPassword)
 	-- Leave the channel and return if the new channel is nil
 	
-	if not pChannel then
-		CalendarNetwork_LeaveChannel();
-		return true;
-	end
+	--if not pChannel then
+	--	CalendarNetwork_LeaveChannel();
+	--	return true;
+	--end
 	
 	-- Just return if nothing is actually changing
 	
-	if gGroupCalendar_Channel.Name
-	and strupper(gGroupCalendar_Channel.Name) == strupper(pChannel)
-	and gGroupCalendar_Channel.Password == pPassword
-	and (gGroupCalendar_Channel.Status == "Connected" or gGroupCalendar_Channel.Status == "Synching") then
-		return false; -- return false to indicate that no change was made
-	end
+	--if --gGroupCalendar_Channel.Name
+	--and strupper(gGroupCalendar_Channel.Name) == strupper(pChannel)
+	--and gGroupCalendar_Channel.Password == pPassword
+	--(gGroupCalendar_Channel.Status == "Connected" or gGroupCalendar_Channel.Status == "Synching") then
+	--	return false; -- return false to indicate that no change was made
+	--end
 	
 	-- Leave the old channel and join the new one
 	
-	CalendarNetwork_LeaveChannel();
+	--CalendarNetwork_LeaveChannel();
 	
-	return CalendarNetwork_JoinChannel(pChannel, pPassword);
-end
+	--return CalendarNetwork_JoinChannel(pChannel, pPassword);
+--end
 
-function CalendarNetwork_JoinChannel(pChannelName, pPassword)
-	if not pChannelName
-	or pChannelName == ""
-	or gGroupCalendar_Channel.Disconnected then
-		return false;
-	end
+--function CalendarNetwork_JoinChannel(pChannelName, pPassword)
+--	if not pChannelName
+--	or pChannelName == ""
+--	or gGroupCalendar_Channel.Disconnected then
+--		return false;
+--	end
 	
 	-- There seems to be some sort of bug with passworded channels getting
 	-- screwed up if the UI is reloaded and the solution appears to be to
 	-- leave and re-join the channel.  Therefore, the code below...
 	
-	LeaveChannelByName(pChannelName);
-	CalendarNetwork_LeftChannel();
-	CalendarNetwork_SetChannelStatus("Initializing");
+--	LeaveChannelByName(pChannelName);
+--	CalendarNetwork_LeftChannel();
+--	CalendarNetwork_SetChannelStatus("Initializing");
 
-	CalendarNetwork_QueueTask(
-			CalendarNetwork_JoinChannel2,
-			{mChannelName = pChannelName, mPassword = pPassword},
-			gCalendarNetwork_RequestDelay.JoinChannel2,
-			"JOINCHANNEL2");
+--	CalendarNetwork_QueueTask(
+--			CalendarNetwork_JoinChannel2,
+--			{mChannelName = pChannelName, mPassword = pPassword},
+--			gCalendarNetwork_RequestDelay.JoinChannel2,
+--			"JOINCHANNEL2");
 	
-	return true;
-end
+--	return true;
+--end
 
 function CalendarNetwork_JoinChannelFailed()
 	if gGroupCalendar_Channel.GotTooManyChannelsMessage then
@@ -156,14 +156,14 @@ function CalendarNetwork_JoinChannelFailed()
 end
 
 function CalendarNetwork_LeftChannel()
-	gGroupCalendar_Channel.Name = nil;
-	gGroupCalendar_Channel.Password = nil;
-	gGroupCalendar_Channel.NameLower = nil;
-	gGroupCalendar_Channel.ID = nil;
+	--gGroupCalendar_Channel.Name = nil;
+	--gGroupCalendar_Channel.Password = nil;
+	--gGroupCalendar_Channel.NameLower = nil;
+	--gGroupCalendar_Channel.ID = nil;
 	
-	CalendarNetwork_ResetQueues();
+	--CalendarNetwork_ResetQueues();
 	
-	CalendarNetwork_SetChannelStatus("Disconnected");
+	--CalendarNetwork_SetChannelStatus("Disconnected");
 end
 
 function CalendarNetwork_SetChannelStatus(pStatus, pStatusMessage)
@@ -184,93 +184,111 @@ function CalendarNetwork_SystemMessage(pMessage)
 end
 
 function CalendarNetwork_JoinChannel2(pParams)
-	if gGroupCalendar_Settings.DebugInit then
-		Calendar_DebugMessage("CalendarNetwork_JoinChannel: "..pParams.mChannelName);
-	end
+	--if gGroupCalendar_Settings.DebugInit then
+	--	Calendar_DebugMessage("CalendarNetwork_JoinChannel: "..pParams.mChannelName);
+	--end
 	
 	gGroupCalendar_Channel.GotTooManyChannelsMessage = false;
-	gGroupCalendar_Channel.Name = pParams.mChannelName;
-	
-	local	vChannelName = GetChannelName(pParams.mChannelName);
-	local	vZoneChannel;
-	local	vChannelAlreadyExists = false;
-	
-	if vChannelName and vChannelName ~= 0 then
-		if gGroupCalendar_Settings.DebugInit then
-			Calendar_DebugMessage("Found existing channel "..pParams.mChannelName.." ("..vChannelName..")");
-		end
-		
-		vChannelName = pParams.mChannelName;
-		vChannelAlreadyExists = true;
-	else
 
-		if gGroupCalendar_Settings.DebugInit then
-			Calendar_DebugMessage("Channel "..pParams.mChannelName.." not found ("..vChannelName..") joining channel...");
-		end		
+	local registeredPrefixes = C_ChatInfo.GetRegisteredAddonMessagePrefixes()
 	
-		vZoneChannel, vChannelName = JoinChannelByName(pParams.mChannelName, pParams.mPassword, DEFAULT_CHAT_FRAME:GetID());
-		
-		if not vZoneChannel then
-		
-			CalendarNetwork_JoinChannelFailed();
-			return false;
-		end
-		
-		if not vChannelName then
-			vChannelName = pParams.mChannelName;
+	local vFound = false;
+
+	for vPrefixNum, vPrefix in ipairs(registeredPrefixes) do
+		if vPrefix == gGroupCalendar_MessagePrefix0 then
+			vFound = true;
+			break;
 		end
 	end
+
+	
+	if vFound == false then
+		local successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix(gGroupCalendar_MessagePrefix0);
+	end
+
+	CalendarNetwork_JoinedChannel();
+
+	--gGroupCalendar_Channel.Name = pParams.mChannelName;
+	
+	--local	vChannelName = GetChannelName(pParams.mChannelName);
+	--local	vZoneChannel;
+	--local	vChannelAlreadyExists = false;
+	
+	--if vChannelName and vChannelName ~= 0 then
+	--	if gGroupCalendar_Settings.DebugInit then
+	--		Calendar_DebugMessage("Found existing channel "..pParams.mChannelName.." ("..vChannelName..")");
+	--	end
+		
+	--	vChannelName = pParams.mChannelName;
+	--	vChannelAlreadyExists = true;
+	--else
+
+	--	if gGroupCalendar_Settings.DebugInit then
+	--		Calendar_DebugMessage("Channel "..pParams.mChannelName.." not found ("..vChannelName..") joining channel...");
+	--	end		
+	
+	--	vZoneChannel, vChannelName = JoinChannelByName(pParams.mChannelName, pParams.mPassword, DEFAULT_CHAT_FRAME:GetID());
+	--	if not vZoneChannel then
+		
+	--		CalendarNetwork_JoinChannelFailed();
+	--		return false;
+	--	end
+		
+	--	if not vChannelName then
+	--		vChannelName = pParams.mChannelName;
+	--	end
+	--end
 	
 	-- Remove the channel from the chat frame so the user doesn't
 	-- have to watch all that data comm. (if we're running debug
 	-- code then leave the setting alone)
-	if (gGroupCalendar_ShowChat) then
-		ChatFrame_AddChannel(DEFAULT_CHAT_FRAME, pParams.mChannelName);
-	else
-		ChatFrame_RemoveChannel(DEFAULT_CHAT_FRAME, pParams.mChannelName);
-	end	
+	--if (gGroupCalendar_ShowChat) then
+	--	ChatFrame_AddChannel(DEFAULT_CHAT_FRAME, pParams.mChannelName);
+	--else
+	--	ChatFrame_RemoveChannel(DEFAULT_CHAT_FRAME, pParams.mChannelName);
+	--end	
 
 	--ChatFrame_RemoveChannel(DEFAULT_CHAT_FRAME, pParams.mChannelName);
 	--ChatFrame_AddChannel(DEFAULT_CHAT_FRAME, pParams.mChannelName);
 
-	if gCalendar_DebugFrame then
-		ChatFrame_AddChannel(gCalendar_DebugFrame, pParams.mChannelName);
-	end
+	--if gCalendar_DebugFrame then
+	--	ChatFrame_AddChannel(gCalendar_DebugFrame, pParams.mChannelName);
+	--end
 	
-	gGroupCalendar_Channel.Password = pParams.mPassword;
-	gGroupCalendar_Channel.NameLower = strlower(pParams.mChannelName);
-	gGroupCalendar_Channel.ID = GetChannelName(gGroupCalendar_Channel.Name);
+	--gGroupCalendar_Channel.Password = pParams.mPassword;
+	--gGroupCalendar_Channel.NameLower = strlower(pParams.mChannelName);
+	--gGroupCalendar_Channel.ID = GetChannelName(gGroupCalendar_Channel.Name);
 	
-	if not gGroupCalendar_Channel.ID
-	or gGroupCalendar_Channel.ID == 0 then
-		gGroupCalendar_Channel.ID = nil;
-		CalendarNetwork_JoinChannelFailed();
-		
-		return false;
-	end
+	--if not gGroupCalendar_Channel.ID
+	--or gGroupCalendar_Channel.ID == 0 then
+	--	gGroupCalendar_Channel.ID = nil;
+	--	CalendarNetwork_JoinChannelFailed();
+	--	
+	--	return false;
+	--end
 	
-	if vChannelAlreadyExists then
-		CalendarNetwork_JoinedChannel();
-	end
+	--if vChannelAlreadyExists then
+	--	CalendarNetwork_JoinedChannel();
+	--end
 	
 	return true;
 end
 
 function CalendarNetwork_LeaveChannel()
-	if gGroupCalendar_Channel.Name
-	and gGroupCalendar_Channel.ID
-	and gGroupCalendar_Channel.Status ~= "Suspended" then
-		LeaveChannelByName(gGroupCalendar_Channel.Name);
-		CalendarNetwork_LeftChannel();
-	end
+	--if gGroupCalendar_Channel.Name
+	--and gGroupCalendar_Channel.ID
+	--and gGroupCalendar_Channel.Status ~= "Suspended" then
+	--	LeaveChannelByName(gGroupCalendar_Channel.Name);
+	--	CalendarNetwork_LeftChannel();
+	--end
 end
 
 function CalendarNetwork_JoinedChannel()
 	CalendarNetwork_SetChannelStatus("Synching");
 	
-	if gGroupCalendar_Settings.DebugInit then
-		Calendar_DebugMessage("CalendarNetwork_JoinChannel succeeded channel "..gGroupCalendar_Channel.Name.." ID "..gGroupCalendar_Channel.ID);
-	end
+	--if gGroupCalendar_Settings.DebugInit then
+	--	Calendar_DebugMessage("CalendarNetwork_JoinChannel succeeded channel "..gGroupCalendar_Channel.Name.." ID "..gGroupCalendar_Channel.ID);
+	--end
 
 	-- Send update requests/notices
 
@@ -319,9 +337,9 @@ function CalendarNetwork_ChannelNotice(pChannelMessage, pChannelName, pChannelID
 			return;
 		end
 		
-		if not gGroupCalendar_Channel.ID then
-			return;
-		end
+		--if not gGroupCalendar_Channel.ID then
+		--	return;
+		--end
 		
 		CalendarNetwork_LeftChannel();
 		
@@ -335,33 +353,33 @@ function CalendarNetwork_ChannelNotice(pChannelMessage, pChannelName, pChannelID
 end
 
 function CalendarNetwork_SuspendChannel()
-	if gGroupCalendar_Channel.Status == "Suspended"
-	or not gGroupCalendar_Channel.Name
-	or not gGroupCalendar_Channel.ID then
-		return;
-	end
+	--if gGroupCalendar_Channel.Status == "Suspended"
+	--or not gGroupCalendar_Channel.Name
+	--or not gGroupCalendar_Channel.ID then
+	--	return;
+	--end
 	
-	LeaveChannelByName(gGroupCalendar_Channel.Name);
+	--LeaveChannelByName(gGroupCalendar_Channel.Name);
 	
-	gGroupCalendar_Channel.ID = nil;
-	CalendarNetwork_SetChannelStatus("Suspended");
+	--gGroupCalendar_Channel.ID = nil;
+	--CalendarNetwork_SetChannelStatus("Suspended");
 end
 
 function CalendarNetwork_ResumeChannel()
-	if not gGroupCalendar_Channel.Status ~= "Suspended" then
-		return;
-	end
+	--if not gGroupCalendar_Channel.Status ~= "Suspended" then
+	--	return;
+	--end
 
-	JoinChannelByName(gGroupCalendar_Channel.Name, gGroupCalendar_Channel.Password, DEFAULT_CHAT_FRAME:GetID());
-	gGroupCalendar_Channel.ID = GetChannelName(gGroupCalendar_Channel.Name);
+	--JoinChannelByName(gGroupCalendar_Channel.Name, gGroupCalendar_Channel.Password, DEFAULT_CHAT_FRAME:GetID());
+	--gGroupCalendar_Channel.ID = GetChannelName(gGroupCalendar_Channel.Name);
 	
-	if (gGroupCalendar_ShowChat) then
-		ChatFrame_AddChannel(DEFAULT_CHAT_FRAME, gGroupCalendar_Channel.Name);
-	else
-		ChatFrame_RemoveChannel(DEFAULT_CHAT_FRAME, gGroupCalendar_Channel.Name);
-	end	
+	--if (gGroupCalendar_ShowChat) then
+	--	ChatFrame_AddChannel(DEFAULT_CHAT_FRAME, gGroupCalendar_Channel.Name);
+	--else
+	--	ChatFrame_RemoveChannel(DEFAULT_CHAT_FRAME, gGroupCalendar_Channel.Name);
+	--end	
 
-	CalendarNetwork_SetChannelStatus("Connected");
+	--CalendarNetwork_SetChannelStatus("Connected");
 end
 
 function CalendarNetwork_UnpackIndexedList(...)
@@ -403,7 +421,7 @@ function CalendarNetwork_CalendarLoaded()
 	
 	--
 	
-	CalendarNetwork_QueueTask(CalendarNetwork_Initialize, nil, vDelay, "INIT");
+	CalendarNetwork_QueueTask(CalendarNetwork_Initialize, nil, 2, "INIT");
 end
 
 function CalendarNetwork_SystemChannelJoined()
@@ -681,7 +699,7 @@ function CalendarNetwork_ProcessDatabaseCommand(pSender, pTrustLevel, pUserName,
 		--
 		
 		if vIsselfPlayerOwned then
-			CalendarNetwork_QueueOutboundMessage(gGroupCalendar_MessagePrefix.."VER:"..gGroupCalendar_VersionString);
+			CalendarNetwork_QueueOutboundMessage("/VER:"..gGroupCalendar_VersionString);
 		end
 	elseif vOpcode == "NOU" then
 		-- If the sender is seen transmitting an NOU while he has a database update
@@ -969,7 +987,7 @@ function CalendarNetwork_ProcessAllCommand(pSender, pTrustLevel, pCommand)
 	if vOpcode == "RFU" then
 		CalendarNetwork_SendAllRevisionNotices();
 	elseif vOpcode == "RFV" then
-		CalendarNetwork_QueueOutboundMessage(gGroupCalendar_MessagePrefix.."VER:"..gGroupCalendar_VersionString);
+		CalendarNetwork_QueueOutboundMessage("/VER:"..gGroupCalendar_VersionString);
 		CalendarNetwork_DeleteRequestByOpcode("RFV"); -- No need to request versions if someone else does it instead
 	end
 end
@@ -1814,23 +1832,24 @@ function CalendarNetwork_ParseCommandString(pCommandString)
 	
 	-- Verify the command begins with the message prefix
 	
-	if strsub(pCommandString, 1, gGroupCalendar_MessagePrefixLength) ~= gGroupCalendar_MessagePrefix then
+	--if strsub(pCommandString, 1, gGroupCalendar_MessagePrefixLength) ~= gGroupCalendar_MessagePrefix then
 		
-		return nil;
-	end
+	--	return nil;
+	--end
 	
-	local	vCommandString = strsub(pCommandString, gGroupCalendar_MessagePrefixLength);
+	--local	vCommandString = strsub(pCommandString, gGroupCalendar_MessagePrefixLength);
 	
-	return CalendarNetwork_ParseCommandSubString(vCommandString)
+	return CalendarNetwork_ParseCommandSubString(pCommandString)
 end
 
 function CalendarNetwork_ParseCommandSubString(pCommandString)
 	
 	-- Break the command into parts
-	
 	local	vCommand = {};
 
-	for vOpcode, vOperands in string.gmatch(pCommandString, "/(%w+):*([^/]*)") do
+	-- May need to add a "/" at the start of this match
+	for vOpcode, vOperands in string.gmatch(pCommandString, "(%w+):*([^/]*)") do
+
 		local	vOperation = {};		
 		vOperation.opcode = vOpcode;
 		vOperation.operandString = vOperands;
@@ -1922,12 +1941,12 @@ function CalendarNetwork_SendRevisionChanged(pChanges, pLabel, pUserName)
 	-- Just leave if there's no channel to communicate on
 	-- or no changes to announce
 	
-	if not gGroupCalendar_Channel.ID
-	or not pChanges then
+	if --not gGroupCalendar_Channel.ID
+	not pChanges then
 		return;
 	end
 	
-	CalendarNetwork_QueueOutboundMessage(gGroupCalendar_MessagePrefix..CalendarChanges_GetRevisionPath(pLabel, pUserName, pChanges.ID, pChanges.Revision).."NOU");
+	CalendarNetwork_QueueOutboundMessage("/"..CalendarChanges_GetRevisionPath(pLabel, pUserName, pChanges.ID, pChanges.Revision).."NOU");
 end
 
 function CalendarNetwork_QueueDatabaseNOU(pDatabase, pDelay, pOwnedDelay)
@@ -1983,14 +2002,14 @@ end
 function CalendarNetwork_RequestAllUpdate()
 	-- Just leave if there's no channel to communicate on
 	
-	if not gGroupCalendar_Channel.ID then
-		return;
-	end
+	--if not gGroupCalendar_Channel.ID then
+	--	return;
+	--end
 	
 	-- Send the request immmediately since delaying it for channel silence will only
 	-- increase the number of times that everyone has to transmit their NOU responses
 	
-	CalendarNetwork_SendMessage(gGroupCalendar_MessagePrefix.."ALL/RFU");
+	CalendarNetwork_SendMessage("/ALL/RFU");
 end
 
 function CalendarNetwork_RequestGuildUpdate(pGuildName, pMinRank)
@@ -2004,9 +2023,9 @@ function CalendarNetwork_RequestGuildUpdate(pGuildName, pMinRank)
 	-- increase the number of times that everyone has to transmit their NOU responses
 	
 	if pMinRank then
-		CalendarNetwork_SendMessage(gGroupCalendar_MessagePrefix.."GLD:"..pGuildName..","..pMinRank.."/RFU");
+		CalendarNetwork_SendMessage("/GLD:"..pGuildName..","..pMinRank.."/RFU");
 	else
-		CalendarNetwork_SendMessage(gGroupCalendar_MessagePrefix.."GLD:"..pGuildName.."/RFU");
+		CalendarNetwork_SendMessage("/GLD:"..pGuildName.."/RFU");
 	end
 end
 
@@ -2040,9 +2059,9 @@ end
 function CalendarNetwork_RequestUpdate(pDatabase, pChanges, pDatabaseTag, pRequestImmediately, pHighPriority)
 	-- Just leave if there's no channel to communicate on
 	
-	if not gGroupCalendar_Channel.ID then
-		return;
-	end
+	--if not gGroupCalendar_Channel.ID then
+	--	return;
+	--end
 	
 	local	vID, vRevision;
 	
@@ -2056,7 +2075,7 @@ function CalendarNetwork_RequestUpdate(pDatabase, pChanges, pDatabaseTag, pReque
 	
 	if pRequestImmediately then
 	
-		local	vRequestMessage = gGroupCalendar_MessagePrefix..CalendarChanges_GetRevisionPath(pDatabaseTag, pDatabase.UserName, vID, vRevision, 0).."RFU";
+		local	vRequestMessage = "/"..CalendarChanges_GetRevisionPath(pDatabaseTag, pDatabase.UserName, vID, vRevision, 0).."RFU";
 		
 		if pHighPriority then
 			vRequestMessage = vRequestMessage..":H";
@@ -2080,7 +2099,7 @@ function CalendarNetwork_SendEmptyChanges(pChanges, pLabel, pUserName)
 		vRevision = 0;
 	end
 	
-	CalendarNetwork_QueueOutboundMessage(gGroupCalendar_MessagePrefix..CalendarChanges_GetRevisionPath(pLabel, pUserName, vID, vRevision).."DEL");
+	CalendarNetwork_QueueOutboundMessage("/"..CalendarChanges_GetRevisionPath(pLabel, pUserName, vID, vRevision).."DEL");
 end
 
 function CalendarNetwork_SendChanges(pChanges, pLabel, pUserName, pLockdown, pSinceRevision)
@@ -2094,7 +2113,7 @@ function CalendarNetwork_SendChanges(pChanges, pLabel, pUserName, pLockdown, pSi
 		return;
 	end
 	
-	CalendarNetwork_QueueOutboundMessage(gGroupCalendar_MessagePrefix..CalendarChanges_GetRevisionPath(pLabel, pUserName, pChanges.ID, pChanges.Revision).."UPD:"..pSinceRevision);
+	CalendarNetwork_QueueOutboundMessage("/"..CalendarChanges_GetRevisionPath(pLabel, pUserName, pChanges.ID, pChanges.Revision).."UPD:"..pSinceRevision);
 	
 	for vRevision = pSinceRevision + 1, pChanges.Revision do
 		local	vRevisionPath = CalendarChanges_GetRevisionPath(pLabel, pUserName, pChanges.ID, vRevision);
@@ -2104,12 +2123,12 @@ function CalendarNetwork_SendChanges(pChanges, pLabel, pUserName, pLockdown, pSi
 			vChangeList.IsOpen = nil; -- Make sure IsOpen is cleared, a bug may have caused it to remain open
 			
 			for vIndex, vChange in pairs(vChangeList) do
-				CalendarNetwork_QueueOutboundMessage(gGroupCalendar_MessagePrefix..vRevisionPath..vChange);
+				CalendarNetwork_QueueOutboundMessage("/"..vRevisionPath..vChange);
 			end
 		end
 	end
 	
-	CalendarNetwork_QueueOutboundMessage(gGroupCalendar_MessagePrefix..CalendarChanges_GetRevisionPath(pLabel, pUserName, pChanges.ID, pChanges.Revision).."END:"..pSinceRevision);
+	CalendarNetwork_QueueOutboundMessage("/"..CalendarChanges_GetRevisionPath(pLabel, pUserName, pChanges.ID, pChanges.Revision).."END:"..pSinceRevision);
 end
 
 function CalendarNetwork_QueueOutboundMessage(pMessage)
@@ -2736,7 +2755,7 @@ function CalendarNetwork_ProcessRequest(pRequest)
 		
 		if vCurrentRevision < pRequest.mRevision
 		or vCurrentRevision == 0 then
-			CalendarNetwork_QueueOutboundMessage(gGroupCalendar_MessagePrefix..EventDatabase_GetDBRevisionPath(pRequest.mUserName, pRequest.mDatabaseID, vCurrentRevision, vAuthRevision).."RFU");
+			CalendarNetwork_QueueOutboundMessage("/"..EventDatabase_GetDBRevisionPath(pRequest.mUserName, pRequest.mDatabaseID, vCurrentRevision, vAuthRevision).."RFU");
 		elseif gGroupCalendar_Settings.DebugQueues then
 			Calendar_DebugMessage("Skipping DB_RFU for "..pRequest.mUserName.." since existing database is already newer");
 		end
@@ -2755,7 +2774,7 @@ function CalendarNetwork_ProcessRequest(pRequest)
 		
 		if vCurrentRevision < pRequest.mRevision
 		or vCurrentRevision == 0 then
-			CalendarNetwork_QueueOutboundMessage(gGroupCalendar_MessagePrefix..EventDatabase_GetRSVPRevisionPath(pRequest.mUserName, pRequest.mDatabaseID, vCurrentRevision, vAuthRevision).."RFU");
+			CalendarNetwork_QueueOutboundMessage("/"..EventDatabase_GetRSVPRevisionPath(pRequest.mUserName, pRequest.mDatabaseID, vCurrentRevision, vAuthRevision).."RFU");
 		elseif gGroupCalendar_Settings.DebugQueues then
 			Calendar_DebugMessage("Skipping RAT_RFU for "..pRequest.mUserName.." since existing database is already newer");
 		end
@@ -2766,8 +2785,8 @@ function CalendarNetwork_ProcessRequest(pRequest)
 	elseif pRequest.mOpcode == "RFV" then
 		-- Send our version and request everyone else to send theirs
 		
-		CalendarNetwork_QueueOutboundMessage(gGroupCalendar_MessagePrefix.."VER:"..gGroupCalendar_VersionString);
-		CalendarNetwork_QueueOutboundMessage(gGroupCalendar_MessagePrefix.."ALL/RFV");
+		CalendarNetwork_QueueOutboundMessage("/VER:"..gGroupCalendar_VersionString);
+		CalendarNetwork_QueueOutboundMessage("/ALL/RFV");
 		
 	elseif pRequest.mOpcode == "DBTRUST" then
 		EventDatabase_CheckDatabaseTrust();
@@ -2790,24 +2809,28 @@ function CalendarNetwork_Initialize()
 	
 	CalendarNetwork_PlayerGuildChanged();
 
+	CalendarNetwork_JoinChannel2(nil);
+
+	--CalendarNetwork_SetChannel(gGroupCalendar_PlayerSettings.Channel.Name, gGroupCalendar_PlayerSettings.Channel.Password);
+
 	-- Go ahead and do manual channel configuration now, automatic
 	-- config will be handled once the player guild gets set and
 	-- the roster gets loaded
 
-	if not gGroupCalendar_PlayerSettings.Channel.AutoConfig then
-		if gGroupCalendar_Settings.DebugInit then
-			Calendar_DebugMessage("GroupCalendar INIT: Starting up data channel (manual configuration)");
-		end
+	--if not gGroupCalendar_PlayerSettings.Channel.AutoConfig then
+	--	if gGroupCalendar_Settings.DebugInit then
+	--		Calendar_DebugMessage("GroupCalendar INIT: Starting up data channel (manual configuration)");
+	--	end
 		
-		if gGroupCalendar_PlayerSettings.Channel.Name then
-			CalendarNetwork_SetChannel(
-					gGroupCalendar_PlayerSettings.Channel.Name,
-					gGroupCalendar_PlayerSettings.Channel.Password);
-		else
-			CalendarNetwork_SetChannelStatus("Disconnected");
-			Calendar_DebugMessage("GroupCalendar channel is not set");
-		end
-	end
+	--	if gGroupCalendar_PlayerSettings.Channel.Name then
+	--		CalendarNetwork_SetChannel(
+	--				gGroupCalendar_PlayerSettings.Channel.Name,
+	--				gGroupCalendar_PlayerSettings.Channel.Password);
+	--	else
+	--		CalendarNetwork_SetChannelStatus("Disconnected");
+	--		Calendar_DebugMessage("GroupCalendar channel is not set");
+	--	end
+	--end
 
 	Calendar_GetPrimaryTradeskills();
 end
@@ -2840,7 +2863,7 @@ end
 
 function CalendarNetwork_RequestAllDatabaseUpdates()
 	-- Immediately send a notice of our version
-	CalendarNetwork_SendMessage(gGroupCalendar_MessagePrefix.."VER:"..gGroupCalendar_VersionString);
+	CalendarNetwork_SendMessage("/VER:"..gGroupCalendar_VersionString);
 	
 	-- Immediately request updates to our own databases
 	
@@ -3091,15 +3114,17 @@ end
 
 function CalendarNetwork_SendMessage(pMessage)
 	-- Just leave if there's no channel to communicate on
-	if not gGroupCalendar_Channel.ID then
-		return;
-	end
+	--if not gGroupCalendar_Channel.ID then
+	--	return;
+	--end
 	
 	local	vSavedAutoClearAFK = GetCVar("autoClearAFK");
 	SetCVar("autoClearAFK", 0);
 	
-	SendChatMessage(Calendar_EscapeChatString(pMessage), "CHANNEL", nil, gGroupCalendar_Channel.ID);
-	
+	--SendChatMessage(Calendar_EscapeChatString(pMessage), "CHANNEL", nil, gGroupCalendar_Channel.ID);
+
+	C_ChatInfo.SendAddonMessage(gGroupCalendar_MessagePrefix0, pMessage, "GUILD");
+
 	SetCVar("autoClearAFK", vSavedAutoClearAFK);
 end
 
@@ -3378,7 +3403,7 @@ function CalendarNetwork_DoAutoConfig(pCheckDatabaseTrust)
 		GroupCalendar_ChannelChanged(); -- Send out a change notice just so the calendar knows the player changed
 	end
 	
-	CalendarNetwork_SetChannel(vChannel, vPassword);
+	--CalendarNetwork_SetChannel(vChannel, vPassword);
 	
 	-- Update the trust settings
 	

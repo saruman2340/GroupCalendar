@@ -82,8 +82,9 @@ function GroupCalendar_OnLoad(frame)
 	
 	-- For monitoring the status of the chat channel
 	
-	GroupCalendar_RegisterEvent(frame, "CHAT_MSG_SYSTEM", GroupCalendar_ChatMsgSystem);
-	GroupCalendar_RegisterEvent(frame, "CHAT_MSG_CHANNEL_NOTICE", GroupCalendar_ChatMsgChannelNotice);
+	--GroupCalendar_RegisterEvent(frame, "CHAT_MSG_SYSTEM", GroupCalendar_ChatMsgSystem);
+	GroupCalendar_RegisterEvent(frame, "CHAT_MSG_ADDON", GroupCalendar_ChatMsgAddon);
+	--GroupCalendar_RegisterEvent(frame, "CHAT_MSG_CHANNEL_NOTICE", GroupCalendar_ChatMsgChannelNotice);
 	GroupCalendar_RegisterEvent(frame, "CHAT_MSG_WHISPER", GroupCalendar_ChatMsgWhisper);
 	
 	-- For suspending/resuming the chat channel during logout
@@ -427,6 +428,39 @@ function GroupCalendar_ChatMsgChannel(pEvent, arg1, arg2, arg3, arg4, arg5, arg6
 	end
 end
 
+function GroupCalendar_ChatMsgAddon(pEvent, prefix, text, channel, sender, target, zoneChannelID, localID, name, instanceID)
+
+	if prefix == gGroupCalendar_MessagePrefix0 and channel == "GUILD" then
+
+		local author = GroupCalendar_RemoveRealmName(sender);	
+		
+		if author == gGroupCalendar_PlayerName then
+			-- Ignore messages from ourselves
+			if not gGroupCalendar_Settings.Debug then		
+				return;
+			end
+			
+			-- Special debugging case: allow self-send of messages starting with '!'
+			
+			if strsub(text, 1, 1) ~= "!" then
+				return;
+			end
+			
+			text = strsub(text, 2);
+		end
+		
+		-- Clean up drunkeness
+		
+		--if strsub(arg1, -8) == " ...hic!" then
+		--	arg1 = strsub(arg1, 1, -9);
+		--end
+		
+		text = Calendar_UnescapeChatString(text);
+		CalendarNetwork_ChannelMessageReceived(author, text);
+		
+	end
+end
+
 function GroupCalendar_ChatMsgChannelNotice(pEvent, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
 	local	vChannelMessage = arg1;
 	local	vChannelName = arg4;
@@ -610,7 +644,8 @@ function GroupCalendar_SavePanel(pIndex)
 				gGroupCalendar_PlayerSettings.Channel.Password = nil;
 			end
 			
-			CalendarNetwork_SetChannel(gGroupCalendar_PlayerSettings.Channel.Name, gGroupCalendar_PlayerSettings.Channel.Password);
+			--CalendarNetwork_JoinChannel2(nil);
+			--CalendarNetwork_SetChannel(gGroupCalendar_PlayerSettings.Channel.Name, gGroupCalendar_PlayerSettings.Channel.Password);
 			
 			if GroupCalendarStoreAutoConfig:GetChecked() then
 				gGroupCalendar_PlayerSettings.Channel.AutoConfigPlayer = GroupCalendarAutoConfigPlayer:GetText();
@@ -1272,12 +1307,12 @@ end
 
 function GroupCalendar_ChannelChanged()
 	if GroupCalendarFrame then
-		if CalendarNetwork_GetChannelStatus() == "Connected"
-		or CalendarNetwork_GetChannelStatus() == "Synching" then
-			GroupCalendar_RegisterEvent(GroupCalendarFrame, "CHAT_MSG_CHANNEL", GroupCalendar_ChatMsgChannel);
-		else
-			GroupCalendar_UnregisterEvent(GroupCalendarFrame, "CHAT_MSG_CHANNEL");
-		end
+		--if CalendarNetwork_GetChannelStatus() == "Connected"
+		--or CalendarNetwork_GetChannelStatus() == "Synching" then
+		--	GroupCalendar_RegisterEvent(GroupCalendarFrame, "CHAT_MSG_CHANNEL", GroupCalendar_ChatMsgChannel);
+		--else
+		--	GroupCalendar_UnregisterEvent(GroupCalendarFrame, "CHAT_MSG_CHANNEL");
+		--end
 
 		if GroupCalendarFrame:IsVisible()
 		and (gGroupCalendar_CurrentPanel == 2
@@ -1344,31 +1379,31 @@ function GroupCalendar_SelectLanguage(pLanguageCode)
 end
 
 function GroupCalendar_ToggleChannelConnection()
-	local	vChannelStatus = CalendarNetwork_GetChannelStatus();
+	--local	vChannelStatus = CalendarNetwork_GetChannelStatus();
 	
-	if vChannelStatus == "Initializing" then
-		return;
-	end
+	--if vChannelStatus == "Initializing" then
+	--	return;
+	--end
 	
-	if vChannelStatus == "Connected"
-	or vChannelStatus == "Synching" then
-		gGroupCalendar_Channel.Disconnected = true;
+	--if vChannelStatus == "Connected"
+	--or vChannelStatus == "Synching" then
+	--	gGroupCalendar_Channel.Disconnected = true;
 		
-		CalendarNetwork_LeaveChannel();
-	else
-		gGroupCalendar_Channel.Disconnected = false;
-		CalendarNetwork_SetChannelStatus("Initializing");
+	--	CalendarNetwork_LeaveChannel();
+	--else
+	--	gGroupCalendar_Channel.Disconnected = false;
+	--	CalendarNetwork_SetChannelStatus("Initializing");
 		
-		if gGroupCalendar_PlayerSettings.Channel.AutoConfig then
-			CalendarNetwork_ScheduleAutoConfig(0.5);
-		elseif gGroupCalendar_PlayerSettings.Channel.Name then
-			CalendarNetwork_SetChannel(
-					gGroupCalendar_PlayerSettings.Channel.Name,
-					gGroupCalendar_PlayerSettings.Channel.Password);
-		else
-			CalendarNetwork_SetChannelStatus("Disconnected");
-		end
-	end
+	--	if gGroupCalendar_PlayerSettings.Channel.AutoConfig then
+	--		CalendarNetwork_ScheduleAutoConfig(0.5);
+	--	elseif gGroupCalendar_PlayerSettings.Channel.Name then
+	--		CalendarNetwork_SetChannel(
+	--				gGroupCalendar_PlayerSettings.Channel.Name,
+	--				gGroupCalendar_PlayerSettings.Channel.Password);
+	--	else
+	--		CalendarNetwork_SetChannelStatus("Disconnected");
+	--	end
+	--end
 end
 
 function GroupCalendar_ToggleCalendarDisplay()

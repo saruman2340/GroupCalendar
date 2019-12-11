@@ -577,7 +577,7 @@ end
 
 function Calendar_GetEventTypeIconPath(pEventType)
 	local	vIconSuffix;
-	
+
 	if EventDatabase_IsResetEventType(pEventType) then
 		local	vIsSystemIcon;
 		
