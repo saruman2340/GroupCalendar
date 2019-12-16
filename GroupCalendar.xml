@@ -297,7 +297,7 @@
 			</Button>
 			<Frame name="GroupCalendarCalendarFrame" hidden="true" setAllPoints="true">
 				<Layers>
-					<Layer level="OVERLAY">
+					<Layer level="OVERLAY">            
 						<FontString name="GroupCalendarMonthYearText" inherits="GameFontNormalLarge">
 							<Anchors>
 								<Anchor point="TOP">
@@ -370,6 +370,15 @@
 								</Anchor>
 							</Anchors>
 						</FontString>
+            <FontString name="GroupCalendarChannelStatus" inherits="GameFontNormalSmall" text="" justifyH="LEFT" justifyV="MIDDLE">              
+              <Anchors>
+                <Anchor point="BOTTOMLEFT" relativePoint="BOTTOMLEFT">
+                  <Offset>
+                    <AbsDimension x="167" y="65"/>
+                  </Offset>
+                </Anchor>
+              </Anchors>
+            </FontString>
 					</Layer>
 				</Layers>
 				<Frames>
@@ -797,6 +806,7 @@
 							</OnLeave>
 						</Scripts>
 					</CheckButton>
+          
 					<Model name="GroupCalendarTodayHighlight" file="Interface\Buttons\UI-AutoCastButton.mdx" scale="1.4" hidden="false">
 						<Size>
 							<AbsDimension x="36" y="36"/>
@@ -817,272 +827,7 @@
 					</Model>
 				</Frames>
 			</Frame>
-
-			<Frame name="GroupCalendarChannelFrame" hidden="true" setAllPoints="true">
-				<Layers>
-					<Layer level="OVERLAY">
-						<FontString text="GroupCalendar_cChannelConfigTitle" inherits="GameFontNormalLarge">
-							<Anchors>
-								<Anchor point="TOP">
-									<Offset>
-										<AbsDimension x="17" y="-48"/>
-									</Offset>
-								</Anchor>
-							</Anchors>
-						</FontString>
-						<FontString text="GroupCalendar_cChannelConfigDescription" inherits="GameFontNormalSmall">
-							<Size>
-								<AbsDimension x="290" y="65"/>
-							</Size>
-							<Anchors>
-								<Anchor point="TOPLEFT">
-									<Offset>
-										<AbsDimension x="35" y="-75"/>
-									</Offset>
-								</Anchor>
-							</Anchors>
-						</FontString>
-						<FontString name="GroupCalendarChannelStatus" inherits="GameFontNormalSmall" text="" justifyH="CENTER" justifyV="MIDDLE">
-							<Size>
-								<AbsDimension x="290" y="25"/>
-							</Size>
-							<Anchors>
-								<Anchor point="BOTTOM" relativePoint="BOTTOM">
-									<Offset>
-										<AbsDimension x="0" y="70"/>
-									</Offset>
-								</Anchor>
-							</Anchors>
-						</FontString>
-					</Layer>
-				</Layers>
-				<Frames>
-					<CheckButton name="GroupCalendarAutoChannelConfig" inherits="OptionsCheckButtonTemplate">
-						<Anchors>
-							<Anchor point="TOPLEFT">
-								<Offset>
-									<AbsDimension x="60" y="-140"/>
-								</Offset>
-							</Anchor>
-						</Anchors>
-						<Scripts>
-							<OnLoad>
-								getglobal(self:GetName().."Text"):SetText(GroupCalendar_cAutoChannelConfig);
-							</OnLoad>
-							<OnClick>
-								GroupCalendar_SetAutoChannelConfig(true);
-							</OnClick>
-							<OnEnter>
-                GameTooltip_AddNewbieTip(self, GroupCalendar_cAutoChannelConfig, 1.0, 1.0, 1.0, GroupCalendar_cAutoConfigTipDescription, 1);
-              </OnEnter>
-							<OnLeave>
-								GameTooltip:Hide();
-							</OnLeave>
-						</Scripts>
-					</CheckButton>
-					<CheckButton name="GroupCalendarManualChannelConfig" inherits="OptionsCheckButtonTemplate">
-						<Anchors>
-							<Anchor point="TOPLEFT" relativeTo="GroupCalendarAutoChannelConfig" relativePoint="BOTTOMLEFT">
-								<Offset>
-									<AbsDimension x="0" y="4"/>
-								</Offset>
-							</Anchor>
-						</Anchors>
-						<Scripts>
-							<OnLoad>
-								getglobal(self:GetName().."Text"):SetText(GroupCalendar_cManualChannelConfig);
-							</OnLoad>
-							<OnClick>
-								GroupCalendar_SetAutoChannelConfig(false);
-							</OnClick>
-							<OnEnter>
-                GameTooltip_AddNewbieTip(self, GroupCalendar_cManualChannelConfig, 1.0, 1.0, 1.0, GroupCalendar_cManualConfigTipDescription, 1);
-              </OnEnter>
-							<OnLeave>
-								GameTooltip:Hide();
-							</OnLeave>
-						</Scripts>
-					</CheckButton>
-					<EditBox name="GroupCalendarChannelName" letters="10" autofocus="false" inherits="GroupCalendarInputBoxTemplate">
-						<Size>
-							<AbsDimension x="120" y="20"/>
-						</Size>
-						<Anchors>
-							<Anchor point="TOPLEFT" relativeTo="GroupCalendarManualChannelConfig" relativePoint="BOTTOMLEFT">
-								<Offset>
-									<AbsDimension x="120" y="0"/>
-								</Offset>
-							</Anchor>
-						</Anchors>
-						<Layers>
-							<Layer level="BACKGROUND">
-								<FontString name="$parentText" inherits="GameFontNormalSmall" text="GroupCalendar_cChannelNameLabel" justifyH="RIGHT">
-									<Anchors>
-										<Anchor point="RIGHT" relativePoint="LEFT">
-											<Offset>
-												<AbsDimension x="-12" y="0"/>
-											</Offset>
-										</Anchor>
-									</Anchors>
-								</FontString>
-							</Layer>
-						</Layers>
-						<Scripts>
-							<OnTextChanged>
-								GroupCalendar_UpdateEnabledControls();
-							</OnTextChanged>
-							<OnEscapePressed>
-								self:ClearFocus();
-							</OnEscapePressed>
-							<OnEnter>
-                GameTooltip_AddNewbieTip(self, GroupCalendar_cChannelNameTipTitle, 1.0, 1.0, 1.0, GroupCalendar_cChannelNameTipDescription, 1);
-              </OnEnter>
-							<OnLeave>
-								GameTooltip:Hide();
-							</OnLeave>
-						</Scripts>
-					</EditBox>
-					<EditBox name="GroupCalendarChannelPassword" letters="6" autofocus="false" inherits="GroupCalendarInputBoxTemplate">
-						<Size>
-							<AbsDimension x="120" y="20"/>
-						</Size>
-						<Anchors>
-							<Anchor point="TOPLEFT" relativeTo="GroupCalendarChannelName" relativePoint="BOTTOMLEFT">
-								<Offset>
-									<AbsDimension x="0" y="-5"/>
-								</Offset>
-							</Anchor>
-						</Anchors>
-						<Layers>
-							<Layer level="BACKGROUND">
-								<FontString name="$parentText" inherits="GameFontNormalSmall" text="GroupCalendar_cPasswordLabel" justifyH="RIGHT">
-									<Anchors>
-										<Anchor point="RIGHT" relativePoint="LEFT">
-											<Offset>
-												<AbsDimension x="-12" y="0"/>
-											</Offset>
-										</Anchor>
-									</Anchors>
-								</FontString>
-							</Layer>
-						</Layers>
-						<Scripts>
-							<OnTextChanged>
-								GroupCalendar_UpdateEnabledControls();
-							</OnTextChanged>
-							<OnEscapePressed>
-								self:ClearFocus();
-							</OnEscapePressed>
-						</Scripts>
-					</EditBox>
-					<CheckButton name="GroupCalendarStoreAutoConfig" inherits="OptionsCheckButtonTemplate">
-						<Anchors>
-							<Anchor point="TOPLEFT" relativeTo="GroupCalendarManualChannelConfig" relativePoint="BOTTOMLEFT">
-								<Offset>
-									<AbsDimension x="0" y="-50"/>
-								</Offset>
-							</Anchor>
-						</Anchors>
-						<Scripts>
-							<OnLoad>
-								getglobal(self:GetName().."Text"):SetText(GroupCalendar_cStoreAutoConfig);
-								getglobal(self:GetName().."Text"):SetWidth(200);
-								getglobal(self:GetName().."Text"):SetJustifyH("LEFT");
-							</OnLoad>
-							<OnClick>
-								GroupCalendar_EnableAutoConfigPlayer(self:GetChecked());
-							</OnClick>
-							<OnEnter>
-                GameTooltip_AddNewbieTip(self, GroupCalendar_cStoreAutoConfig, 1.0, 1.0, 1.0, GroupCalendar_cStoreAutoConfigTipDescription, 1);
-              </OnEnter>
-							<OnLeave>
-								GameTooltip:Hide();
-							</OnLeave>
-						</Scripts>
-					</CheckButton>
-					<EditBox name="GroupCalendarAutoConfigPlayer" letters="25" autofocus="false" inherits="GroupCalendarInputBoxTemplate">
-						<Size>
-							<AbsDimension x="120" y="20"/>
-						</Size>
-						<Anchors>
-							<Anchor point="TOPLEFT" relativeTo="GroupCalendarStoreAutoConfig" relativePoint="BOTTOMLEFT">
-								<Offset>
-									<AbsDimension x="120" y="0"/>
-								</Offset>
-							</Anchor>
-						</Anchors>
-						<Layers>
-							<Layer level="BACKGROUND">
-								<FontString name="$parentText" inherits="GameFontNormalSmall" text="GroupCalendar_cAutoConfigPlayer" justifyH="RIGHT">
-									<Anchors>
-										<Anchor point="RIGHT" relativePoint="LEFT">
-											<Offset>
-												<AbsDimension x="-12" y="0"/>
-											</Offset>
-										</Anchor>
-									</Anchors>
-								</FontString>
-							</Layer>
-						</Layers>
-						<Scripts>
-							<OnChar>
-								Calendar_AutoCompletePlayerName(self);
-							</OnChar>
-							<OnTextChanged>
-								GroupCalendar_UpdateEnabledControls();
-							</OnTextChanged>
-							<OnEscapePressed>
-								self:ClearFocus();
-							</OnEscapePressed>
-							<OnEnter>
-                GameTooltip_AddNewbieTip(self, GroupCalendar_cAutoConfigPlayer, 1.0, 1.0, 1.0, GroupCalendar_cAutoConfigPlayerTipDescription, 1);
-              </OnEnter>
-							<OnLeave>
-								GameTooltip:Hide();
-							</OnLeave>
-						</Scripts>
-					</EditBox>
-					
-					<Button name="GroupCalendarConnectChannelButton" inherits="UIPanelButtonTemplate" text="GroupCalendar_cConnectChannel">
-						<Size>
-							<AbsDimension x="135" y="21"/>
-						</Size>
-						<Anchors>
-							<Anchor point="BOTTOMLEFT">
-								<Offset>
-									<AbsDimension x="34" y="45"/>
-								</Offset>
-							</Anchor>
-						</Anchors>
-						<Scripts>
-							<OnClick>
-								PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON );
-								GroupCalendar_ToggleChannelConnection();
-							</OnClick>
-						</Scripts>
-					</Button>
-					
-					<Button name="GroupCalendarApplyChannelButton" inherits="UIPanelButtonTemplate" text="GroupCalendar_cApplyChannelChanges">
-						<Size>
-							<AbsDimension x="135" y="21"/>
-						</Size>
-						<Anchors>
-							<Anchor point="BOTTOMRIGHT">
-								<Offset>
-									<AbsDimension x="-26" y="45"/>
-								</Offset>
-							</Anchor>
-						</Anchors>
-						<Scripts>
-							<OnClick>
-								PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON );
-								GroupCalendar_SavePanel(gGroupCalendar_CurrentPanel);
-							</OnClick>
-						</Scripts>
-					</Button>
-				</Frames>
-			</Frame>
-			
+		
 			<Frame name="GroupCalendarTrustFrame" hidden="true" setAllPoints="true">
 				<Layers>
 					<Layer level="OVERLAY">
@@ -1493,8 +1238,8 @@
 						</Offset>
 					</Anchor>
 				</Anchors>
-			</Button>
-			<Button name="GroupCalendarFrameTab2" inherits="CalendarFrameTabTemplate" id="2" text="GroupCalendar_cChannel">
+			</Button>			
+			<Button name="GroupCalendarFrameTab2" inherits="CalendarFrameTabTemplate" id="2" text="GroupCalendar_cTrust">
 				<Anchors>
 					<Anchor point="LEFT" relativeTo="GroupCalendarFrameTab1" relativePoint="RIGHT">
 						<Offset>
@@ -1503,18 +1248,9 @@
 					</Anchor>
 				</Anchors>
 			</Button>
-			<Button name="GroupCalendarFrameTab3" inherits="CalendarFrameTabTemplate" id="3" text="GroupCalendar_cTrust">
+			<Button name="GroupCalendarFrameTab3" inherits="CalendarFrameTabTemplate" id="3" text="GroupCalendar_cAbout">
 				<Anchors>
 					<Anchor point="LEFT" relativeTo="GroupCalendarFrameTab2" relativePoint="RIGHT">
-						<Offset>
-							<AbsDimension x="-14" y="0"/>
-						</Offset>
-					</Anchor>
-				</Anchors>
-			</Button>
-			<Button name="GroupCalendarFrameTab4" inherits="CalendarFrameTabTemplate" id="4" text="GroupCalendar_cAbout">
-				<Anchors>
-					<Anchor point="LEFT" relativeTo="GroupCalendarFrameTab3" relativePoint="RIGHT">
 						<Offset>
 							<AbsDimension x="-14" y="0"/>
 						</Offset>

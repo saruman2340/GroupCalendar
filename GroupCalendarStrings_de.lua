@@ -43,23 +43,7 @@
 
 	GroupCalendar_cUseServerDateTime = "Benutze Server-Zeitformat";
 	GroupCalendar_cUseServerDateTimeDescription = "Aktivieren um Events im Server Zeitformat anzuzeigen. Deaktivieren um Events im lokalen Zeitformat anzuzeigen";
-	
-    GroupCalendar_cChannelConfigTitle = "Daten Channel Setup";
-    GroupCalendar_cChannelConfigDescription = "\195\156ber den Daten Channel tauscht GroupCalendar die Event Informationen zwischen den einzelnen Spielern aus. Jeder der diesen Channel betreten kann, ist in der Lage deine Eintragungen zu sehen. Man kann dem Channel ein Passwort geben um seinen Kalender privat zu halten.";
-    GroupCalendar_cAutoChannelConfig = "Automatische Channel Konfiguration";
-    GroupCalendar_cManualChannelConfig = "Manuelle Channel Konfiguration";
-    GroupCalendar_cStoreAutoConfig = "Autom. Konfig. Daten in Spieler Notizen sichern";
-    GroupCalendar_cAutoConfigPlayer = "Spieler Name:";
-    GroupCalendar_cApplyChannelChanges = "\195\156bernehmen";
-    GroupCalendar_cAutoConfigTipTitle = "Automatische Channel Konfiguration";
-    GroupCalendar_cAutoConfigTipDescription = "Event Daten werden automatisch \195\188ber die Gilden Notizen eines ausgew\195\164hlten Spielers ausgetauscht. Du musst dich in einer Gilde befinden und die Funktion muss vorher von einem Offizier aktiviert worden sein.";
-    GroupCalendar_cManualConfigTipDescription = "Manuelle Eingabe des Daten Channels und dessen Passwort.";
-    GroupCalendar_cStoreAutoConfigTipDescription = "Erlaubt es einem Offizier die Channel Konfiguration in den Notizen des angegebenen Gildenmitglieds zu speichern.";
-    GroupCalendar_cAutoConfigPlayerTipDescription = "Der Name des Gildenmitglieds das die Konfigurationsdaten speichert.";
-    GroupCalendar_cChannelNameTipTitle = "Channel Name";
-    GroupCalendar_cChannelNameTipDescription = "Der Name des Chat Channels in welchem die Kalender Daten zwischen den Spielern ausgetauscht werden";
-    GroupCalendar_cConnectChannel = "Verbinden";
-    GroupCalendar_cDisconnectChannel = "Trennen";
+	    
     GroupCalendar_cChannelStatus =
     {
 		Starting = {mText = "Status: Initialisiere...", mColor = {r = 1, g = 1, b = 0.3}},
@@ -79,7 +63,7 @@
 	GroupCalendar_cErrorAccessingNote = "Fehler beim empfangen der Konfigurationsdaten";
 
     GroupCalendar_cTrustConfigTitle = "Berechtigungen Setup";
-    GroupCalendar_cTrustConfigDescription = "Legt fest wer dir Events schicken darf. Es wird NICHT festgelegt wer Events in deinem Kalender sehen kann.  Benutze ein Passwort f\195\188r den Daten Channel um zu verhindern das jeder deinen Kalender sehen kann.";
+    GroupCalendar_cTrustConfigDescription = "Vertrauen bestimmt, wer Ereignisse erstellen kann. Nur der Gildenleiter kann diese Einstellungen ändern.";
     GroupCalendar_cTrustGroupLabel = "Berechtigt:";
     GroupCalendar_cEvent = "Event";
     GroupCalendar_cAttendance = "Anmeldungen";

@@ -44,23 +44,7 @@ if GetLocale() == "koKR" then
 	GroupCalendar_cChannel = "채널";
 	GroupCalendar_cTrust = "공유";
 	GroupCalendar_cAbout = "About";
-
-	GroupCalendar_cChannelConfigTitle = "데이터 채널 설정";
-	GroupCalendar_cChannelConfigDescription = "달력 데이터 채널은 사용자들간의 이벤트 정보를 공유하는데 사용됩니다. 같은 채널에 참여할 수 있는 사용자는 원하면 당신의 이벤트 데이터를 볼 수 있을 것입니다. 당신의 달력을 공개하고 싶지 않다면 비밀번호를 사용하세요.";
-	GroupCalendar_cAutoChannelConfig = "자동 채널 구성";
-	GroupCalendar_cManualChannelConfig = "수동 채널 구성";
-	GroupCalendar_cStoreAutoConfig = "길드 채널 구성 정보를 이용하여 자동 채널 구성";
-	GroupCalendar_cAutoConfigPlayer = "길드 관리자 이름:";
-	GroupCalendar_cApplyChannelChanges = "적용";
-	GroupCalendar_cAutoConfigTipTitle = "자동 채널 구성";
-	GroupCalendar_cAutoConfigTipDescription = "길드 관리자의 채널 구성 데이터를 이용하여 자동으로 채널을 구성합니다. 이 기능을 사용하기 위해서는 길드에 가입되어 있어야 하며 길드 관리자는 채널 데이터를 작성해 두어야 합니다.";
-	GroupCalendar_cManualConfigTipDescription = "수동으로 채널이름과 비밀번호를 설정할 수 있습니다.";
-	GroupCalendar_cStoreAutoConfigTipDescription = "길드 관리자가 채널 정보를 구성하고 길드원들이 자동 채널 구성을 통해 길드 채널 정보를 공유할 수 있도록 설정합니다.";
-	GroupCalendar_cAutoConfigPlayerTipDescription = "채널 구성 데이터를 작성하는 길드 관리자 이름.";
-	GroupCalendar_cChannelNameTipTitle = "채널이름";
-	GroupCalendar_cChannelNameTipDescription = "다른 사용자들과 이벤트 내용을 주고받을 수 있는 채널 이름";
-	GroupCalendar_cConnectChannel = "연결";
-	GroupCalendar_cDisconnectChannel = "연결해제";
+		
 	GroupCalendar_cChannelStatus =
 	{
 		Starting = {mText = "상태: 시동중...", mColor = {r = 1, g = 1, b = 0.3}},
@@ -80,7 +64,7 @@ if GetLocale() == "koKR" then
 	GroupCalendar_cErrorAccessingNote = "채널 설정 데이터를 로드할 수 없습니다";
 
 	GroupCalendar_cTrustConfigTitle = "공유 설정";
-	GroupCalendar_cTrustConfigDescription = "당신의 이벤트 정보를 제공할 사람들의 명단입니다. 이벤트 정보를 보는 것을 제한하는 것이 아닙니다. 만약 당신의 달력의 정보를 보는것을 제한하려면 데이터 채널에 비밀번호를 설정하십시오.";
+	GroupCalendar_cTrustConfigDescription = "신뢰는 이벤트를 작성할 수있는 사람을 결정합니다. 길드 리더 만이 설정을 수정할 수 있습니다.";
 	GroupCalendar_cTrustGroupLabel = "공유:";
 	GroupCalendar_cEvent = "이벤트";
 	GroupCalendar_cAttendance = "출석";

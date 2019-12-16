@@ -277,12 +277,33 @@ end
 function Calendar_SetDropDownEnable(pDropDown, pEnabled)
 	if pEnabled then
 		pDropDown:SetAlpha(1.0);
-		getglobal(pDropDown:GetName().."Text"):SetAlpha(1.0);
-		getglobal(pDropDown:GetName().."Button"):EnableMouse(true);
+		local txt = _G[pDropDown:GetName().."Text"];
+		if txt then
+			txt:SetAlpha(1.0);
+		end
+
+		local btn = _G[pDropDown:GetName().."Button"];
+		if btn then
+			btn:EnableMouse(true);
+		end
+
+		--getglobal(pDropDown:GetName().."Text"):SetAlpha(1.0);
+		--getglobal(pDropDown:GetName().."Button"):EnableMouse(true);
 	else
 		pDropDown:SetAlpha(0.7);
-		getglobal(pDropDown:GetName().."Text"):SetAlpha(0.7);
-		getglobal(pDropDown:GetName().."Button"):EnableMouse(false);
+
+		local txt = _G[pDropDown:GetName().."Text"];
+		if txt then
+			txt:SetAlpha(0.7);
+		end
+
+		local btn = _G[pDropDown:GetName().."Button"];
+		if btn then
+			btn:EnableMouse(false);
+		end
+
+		--getglobal(pDropDown:GetName().."Text"):SetAlpha(0.7);
+		--getglobal(pDropDown:GetName().."Button"):EnableMouse(false);
 	end
 end
 
@@ -1869,49 +1890,6 @@ function Calendar_UnescapeString(pString)
 					"&(%w+);", 
 					function (pField)
 						local	vChar = gGroupCalendar_cSpecialCharMap[pField];
-						
-						if vChar ~= nil then
-							return vChar;
-						else
-							return pField;
-						end
-					end);
-end
-
--- NOTE: If any of LUA's "magic" characters ever need to be escaped they will
---       need to be coded properly with a % preceeding them in the cSpecialChars
---       string.  Currently the "magic" characters are: ^$()%.[]*+-?
-
-gGroupCalendar_cSpecialChatChars = "`sS";
-
-gGroupCalendar_cSpecialChatCharMap =
-{
-	a = "`",
-	l = "s",
-	u = "S"
-};
-
-function Calendar_EscapeChatString(pString)
-	return string.gsub(
-					pString,
-					"(["..gGroupCalendar_cSpecialChatChars.."])",
-					function (pField)
-						for vName, vChar in pairs(gGroupCalendar_cSpecialChatCharMap) do
-							if vChar == pField then
-								return "`"..vName;
-							end
-						end
-						
-						return "";
-					end);
-end
-
-function Calendar_UnescapeChatString(pString)
-	return string.gsub(
-					pString,
-					"`(.)", 
-					function (pField)
-						local	vChar = gGroupCalendar_cSpecialChatCharMap[pField];
 						
 						if vChar ~= nil then
 							return vChar;

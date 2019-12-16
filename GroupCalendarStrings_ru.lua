@@ -44,23 +44,7 @@ if GetLocale() == "ruRU" then
 
 	GroupCalendar_cUseServerDateTime = "Использовать время сервера";
 	GroupCalendar_cUseServerDateTimeDescription = "Включите, чтобы показать события, используя дату и время сервера, выключите, чтобы использовать местную дату и время";
-
-	GroupCalendar_cChannelConfigTitle = "Настройка канала данных";
-	GroupCalendar_cChannelConfigDescription = "Канал данных календаря используется для отправки и получения событий между игроками. Любой, кто присоединиться к каналу, сможет видеть ваши события, если захочет. Для сохранения конфиденциальности вашего календаря необходимо использовать пароль канала.";
-	GroupCalendar_cAutoChannelConfig = "Автоматическая настройка канала";
-	GroupCalendar_cManualChannelConfig = "Ручная настройка канала";
-	GroupCalendar_cStoreAutoConfig = "Сохранять данные авто. настройки в заметке игрока";
-	GroupCalendar_cAutoConfigPlayer = "Имя игрока:";
-	GroupCalendar_cApplyChannelChanges = "Применить изменения";
-	GroupCalendar_cAutoConfigTipTitle = "Автоматическая Настройка Канала";
-	GroupCalendar_cAutoConfigTipDescription = "Автоматическое получение информации о канале из вашего списка гильдий. Вы должны состоять в гильдии, и эта функция должна быть настроена офицером гильдии, чтобы её использовать.";
-	GroupCalendar_cManualConfigTipDescription = "Позволяет вручную ввести информацию о канале и пароль.";
-	GroupCalendar_cStoreAutoConfigTipDescription = "Позволяет члену гильдии хранить информацию о настройке канала в выбранной заметке игрока в списке гильдии.";
-	GroupCalendar_cAutoConfigPlayerTipDescription = "Имя члена гильдии, хранящего данные о настройке канала.";
-	GroupCalendar_cChannelNameTipTitle = "Название канала";
-	GroupCalendar_cChannelNameTipDescription = "Название канала чата, который будет использоваться для отправки и получения данных о событиях от других игроков";
-	GroupCalendar_cConnectChannel = "Подключиться";
-	GroupCalendar_cDisconnectChannel = "Отключиться";
+		
 	GroupCalendar_cChannelStatus =
 	{
 		Starting = {mText = "Статус: Запуск...", mColor = {r = 1, g = 1, b = 0.3}},
@@ -80,7 +64,7 @@ if GetLocale() == "ruRU" then
 	GroupCalendar_cErrorAccessingNote = "Не удалось получить настройки";
 
 	GroupCalendar_cTrustConfigTitle = "Настройки доступа";
-	GroupCalendar_cTrustConfigDescription = "Настройки доступа определяют, кому можно добавлять событие в календарь. Настройки доступа НЕ влияют на возможность других игроков видеть события. Установите пароль, чтобы ограничить просмотр календаря.";
+	GroupCalendar_cTrustConfigDescription = "Доверие определяет, кто может создавать события. Только лидер гильдии может изменять эти настройки.";
 	GroupCalendar_cTrustGroupLabel = "Доступ:";
 	GroupCalendar_cEvent = "Событие";
 	GroupCalendar_cAttendance = "Посещаемость";

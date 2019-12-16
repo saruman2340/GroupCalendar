@@ -43,23 +43,7 @@ if GetLocale() == "frFR" then
 
 	GroupCalendar_cUseServerDateTime = "Utiliser les horaires du serveur";
 	GroupCalendar_cUseServerDateTimeDescription = "Turn on to show events using the server date and time, turn off to use your local date and time";
-	
-	GroupCalendar_cChannelConfigTitle = "Config canal de donn\195\169es";
-	GroupCalendar_cChannelConfigDescription = "Le canal de donn\195\169es du calendrier est utilis\195\169 pour envoyer et recevoir les events entre joueurs. Toute personne pouvant joindre le canal pourra voir vos \195\169vents s\'ils le veulent. Pour garder votre calendrier priv\195\169 vous devriez utiliser un mot de passe pour le canal.";
-	GroupCalendar_cAutoChannelConfig = "Configuration de canal automatique";
-	GroupCalendar_cManualChannelConfig = "Configuration du canal manuelle";
-	GroupCalendar_cStoreAutoConfig = "Stockage auto. configure les donn\195\169es depuis les notes du joueur";
-	GroupCalendar_cAutoConfigPlayer = "Nom du joueur :";
-	GroupCalendar_cApplyChannelChanges = "Appliquer";
-	GroupCalendar_cAutoConfigTipTitle = "Configuration canal Automatique";
-	GroupCalendar_cAutoConfigTipDescription = "Obtention automatique des configuration de canal depuis votre tableau de guilde. Vous devez obligatoirement \195\170tre dans une guilde et ce dispositif doit \195\170tre configur\195\169 par un officier de la guilde pour pouvoir l\'utiliser .";
-	GroupCalendar_cManualConfigTipDescription = "Vous permet de saisir manuellement les informations de canal et de mot de passe.";
-	GroupCalendar_cStoreAutoConfigTipDescription = "Permet \195\160 un officier de guilde de stocker la configuration du canal dans la note des joueurs s\195\169lection\195\169s dans le tableau de guilde.";
-	GroupCalendar_cAutoConfigPlayerTipDescription = "Le nom du joueur dans le tableau de guilde ayant les donn\195\169es de configuration du canal.";
-	GroupCalendar_cChannelNameTipTitle = "Nom du canal";
-	GroupCalendar_cChannelNameTipDescription = "Le nom du canal de chat qui sera utilis\195\169 pour envoyer et recevoir les donn\195\169es des \195\169ents des autres joueurs";
-	GroupCalendar_cConnectChannel = "Connecter";
-	GroupCalendar_cDisconnectChannel = "D\195\169connecter";
+		
 	GroupCalendar_cChannelStatus =
 	{
 		Starting = {mText = "Status: D\195\169marrage...", mColor = {r = 1, g = 1, b = 0.3}},
@@ -79,7 +63,7 @@ if GetLocale() == "frFR" then
 	GroupCalendar_cErrorAccessingNote = "N'a pas pu retrouver les donn\195\169es de configuration";
 
 	GroupCalendar_cTrustConfigTitle = "Config Confiance";
-	GroupCalendar_cTrustConfigDescription = "Confiance d\195\169signe qui vous autorisez \195\160 vous ajouter des \195\169vents. Cela ne limite pas qui peut voir les \195\169vents de votre calendrier. UTilisez un canal de donn\195\169es avec mot de passe pour restreindre l\'acc\195\168s \195\160 votre calendrier.";
+	GroupCalendar_cTrustConfigDescription = "La confiance détermine qui peut créer des événements. Seul le chef de guilde peut modifier ces paramètres.";
 	GroupCalendar_cTrustGroupLabel = "Confiance:";
 	GroupCalendar_cEvent = "Event";
 	GroupCalendar_cAttendance = "Assistance";

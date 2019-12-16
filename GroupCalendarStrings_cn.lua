@@ -48,23 +48,7 @@ if GetLocale() == "zhCN" then
 
 	GroupCalendar_cUseServerDateTime = "使用伺服器日期与时间";
 	GroupCalendar_cUseServerDateTimeDescription = "启动此功能将会以伺服器的日期与时间来显示活动资讯，若关闭此功能则会以您的电脑日期及时间来显示。";
-
-	GroupCalendar_cChannelConfigTitle = "资料频道设定";
-	GroupCalendar_cChannelConfigDescription = "行事历频道用来传送及接收玩家之间的活动，所有在频道的人都能浏灠您的活动。若想替您的行事历保密就必须设定密码。";
-	GroupCalendar_cAutoChannelConfig = "自动频道设定";
-	GroupCalendar_cManualChannelConfig = "手动频道设定";
-	GroupCalendar_cStoreAutoConfig = "自动储存设定到玩家讯息";
-	GroupCalendar_cAutoConfigPlayer = "玩家名称:";
-	GroupCalendar_cApplyChannelChanges = "套用";
-	GroupCalendar_cAutoConfigTipTitle = "自动频道设定";
-	GroupCalendar_cAutoConfigTipDescription = "自动从公会资讯中取得频道资讯。您必须是公会成员，此功能必须在公会干部设定后方可使用。";
-	GroupCalendar_cManualConfigTipDescription = "允许您手动输入频道及密码资料。";
-	GroupCalendar_cStoreAutoConfigTipDescription = "允许公会干部将频道设置资讯存到指定成员的玩家资讯中。";
-	GroupCalendar_cAutoConfigPlayerTipDescription = "玩家在公会资讯中包含频道设置资料。";
-	GroupCalendar_cChannelNameTipTitle = "频道名称";
-	GroupCalendar_cChannelNameTipDescription = "频道名称用来传送及接收其他玩家的活动资料。";
-	GroupCalendar_cConnectChannel = "连线";
-	GroupCalendar_cDisconnectChannel = "中断连线";
+		
 	GroupCalendar_cChannelStatus =
 	{
 		Starting = {mText = "状态: 启动中...", mColor = {r = 1, g = 1, b = 0.3}},
@@ -84,7 +68,7 @@ if GetLocale() == "zhCN" then
 	GroupCalendar_cErrorAccessingNote = "无法接收设置资料";
 
 	GroupCalendar_cTrustConfigTitle = "信任设定";
-	GroupCalendar_cTrustConfigDescription = "允许您控制能够检视活动的人。行事历本身并无限制谁能够检视活动，设定密码就能有效限制能够检视行事历的人。";
+	GroupCalendar_cTrustConfigDescription = "信任决定了谁可以创建事件。只有公会负责人可以修改这些设置。";
 	GroupCalendar_cTrustGroupLabel = "信任:";
 	GroupCalendar_cEvent = "活动";
 	GroupCalendar_cAttendance = "出席";

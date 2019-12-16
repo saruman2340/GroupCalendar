@@ -6,12 +6,7 @@ gGroupCalendar_MessagePrefixLength = string.len(gGroupCalendar_MessagePrefix);
 gGroupCalendar_ShowChat = false;
 
 gGroupCalendar_Channel =
-{
-	Name          = nil,
-	NameLower     = nil,
-	ID            = nil,
-	Password      = nil,
-	AutoPlayer    = nil,
+{	
 	Status        = "Disconnected",
 	StatusMessage = nil,
 	GotTooManyChannelsMessage = false,
@@ -99,54 +94,6 @@ function CalendarNetwork_GetChannelStatus()
 	return gGroupCalendar_Channel.Status;
 end
 
---function CalendarNetwork_SetChannel(pChannel, pPassword)
-	-- Leave the channel and return if the new channel is nil
-	
-	--if not pChannel then
-	--	CalendarNetwork_LeaveChannel();
-	--	return true;
-	--end
-	
-	-- Just return if nothing is actually changing
-	
-	--if --gGroupCalendar_Channel.Name
-	--and strupper(gGroupCalendar_Channel.Name) == strupper(pChannel)
-	--and gGroupCalendar_Channel.Password == pPassword
-	--(gGroupCalendar_Channel.Status == "Connected" or gGroupCalendar_Channel.Status == "Synching") then
-	--	return false; -- return false to indicate that no change was made
-	--end
-	
-	-- Leave the old channel and join the new one
-	
-	--CalendarNetwork_LeaveChannel();
-	
-	--return CalendarNetwork_JoinChannel(pChannel, pPassword);
---end
-
---function CalendarNetwork_JoinChannel(pChannelName, pPassword)
---	if not pChannelName
---	or pChannelName == ""
---	or gGroupCalendar_Channel.Disconnected then
---		return false;
---	end
-	
-	-- There seems to be some sort of bug with passworded channels getting
-	-- screwed up if the UI is reloaded and the solution appears to be to
-	-- leave and re-join the channel.  Therefore, the code below...
-	
---	LeaveChannelByName(pChannelName);
---	CalendarNetwork_LeftChannel();
---	CalendarNetwork_SetChannelStatus("Initializing");
-
---	CalendarNetwork_QueueTask(
---			CalendarNetwork_JoinChannel2,
---			{mChannelName = pChannelName, mPassword = pPassword},
---			gCalendarNetwork_RequestDelay.JoinChannel2,
---			"JOINCHANNEL2");
-	
---	return true;
---end
-
 function CalendarNetwork_JoinChannelFailed()
 	if gGroupCalendar_Channel.GotTooManyChannelsMessage then
 		CalendarNetwork_SetChannelStatus("Error", GroupCalendar_cTooManyChannels);
@@ -155,22 +102,10 @@ function CalendarNetwork_JoinChannelFailed()
 	end
 end
 
-function CalendarNetwork_LeftChannel()
-	--gGroupCalendar_Channel.Name = nil;
-	--gGroupCalendar_Channel.Password = nil;
-	--gGroupCalendar_Channel.NameLower = nil;
-	--gGroupCalendar_Channel.ID = nil;
-	
-	--CalendarNetwork_ResetQueues();
-	
-	--CalendarNetwork_SetChannelStatus("Disconnected");
-end
-
 function CalendarNetwork_SetChannelStatus(pStatus, pStatusMessage)
 	gGroupCalendar_Channel.Status = pStatus;
-	gGroupCalendar_Channel.StatusMessage = pStatusMessage;
-	
-	GroupCalendar_ChannelChanged();
+	gGroupCalendar_Channel.StatusMessage = pStatusMessage;	
+	GroupCalendar_UpdateChannelStatus();
 end
 
 function CalendarNetwork_SystemMessage(pMessage)
@@ -184,9 +119,6 @@ function CalendarNetwork_SystemMessage(pMessage)
 end
 
 function CalendarNetwork_JoinChannel2(pParams)
-	--if gGroupCalendar_Settings.DebugInit then
-	--	Calendar_DebugMessage("CalendarNetwork_JoinChannel: "..pParams.mChannelName);
-	--end
 	
 	gGroupCalendar_Channel.GotTooManyChannelsMessage = false;
 
@@ -207,89 +139,12 @@ function CalendarNetwork_JoinChannel2(pParams)
 	end
 
 	CalendarNetwork_JoinedChannel();
-
-	--gGroupCalendar_Channel.Name = pParams.mChannelName;
-	
-	--local	vChannelName = GetChannelName(pParams.mChannelName);
-	--local	vZoneChannel;
-	--local	vChannelAlreadyExists = false;
-	
-	--if vChannelName and vChannelName ~= 0 then
-	--	if gGroupCalendar_Settings.DebugInit then
-	--		Calendar_DebugMessage("Found existing channel "..pParams.mChannelName.." ("..vChannelName..")");
-	--	end
-		
-	--	vChannelName = pParams.mChannelName;
-	--	vChannelAlreadyExists = true;
-	--else
-
-	--	if gGroupCalendar_Settings.DebugInit then
-	--		Calendar_DebugMessage("Channel "..pParams.mChannelName.." not found ("..vChannelName..") joining channel...");
-	--	end		
-	
-	--	vZoneChannel, vChannelName = JoinChannelByName(pParams.mChannelName, pParams.mPassword, DEFAULT_CHAT_FRAME:GetID());
-	--	if not vZoneChannel then
-		
-	--		CalendarNetwork_JoinChannelFailed();
-	--		return false;
-	--	end
-		
-	--	if not vChannelName then
-	--		vChannelName = pParams.mChannelName;
-	--	end
-	--end
-	
-	-- Remove the channel from the chat frame so the user doesn't
-	-- have to watch all that data comm. (if we're running debug
-	-- code then leave the setting alone)
-	--if (gGroupCalendar_ShowChat) then
-	--	ChatFrame_AddChannel(DEFAULT_CHAT_FRAME, pParams.mChannelName);
-	--else
-	--	ChatFrame_RemoveChannel(DEFAULT_CHAT_FRAME, pParams.mChannelName);
-	--end	
-
-	--ChatFrame_RemoveChannel(DEFAULT_CHAT_FRAME, pParams.mChannelName);
-	--ChatFrame_AddChannel(DEFAULT_CHAT_FRAME, pParams.mChannelName);
-
-	--if gCalendar_DebugFrame then
-	--	ChatFrame_AddChannel(gCalendar_DebugFrame, pParams.mChannelName);
-	--end
-	
-	--gGroupCalendar_Channel.Password = pParams.mPassword;
-	--gGroupCalendar_Channel.NameLower = strlower(pParams.mChannelName);
-	--gGroupCalendar_Channel.ID = GetChannelName(gGroupCalendar_Channel.Name);
-	
-	--if not gGroupCalendar_Channel.ID
-	--or gGroupCalendar_Channel.ID == 0 then
-	--	gGroupCalendar_Channel.ID = nil;
-	--	CalendarNetwork_JoinChannelFailed();
-	--	
-	--	return false;
-	--end
-	
-	--if vChannelAlreadyExists then
-	--	CalendarNetwork_JoinedChannel();
-	--end
 	
 	return true;
 end
 
-function CalendarNetwork_LeaveChannel()
-	--if gGroupCalendar_Channel.Name
-	--and gGroupCalendar_Channel.ID
-	--and gGroupCalendar_Channel.Status ~= "Suspended" then
-	--	LeaveChannelByName(gGroupCalendar_Channel.Name);
-	--	CalendarNetwork_LeftChannel();
-	--end
-end
-
 function CalendarNetwork_JoinedChannel()
-	CalendarNetwork_SetChannelStatus("Synching");
-	
-	--if gGroupCalendar_Settings.DebugInit then
-	--	Calendar_DebugMessage("CalendarNetwork_JoinChannel succeeded channel "..gGroupCalendar_Channel.Name.." ID "..gGroupCalendar_Channel.ID);
-	--end
-
+	CalendarNetwork_SetChannelStatus("Synching");	
 	-- Send update requests/notices
 
 	gGroupCalendar_EnableUpdates = false;
@@ -299,88 +154,6 @@ function CalendarNetwork_JoinedChannel()
 	CalendarNetwork_RequestAllVersions();
 end
 
-function CalendarNetwork_ChannelNotice(pChannelMessage, pChannelName, pChannelID, pActualChannelName)
-	-- Decode the channel name if it's in the nn. <channel name> format
-	
-	local	vChannelName = pChannelName;
-	for vFoundNumber, vFoundName in string.gmatch(pChannelName, "(%d)%. (.+)") do		
-		vChannelName = vFoundName;
-	end
-	
-	-- Just leave if it's not a channel we're interested in
-	
-	local	vIsDataChannel = strlower(vChannelName) == gGroupCalendar_Channel.NameLower;
-	
-	--
-	if pChannelMessage == "YOU_JOINED" or pChannelMessage == "YOU_CHANGED" then
-		-- If it's one of the system channels, then shorten the initialization
-		-- timer if one is present
-		
-		if pChannelID == 1 then
-			CalendarNetwork_SystemChannelJoined();
-		end
-		
-		if not vIsDataChannel then
-			return;
-		end
-		
-		if pChannelID > 0 then
-			CalendarNetwork_JoinedChannel();
-		else
-			-- Joining failed
-			
-			CalendarNetwork_JoinChannelFailed();
-		end
-		
-	elseif pChannelMessage == "YOU_LEFT" then
-		if not vIsDataChannel then
-			return;
-		end
-		
-		--if not gGroupCalendar_Channel.ID then
-		--	return;
-		--end
-		
-		CalendarNetwork_LeftChannel();
-		
-	elseif pChannelMessage == "WRONG_PASSWORD" then
-		if not vIsDataChannel then
-			return;
-		end
-		
-		CalendarNetwork_SetChannelStatus("Error", GroupCalendar_cWrongPassword);
-	end
-end
-
-function CalendarNetwork_SuspendChannel()
-	--if gGroupCalendar_Channel.Status == "Suspended"
-	--or not gGroupCalendar_Channel.Name
-	--or not gGroupCalendar_Channel.ID then
-	--	return;
-	--end
-	
-	--LeaveChannelByName(gGroupCalendar_Channel.Name);
-	
-	--gGroupCalendar_Channel.ID = nil;
-	--CalendarNetwork_SetChannelStatus("Suspended");
-end
-
-function CalendarNetwork_ResumeChannel()
-	--if not gGroupCalendar_Channel.Status ~= "Suspended" then
-	--	return;
-	--end
-
-	--JoinChannelByName(gGroupCalendar_Channel.Name, gGroupCalendar_Channel.Password, DEFAULT_CHAT_FRAME:GetID());
-	--gGroupCalendar_Channel.ID = GetChannelName(gGroupCalendar_Channel.Name);
-	
-	--if (gGroupCalendar_ShowChat) then
-	--	ChatFrame_AddChannel(DEFAULT_CHAT_FRAME, gGroupCalendar_Channel.Name);
-	--else
-	--	ChatFrame_RemoveChannel(DEFAULT_CHAT_FRAME, gGroupCalendar_Channel.Name);
-	--end	
-
-	--CalendarNetwork_SetChannelStatus("Connected");
-end
 
 function CalendarNetwork_UnpackIndexedList(...)
 	
@@ -421,7 +194,7 @@ function CalendarNetwork_CalendarLoaded()
 	
 	--
 	
-	CalendarNetwork_QueueTask(CalendarNetwork_Initialize, nil, 2, "INIT");
+	CalendarNetwork_QueueTask(CalendarNetwork_Initialize, nil, 4, "INIT");
 end
 
 function CalendarNetwork_SystemChannelJoined()
@@ -458,7 +231,7 @@ function CalendarNetwork_ProcessCommand(pSender, pTrustLevel, pCommand, pCurrent
 	local	vOperands = pCommand[1].operands;
 	
 	table.remove(pCommand, 1);
-	
+
 	if vOpcode == "DB" then
 		local	vUserName = vOperands[1];
 		local	vDatabaseID = tonumber(vOperands[2]);
@@ -538,6 +311,10 @@ function CalendarNetwork_ProcessCommand(pSender, pTrustLevel, pCommand, pCurrent
 		CalendarNetwork_ProcessGuildCommand(pSender, pTrustLevel, vGuildName, vMinRank, pCommand);
 	elseif vOpcode == "ALL" then
 		CalendarNetwork_ProcessAllCommand(pSender, pTrustLevel, pCommand);
+	elseif vOpcode == "TRUST" then
+		CalendarNetwork_ProcessTrustCommand(pSender, vOperands);
+	elseif vOpcode == "TRUSTREQ" then
+		CalendarNetwork_ProcessTrustRequestCommand(pSender, vOperands);
 	elseif vOpcode == "VER" then
 		local	vDatabase = EventDatabase_GetDatabase(pSender, true);
 		
@@ -821,6 +598,41 @@ function CalendarNetwork_ProcessDatabaseCommand(pSender, pTrustLevel, pUserName,
 	end
 end
 
+
+
+function CalendarNetwork_ProcessTrustCommand(pSender, pCommand)
+	
+	--local params = CalendarNetwork_ParseParameterString(pCommand);
+	local pVersion = tonumber(pCommand[1]);
+	local pGuild = pCommand[2];
+	local pTrustAnyone = pCommand[3];
+	local pTrustGuildies = pCommand[4];
+	local pMinRank = pCommand[5];
+
+	local pPlayers = {};
+	if pCommand[6] then
+		for vPlayerName, vPlayerSecurity in string.gmatch(pCommand[6], "(%a+)~(%d)~") do
+			pPlayers[vPlayerName] = tonumber(vPlayerSecurity);
+		end
+	end
+	CalendarNetwork_ReceiveTrustUpdate(pSender, pGuild, pVersion, pTrustAnyone, pTrustGuildies, pMinRank, pPlayers);
+
+end
+
+function CalendarNetwork_ProcessTrustRequestCommand(pSender, pCommand)
+	--local params = CalendarNetwork_ParseParameterString(pCommand);
+	local pVersion = tonumber(pCommand[1]);
+	local pGuild = pCommand[2];
+
+	if gGroupCalendar_PlayerSettings.Security.Version > pVersion and gGroupCalendar_PlayerSettings.Security.Guild == pGuild then
+		-- We have newer trust settings. Send our version to others
+		CalendarNetwork_QueueTrustUpdate();
+	elseif gGroupCalendar_PlayerSettings.Security.Version < pVersion and gGroupCalendar_PlayerSettings.Security.Guild == pGuild then
+		-- We have a lower version than the user requesting an update. Ask for an update ourselves as it must be out of date.
+		CalendarNetwork_QueueTrustRequest();
+	end
+end
+
 function CalendarNetwork_ProcessRSVPCommand(pSender, pUserName, pDatabaseID, pRevision, pAuthRevision, pCommand)
 	local	vOpcode = pCommand[1].opcode;
 	local	vOperands = pCommand[1].operands;
@@ -955,6 +767,11 @@ function CalendarNetwork_ProcessRSVPCommand(pSender, pUserName, pDatabaseID, pRe
 		-- Event data
 		
 		CalendarNetwork_InsertRSVPUpdate(pSender, pUserName, pDatabaseID, pRevision, vOperandString);
+
+	elseif vOpcode == "TRUST" then
+		-- Event data
+		
+		
 		
 	elseif vOpcode == "END" then
 		-- End a RSVP update
@@ -1164,7 +981,7 @@ function CalendarNetwork_InsertEventUpdate(pSender, pUserName, pDatabaseID, pRev
 	
 	-- Reconstruct the change string
 	
-	local	vChangeString = "EVT:"..pEventID;
+	local	vChangeString = "/EVT:"..pEventID;
 	
 	for vIndex, vCommand in pairs(pCommand) do
 		vChangeString = vChangeString.."/"..vCommand.opcode;
@@ -1672,7 +1489,7 @@ function CalendarNetwork_InsertRSVPUpdate(pSender, pUserName, pDatabaseID, pRevi
 	
 	-- Process the event command
 	
-	local	vChangeString = "EVT:"..pEventFields;
+	local	vChangeString = "/EVT:"..pEventFields;
 
 	table.insert(vChanges, vChangeString);
 end
@@ -1941,8 +1758,7 @@ function CalendarNetwork_SendRevisionChanged(pChanges, pLabel, pUserName)
 	-- Just leave if there's no channel to communicate on
 	-- or no changes to announce
 	
-	if --not gGroupCalendar_Channel.ID
-	not pChanges then
+	if not pChanges then
 		return;
 	end
 	
@@ -2000,12 +1816,6 @@ function CalendarNetwork_SendRSVPNOU(pDatabase)
 end
 
 function CalendarNetwork_RequestAllUpdate()
-	-- Just leave if there's no channel to communicate on
-	
-	--if not gGroupCalendar_Channel.ID then
-	--	return;
-	--end
-	
 	-- Send the request immmediately since delaying it for channel silence will only
 	-- increase the number of times that everyone has to transmit their NOU responses
 	
@@ -2013,11 +1823,6 @@ function CalendarNetwork_RequestAllUpdate()
 end
 
 function CalendarNetwork_RequestGuildUpdate(pGuildName, pMinRank)
-	-- Just leave if there's no channel to communicate on
-	
-	if not gGroupCalendar_Channel.ID then
-		return;
-	end
 	
 	-- Send the request immmediately since delaying it for channel silence will only
 	-- increase the number of times that everyone has to transmit their NOU responses
@@ -2057,12 +1862,7 @@ function CalendarNetwork_RequestUpdateForUser(pUserName, pDatabaseTag, pRequestI
 end
 
 function CalendarNetwork_RequestUpdate(pDatabase, pChanges, pDatabaseTag, pRequestImmediately, pHighPriority)
-	-- Just leave if there's no channel to communicate on
-	
-	--if not gGroupCalendar_Channel.ID then
-	--	return;
-	--end
-	
+
 	local	vID, vRevision;
 	
 	if pChanges then
@@ -2790,7 +2590,10 @@ function CalendarNetwork_ProcessRequest(pRequest)
 		
 	elseif pRequest.mOpcode == "DBTRUST" then
 		EventDatabase_CheckDatabaseTrust();
-	
+	elseif pRequest.mOpcode == "TRUST" then
+		CalendarNetwork_SendTrustUpdate();
+	elseif pRequest.mOpcode == "TRUSTREQ" then
+		CalendarNetwork_SendTrustRequest();
 	elseif pRequest.mOpcode == "OWNEDNOTICES" then
 		gGroupCalendar_EnableUpdates = true;
 		gGroupCalendar_EnableSelfUpdates = true;
@@ -2810,28 +2613,7 @@ function CalendarNetwork_Initialize()
 	CalendarNetwork_PlayerGuildChanged();
 
 	CalendarNetwork_JoinChannel2(nil);
-
-	--CalendarNetwork_SetChannel(gGroupCalendar_PlayerSettings.Channel.Name, gGroupCalendar_PlayerSettings.Channel.Password);
-
-	-- Go ahead and do manual channel configuration now, automatic
-	-- config will be handled once the player guild gets set and
-	-- the roster gets loaded
-
-	--if not gGroupCalendar_PlayerSettings.Channel.AutoConfig then
-	--	if gGroupCalendar_Settings.DebugInit then
-	--		Calendar_DebugMessage("GroupCalendar INIT: Starting up data channel (manual configuration)");
-	--	end
-		
-	--	if gGroupCalendar_PlayerSettings.Channel.Name then
-	--		CalendarNetwork_SetChannel(
-	--				gGroupCalendar_PlayerSettings.Channel.Name,
-	--				gGroupCalendar_PlayerSettings.Channel.Password);
-	--	else
-	--		CalendarNetwork_SetChannelStatus("Disconnected");
-	--		Calendar_DebugMessage("GroupCalendar channel is not set");
-	--	end
-	--end
-
+	
 	Calendar_GetPrimaryTradeskills();
 end
 
@@ -2979,7 +2761,7 @@ function CalendarNetwork_LoadGuildRosterTask()
 	
 	CalendarNetwork_QueueTask(
 			CalendarNetwork_LoadGuildRosterTask, nil,
-			240, "GUILDROSTER");
+			120, "GUILDROSTER");
 end
 
 function CalendarNetwork_LoadGuildRoster()
@@ -3113,16 +2895,10 @@ function CalendarNetwork_CancelRedundantNOURequests(pChanges, pDatabaseTag, pSen
 end
 
 function CalendarNetwork_SendMessage(pMessage)
-	-- Just leave if there's no channel to communicate on
-	--if not gGroupCalendar_Channel.ID then
-	--	return;
-	--end
 	
 	local	vSavedAutoClearAFK = GetCVar("autoClearAFK");
 	SetCVar("autoClearAFK", 0);
 	
-	--SendChatMessage(Calendar_EscapeChatString(pMessage), "CHANNEL", nil, gGroupCalendar_Channel.ID);
-
 	C_ChatInfo.SendAddonMessage(gGroupCalendar_MessagePrefix0, pMessage, "GUILD");
 
 	SetCVar("autoClearAFK", vSavedAutoClearAFK);
@@ -3155,198 +2931,8 @@ function CalendarNetwork_GetGuildMemberIndex(pPlayerName)
 	return nil;
 end
 
-function CalendarNetwork_SetAutoConfigData(pPlayerName)
-	
-	if not CanEditPublicNote()
-	or not gGroupCalendar_PlayerSettings.Channel.Name then
-		return false;
-	end
-	
-	local		vMemberIndex = CalendarNetwork_GetGuildMemberIndex(pPlayerName);
-	
-	if not vMemberIndex then
-		return false;
-	end
-	
-	CalendarNetwork_RemoveAllAutoConfigData(pPlayerName);
-	
-	local		vNote = "["..gGroupCalendar_MessagePrefix.."C:"..gGroupCalendar_PlayerSettings.Channel.Name;
-	if gGroupCalendar_PlayerSettings.Channel.Password then
-		vNote = vNote..","..gGroupCalendar_PlayerSettings.Channel.Password
-	end
-	
-	-- Add the trust group
-	
-	local		vTrustGroup = CalendarTrust_GetCurrentTrustGroup();
-	
-	vNote = vNote.."/T:"..vTrustGroup;
-	
-	-- Add the trust rank
-	
-	if gGroupCalendar_PlayerSettings.Security.TrustGuildies
-	and gGroupCalendar_PlayerSettings.Security.MinTrustedRank then
-		vNote = vNote..","..gGroupCalendar_PlayerSettings.Security.MinTrustedRank;
-	end
-	
-	vNote = vNote.."]";
-	
-	if gGroupCalendar_Settings.DebugConfig then
-		Calendar_DebugMessage("Setting auto-config data on player "..pPlayerName);
-	end
-	
-	GuildRosterSetPublicNote(vMemberIndex, vNote);
-	
-	return true;
-end
-
-function CalendarNetwork_RemoveAllAutoConfigData(pExcludePlayerName)
-	-- Remove it from the GuildInfoText
-	local	vGuildInfoText = GetGuildInfoText();
-	local	vStartIndex, vEndIndex = string.find(vGuildInfoText, "%["..gGroupCalendar_MessagePrefix.."[^%]]+%]");
-	
-	if vStartIndex then
-		vGuildInfoText = string.sub(vGuildInfoText, 1, vStartIndex - 1)..string.sub(vGuildInfoText, vEndIndex + 1);
-		SetGuildInfoText(vGuildInfoText);
-	end
-	
-	-- Remove it from player notes
-	
-	local	vIndex = CalendarNetwork_FindAutoConfigData(nil, pExcludePlayerName);
-	
-	while vIndex do
-		CalendarNetwork_RemoveAutoConfigData(vIndex);
-		vIndex = CalendarNetwork_FindAutoConfigData(vIndex + 1, pExcludePlayerName);
-	end
-end
-
-function CalendarNetwork_RemoveAutoConfigData(pMemberIndex)
-	if not pMemberIndex then
-		Calendar_DebugMessage("CalendarNetwork_RemoveAutoConfigData: nil index");
-		return;
-	end
-	
-	local	vName, vNote = CalendarNetwork_GetGuildPublicNote(pMemberIndex);
-	
-	if not vNote then
-		return false;
-	end
-	
-	if gGroupCalendar_Settings.DebugConfig then
-		Calendar_DebugMessage("Removing auto-config data from player "..vName);
-	end
-	
-	local	vPatternString = "%["..gGroupCalendar_MessagePrefix0.."[^%]]+%]";
-	
-	vNote = string.gsub(vNote, vPatternString, "");
-
-	GuildRosterSetPublicNote(pMemberIndex, vNote);
-	
-	return true;
-end
-
-function CalendarNetwork_GetGuildPublicNote(pMemberIndex)
-	local	vName, vRank, vRankIndex, vLevel, vClass, vZone, vNote, vOfficerNote, vOnline = GetGuildRosterInfo(pMemberIndex);
-	vName = GroupCalendar_RemoveRealmName(vName);
-	return vName, vNote;
-end
-
-function CalendarNetwork_GetAutoConfigData()
-	local	vGuildInfoText = GetGuildInfoText();
-	local	vConfigSource = GroupCalendar_cGuildInfoConfigSource;
-	
-	local	vStartIndex, vEndIndex, vConfigString = string.find(vGuildInfoText, "%[("..gGroupCalendar_MessagePrefix.."[^%]]+)%]");
-	
-	if not vStartIndex then
-		local	vIndex = CalendarNetwork_FindAutoConfigData();
-		
-		if not vIndex then
-			return nil;
-		end
-		
-		local	vName, vNote = CalendarNetwork_GetGuildPublicNote(vIndex);
-		
-		if not vNote then
-			return nil;
-		end
-		
-		vStartIndex, vEndIndex, vConfigString = string.find(vNote, "%[("..gGroupCalendar_MessagePrefix.."[^%]]+)%]");
-		
-		if not vStartIndex then
-			return nil;
-		end
-		
-		vConfigSource = vName;
-	end
-	
-	return CalendarNetwork_ParseCommandString(vConfigString), vConfigSource;
-end
-
-function CalendarNetwork_FindAutoConfigData(pStartingIndex, pExcludePlayerName)
-	-- Build the roster
-	
-	if GetNumGuildMembers() == 0 then
-		CalendarNetwork_LoadGuildRoster();
-		return nil;
-	end
-	
-	-- Search for the member
-	
-	local		vNumGuildMembers = GetNumGuildMembers(true);
-	local		vStartingIndex;
-	
-	if pStartingIndex then
-		vStartingIndex = pStartingIndex;
-	else
-		vStartingIndex = 1;
-	end
-	
-	for vIndex = vStartingIndex, vNumGuildMembers do
-		local	vName, vNote = CalendarNetwork_GetGuildPublicNote(vIndex);
-		
-		if vNote
-		and (not pExcludePlayerName or string.lower(vName) ~= string.lower(pExcludePlayerName))
-		and strfind(vNote, "%["..gGroupCalendar_MessagePrefix0) then
-			if gGroupCalendar_Settings.DebugConfig then
-				Calendar_DebugMessage("Found auto-config data on player "..vName);
-			end
-			
-			return vIndex, vName;
-		end
-	end
-	
-	return nil;
-end
-
 function CalendarNetwork_ScheduleCheckDatabaseTrust(pDelay)
 	CalendarNetwork_QueueUniqueOpcodeRequest({mOpcode = "DBTRUST"}, pDelay);
-end
-
-function CalendarNetwork_ScheduleAutoConfig(pDelay, pCheckDatabaseTrust)
-	if gGroupCalendar_Channel.Disconnected then
-		return;
-	end
-	
-	local	vRequest = CalendarNetwork_FindRequest({mOpcode = "AUTOCONFIG"});
-	
-	if vRequest then
-		if gGroupCalendar_Settings.DebugInit then
-			Calendar_DebugMessage("CalendarNetwork_ScheduleAutoConfig: Rescheduling existing request");
-		end
-		
-		if pDelay < vRequest.mDelay then
-			vRequest.mDelay = pDelay;
-		end
-		
-		if pCheckDatabaseTrust then
-			vRequest.mCheckDatabaseTrust = true;
-		end
-	else
-		if gGroupCalendar_Settings.DebugInit then
-			Calendar_DebugMessage("CalendarNetwork_ScheduleAutoConfig: Scheduling request");
-		end
-		
-		CalendarNetwork_QueueRequest({mOpcode = "AUTOCONFIG", mCheckDatabaseTrust = pCheckDatabaseTrust}, pDelay);
-	end
 end
 
 function CalendarNetwork_RequestAllVersions(pDelay)
@@ -3357,82 +2943,6 @@ function CalendarNetwork_RequestAllVersions(pDelay)
 	end
 	
 	CalendarNetwork_QueueUniqueOpcodeRequest({mOpcode = "RFV"}, vDelay);
-end
-
-function CalendarNetwork_DoAutoConfig(pCheckDatabaseTrust)
-	if gGroupCalendar_Settings.DebugInit then
-		Calendar_DebugMessage("CalendarNetwork_DoAutoConfig: Performing auto-config");
-	end
-	
-	local	vCommand, vConfigSource = CalendarNetwork_GetAutoConfigData();
-
-	if not vCommand then
-		CalendarNetwork_SetChannelStatus("Error", GroupCalendar_cAutoConfigNotFound);
-		return false;
-	end
-	
-	local		vChannel = nil;
-	local		vPassword = nil;
-	local		vMinTrustedRank = nil;
-	local		vTrustGroup = nil;
-	
-	while vCommand[1] ~= nil do
-		local	vOpcode = vCommand[1].opcode;
-		local	vOperands = vCommand[1].operands;
-		
-		table.remove(vCommand, 1);
-		
-		if vOpcode == "CHN"
-		or vOpcode == "C" then
-			vChannel = vOperands[1];
-			vPassword = vOperands[2];
-			
-		elseif vOpcode == "RNK" then
-			vMinTrustedRank = tonumber(vOperands[1]);
-		elseif vOpcode == "T" then
-			vTrustGroup = tonumber(vOperands[1]);
-			vMinTrustedRank = tonumber(vOperands[2]);
-		end
-	end
-	
-	local	vAutoPlayerChanged = gGroupCalendar_Channel.AutoPlayer ~= vConfigSource;
-	
-	gGroupCalendar_Channel.AutoPlayer = vConfigSource;
-	
-	if vAutoPlayerChanged then
-		GroupCalendar_ChannelChanged(); -- Send out a change notice just so the calendar knows the player changed
-	end
-	
-	--CalendarNetwork_SetChannel(vChannel, vPassword);
-	
-	-- Update the trust settings
-	
-	local	vTrustChanged = false;
-	local	vCurrentTrustGroup = CalendarTrust_GetCurrentTrustGroup();
-	
-	if vTrustGroup ~= nil then
-		if vCurrentTrustGroup ~= vTrustGroup then
-			vTrustChanged = true;
-		end
-	else
-		vTrustGroup = vCurrentTrustGroup;
-	end
-	
-	if vMinTrustedRank ~= nil then
-		if gGroupCalendar_PlayerSettings.Security.MinTrustedRank ~= vMinTrustedRank then
-			vTrustChanged = true;
-		end
-	else
-		vMinTrustedRank = gGroupCalendar_PlayerSettings.Security.MinTrustedRank;
-	end
-	
-	if vTrustChanged then
-		CalendarTrust_SetCurrentTrustGroup(vTrustGroup, vMinTrustedRank);
-	elseif pCheckDatabaseTrust then
-		EventDatabase_CheckDatabaseTrust();
-	end
-	
-	return true;
 end
 
 function CalendarTrust_GetCurrentTrustGroup()
@@ -3477,7 +2987,87 @@ function CalendarTrust_TrustSettingsChanged()
 		end
 	end
 	
+	-- If you're the leader, send an update to everyone
+	if gGroupCalendar_PlayerGuildRank == 0 then
+		gGroupCalendar_PlayerSettings.Security.Version = gGroupCalendar_PlayerSettings.Security.Version + 1;	
+		CalendarNetwork_QueueTrustUpdate();
+	end
+
 	CalendarNetwork_SendAllRevisionNotices(); -- Send out revision notices since trusted players may want to know now
+end
+
+function CalendarNetwork_QueueTrustUpdate()
+	vRequest = {};		
+	vRequest.mOpcode = "TRUST";
+	CalendarNetwork_QueueUniqueOpcodeRequest(vRequest, gCalendarNetwork_RequestDelay.RFUMin + math.random() * gCalendarNetwork_RequestDelay.RFURange);
+end
+
+function CalendarNetwork_QueueTrustRequest()
+	vRequest = {};		
+	vRequest.mOpcode = "TRUSTREQ";
+	CalendarNetwork_QueueUniqueOpcodeRequest(vRequest, gCalendarNetwork_RequestDelay.RFUMin + math.random() * gCalendarNetwork_RequestDelay.RFURange);
+end
+
+function CalendarNetwork_SendTrustUpdate()	
+	local trust = gGroupCalendar_PlayerSettings.Security;
+	local	vRequest = "/TRUST:"..trust.Version..","..gGroupCalendar_PlayerGuild..","..tostring(trust.TrustAnyone)..","..tostring(trust.TrustGuildies)..","..trust.MinTrustedRank..",";
+	for vPlayerName, vPlayerSecurity in pairs(trust.Player) do
+		vRequest = vRequest..vPlayerName.."~"..vPlayerSecurity.."~";
+	end
+	CalendarNetwork_QueueOutboundMessage(vRequest);
+end
+
+function CalendarNetwork_SendTrustRequest()
+	if gGroupCalendar_PlayerGuild then
+		local trust = gGroupCalendar_PlayerSettings.Security;
+		local	vRequest = "/TRUSTREQ:"..trust.Version..","..gGroupCalendar_PlayerGuild;	
+		CalendarNetwork_QueueOutboundMessage(vRequest);
+	end
+end
+
+function CalendarNetwork_ReceiveTrustUpdate(pSender, pGuild, pVersion, pTrustAnyone, pTrustGuildies, pMinRank, pPlayers)
+	-- Ignore settings not from your guild
+	if pGuild == gGroupCalendar_PlayerGuild then
+		-- If you're the guild leader, compare what version you have to the received message. If it's newer, incremement the version and resend
+		if gGroupCalendar_PlayerGuildRank == 0 and pVersion > gGroupCalendar_PlayerSettings.Security.Version then
+			gGroupCalendar_PlayerSettings.Security.Version = pVersion + 1;
+			CalendarNetwork_SendTrustUpdate();
+		elseif pVersion > gGroupCalendar_PlayerSettings.Security.Version then
+			-- Update the trust settings as the received version is higher
+			if pTrustAnyone == "true" then
+				gGroupCalendar_PlayerSettings.Security.TrustAnyone = true;
+			else
+				gGroupCalendar_PlayerSettings.Security.TrustAnyone = false;
+			end
+			if pTrustGuildies == "true" then
+				gGroupCalendar_PlayerSettings.Security.TrustGuildies = true;
+			else
+				gGroupCalendar_PlayerSettings.Security.TrustGuildies = false;
+			end			
+			gGroupCalendar_PlayerSettings.Security.MinTrustedRank = tonumber(pMinRank);
+			--CalendarTrust_merge(gGroupCalendar_PlayerSettings.Security.Player, pPlayers);
+			gGroupCalendar_PlayerSettings.Security.Player = pPlayers;
+			gGroupCalendar_PlayerSettings.Security.Version = pVersion;
+			gGroupCalendar_PlayerSettings.Security.Guild = pGuild
+			
+			CalendarTrust_TrustSettingsChanged();
+			if GroupCalendarFrame.selectedTab == 2 then
+				GroupCalendar_UpdateTrustedPlayerList();
+				GroupCalendar_ShowPanel(2);
+			end
+
+		elseif pVersion == gGroupCalendar_PlayerSettings.Security.Version then
+			-- Remove any pending trust updates in the message queue to avoid spamming
+			CalendarNetwork_DeleteRequestByOpcode("TRUST");
+		end
+	end
+end
+
+function CalendarTrust_merge(a, b)
+    if type(a) == 'table' and type(b) == 'table' then
+        for k,v in pairs(b) do if type(v)=='table' and type(a[k] or false)=='table' then merge(a[k],v) else a[k]=v end end
+    end
+    return a
 end
 
 function CalendarTrust_TrustCheckingAvailable()
@@ -3692,57 +3282,14 @@ function CalendarNetwork_PlayerGuildChanged()
 		if gGroupCalendar_Settings.DebugInit then
 			Calendar_DebugMessage("PlayerGuildChanged: Player is now unguilded");
 		end
-		
-		if gGroupCalendar_PlayerSettings.Channel.AutoConfig then
-			CalendarNetwork_LeaveChannel();
-		end
-		
+			
 		EventDatabase_CheckDatabaseTrust();
 		
 		return;
 	end
-	
-	-- The player is in a new guild or has changed guilds, so
-	-- schedule a roster update if necessary
-	
-	if GetNumGuildMembers() > 0 then
-		if gGroupCalendar_Settings.DebugInit then
-			Calendar_DebugMessage("PlayerGuildChanged: Roster is already loaded, calling GuildRosterChanged()");
-		end
-		
-		CalendarNetwork_GuildRosterChanged();
-	end
-	
 	-- Force the roster to reload or to start loading
 	
 	CalendarNetwork_LoadGuildRosterTask();
-end
-
-function CalendarNetwork_GuildRosterChanged()
-	if gGroupCalendar_Settings.DebugInit then
-		Calendar_DebugMessage("CalendarNetwork_GuildRosterChanged: Checking changes");
-	end
-	
-	EventDatabase_UpdateGuildRankCache();
-	
-	CalendarNetwork_FlushCaches();
-
-	if gGroupCalendar_PlayerSettings.Channel.AutoConfig then
-		CalendarNetwork_ScheduleAutoConfig(gCalendarNetwork_RequestDelay.GuildUpdateAutoConfig, true);		
-	else
-		if gGroupCalendar_Settings.DebugInit then
-			Calendar_DebugMessage("PlayerGuildChanged: Channel is set for manual config, verifying database trust");
-		end
-		
-		CalendarNetwork_ScheduleCheckDatabaseTrust(5);
-	end
-	
-	-- Start sending notices now if we were waiting for a roster update
-	
-	if gGroupCalendar_SendNoticesOnRosterUpdate then
-		gGroupCalendar_SendNoticesOnRosterUpdate = nil;
-		CalendarNetwork_SendNotices();
-	end
 end
 
 function CalendarNetwork_CheckPlayerGuild()
@@ -3750,6 +3297,10 @@ function CalendarNetwork_CheckPlayerGuild()
 
 	if IsInGuild() then
 		vPlayerGuild, _, gGroupCalendar_PlayerGuildRank = GetGuildInfo("player");
+		
+		--if gGroupCalendar_PlayerName == "Magne" then
+		--	gGroupCalendar_PlayerGuildRank = 0;
+		--end		
 		
 		-- Just return if the server is lagging and the guild info
 		-- isn't available yet
@@ -3767,4 +3318,16 @@ function CalendarNetwork_CheckPlayerGuild()
 		
 		CalendarNetwork_PlayerGuildChanged();
 	end
+
+	-- Reset settings if not in a guild or the guild changes
+	if gGroupCalendar_PlayerSettings and (gGroupCalendar_PlayerGuild == nil or gGroupCalendar_PlayerGuild ~= gGroupCalendar_PlayerSettings.Security.Guild) then
+		gGroupCalendar_PlayerSettings.Security.TrustAnyone = false;
+		gGroupCalendar_PlayerSettings.Security.TrustGuildies = true;
+		gGroupCalendar_PlayerSettings.Security.MinTrustedRank = 0;
+		gGroupCalendar_PlayerSettings.Security.Player = {};
+		gGroupCalendar_PlayerSettings.Security.Version = 0;
+		gGroupCalendar_PlayerSettings.Security.Guild = gGroupCalendar_PlayerGuild
+	end
+
+	CalendarNetwork_QueueTrustRequest();
 end

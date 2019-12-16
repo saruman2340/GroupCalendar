@@ -34,7 +34,6 @@ gGroupCalendar_CurrentPanel = 1;
 gGroupCalendar_PanelFrames =
 {
 	"GroupCalendarCalendarFrame",
-	"GroupCalendarChannelFrame",
 	"GroupCalendarTrustFrame",
 	"GroupCalendarAboutFrame",
 };
@@ -52,7 +51,7 @@ end
 EventFrame:SetScript("OnEvent", EventFrame_OnEvent)
 
 function GroupCalendar_OnLoad(frame)	
-
+	
 	SlashCmdList["CALENDAR"] = GroupCalendar_ExecuteCommand;
 	
 	SLASH_CALENDAR1 = "/calendar";
@@ -80,11 +79,8 @@ function GroupCalendar_OnLoad(frame)
 	
 	GroupCalendar_RegisterEvent(frame, "PLAYER_LEVEL_UP", GroupCalendar_PlayerLevelUp);
 	
-	-- For monitoring the status of the chat channel
-	
-	--GroupCalendar_RegisterEvent(frame, "CHAT_MSG_SYSTEM", GroupCalendar_ChatMsgSystem);
+	-- For monitoring the status of the chat channel	
 	GroupCalendar_RegisterEvent(frame, "CHAT_MSG_ADDON", GroupCalendar_ChatMsgAddon);
-	--GroupCalendar_RegisterEvent(frame, "CHAT_MSG_CHANNEL_NOTICE", GroupCalendar_ChatMsgChannelNotice);
 	GroupCalendar_RegisterEvent(frame, "CHAT_MSG_WHISPER", GroupCalendar_ChatMsgWhisper);
 	
 	-- For suspending/resuming the chat channel during logout
@@ -171,8 +167,6 @@ function GroupCalendar_VariablesLoaded()
 	EventDatabase_Initialize();
 	
 	CalendarNetwork_CalendarLoaded();	
-
-	
 end
 
 function GroupCalendar_LoadSettingsFrame()
@@ -324,7 +318,6 @@ function GroupCalendar_OnEvent(frame, pEvent, ...)
 			return;
 		end
 		
-		CalendarNetwork_GuildRosterChanged();
 		CalendarGroupInvites_GuildRosterChanged();
 		
 	elseif pEvent == "PLAYER_GUILD_UPDATE" then
@@ -365,6 +358,8 @@ function GroupCalendar_PlayerEnteringWorld(pEvent)
 	gGroupCalendar_PlayerFactionGroup = UnitFactionGroup("player");
 	gGroupCalendar_PlayerSettings = GroupCalendar_GetPlayerSettings(gGroupCalendar_PlayerName, GetRealmName());
 	gGroupCalendar_RealmSettings = GroupCalendar_GetRealmSettings(GetRealmName());
+	CalendarNetwork_CheckPlayerGuild();
+
 	EventDatabase_PlayerLevelChanged(gGroupCalendar_PlayerLevel);
 	GroupCalendar_CalculateTimeZoneOffset();
 	GroupCalendar_MajorDatabaseChange(nil);
@@ -377,8 +372,9 @@ function GroupCalendar_PlayerEnteringWorld(pEvent)
 	--GroupCalendar_MoveMinimap();
 	--GroupCalendarMiniMapButton.Init();
 
-	GuildRoster();
-
+	CalendarNetwork_QueueTask(
+			CalendarNetwork_LoadGuildRoster, nil,
+			3, "LOADGUILDROSTER");
 	
 end
 
@@ -392,56 +388,17 @@ function GroupCalendar_RemoveRealmName(pName)
 	return pName;
 end
 
-function GroupCalendar_ChatMsgChannel(pEvent, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
-
-	local author = GroupCalendar_RemoveRealmName(arg2);	
-
-	if arg9
-	and strlower(arg9) == gGroupCalendar_Channel.NameLower
-	and arg1
-	and type(arg1) == "string"
-	then
-		if author == gGroupCalendar_PlayerName then
-			-- Ignore messages from ourselves
-			if not gGroupCalendar_Settings.Debug then		
-				return;
-			end
-			
-			-- Special debugging case: allow self-send of messages starting with '!'
-			
-			if strsub(arg1, 1, 1) ~= "!" then
-				return;
-			end
-			
-			arg1 = strsub(arg1, 2);
-		end
-		
-		-- Clean up drunkeness
-		
-		if strsub(arg1, -8) == " ...hic!" then
-			arg1 = strsub(arg1, 1, -9);
-		end
-		
-		arg1 = Calendar_UnescapeChatString(arg1);
-		
-		CalendarNetwork_ChannelMessageReceived(author, arg1);
-	end
-end
-
 function GroupCalendar_ChatMsgAddon(pEvent, prefix, text, channel, sender, target, zoneChannelID, localID, name, instanceID)
 
 	if prefix == gGroupCalendar_MessagePrefix0 and channel == "GUILD" then
-
 		local author = GroupCalendar_RemoveRealmName(sender);	
-		
 		if author == gGroupCalendar_PlayerName then
 			-- Ignore messages from ourselves
 			if not gGroupCalendar_Settings.Debug then		
 				return;
 			end
 			
-			-- Special debugging case: allow self-send of messages starting with '!'
-			
+			-- Special debugging case: allow self-send of messages starting with '!'			
 			if strsub(text, 1, 1) ~= "!" then
 				return;
 			end
@@ -449,26 +406,9 @@ function GroupCalendar_ChatMsgAddon(pEvent, prefix, text, channel, sender, targe
 			text = strsub(text, 2);
 		end
 		
-		-- Clean up drunkeness
-		
-		--if strsub(arg1, -8) == " ...hic!" then
-		--	arg1 = strsub(arg1, 1, -9);
-		--end
-		
-		text = Calendar_UnescapeChatString(text);
 		CalendarNetwork_ChannelMessageReceived(author, text);
 		
 	end
-end
-
-function GroupCalendar_ChatMsgChannelNotice(pEvent, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
-	local	vChannelMessage = arg1;
-	local	vChannelName = arg4;
-	local	vChannelID = arg8;
-	local	vActualChannelName = arg9;
-
-	CalendarNetwork_ChannelNotice(vChannelMessage, vChannelName, vChannelID, vActualChannelName);
-	
 end
 
 function GroupCalendar_ChatMsgWhisper(pEvent, arg1, arg2)
@@ -487,8 +427,6 @@ function GroupCalendar_GuildRosterUpdate(pEvent)
 	if not gGroupCalendar_Initialized then
 		return;
 	end
-
-	CalendarNetwork_GuildRosterChanged();
 	CalendarGroupInvites_GuildRosterChanged();
 end
 
@@ -553,45 +491,27 @@ end
 
 function GroupCalendar_UpdateEnabledControls()
 	if GroupCalendarFrame.selectedTab == 1 then
-		-- Update the calendar display
+		-- Update the calendar display	
 		
 	elseif GroupCalendarFrame.selectedTab == 2 then
-		-- Update the channel frame
-		
-		Calendar_SetCheckButtonEnable(GroupCalendarAutoChannelConfig, IsInGuild());
-		
-		Calendar_SetEditBoxEnable(GroupCalendarChannelName, GroupCalendarManualChannelConfig:GetChecked());
-		Calendar_SetEditBoxEnable(GroupCalendarChannelPassword, GroupCalendarManualChannelConfig:GetChecked());
-		
-		if IsInGuild()
-		and CanEditPublicNote()
-		and GroupCalendarManualChannelConfig:GetChecked() then
-			Calendar_SetCheckButtonEnable(GroupCalendarStoreAutoConfig, true);
-			
-			if GroupCalendarStoreAutoConfig:GetChecked() then
-				Calendar_SetEditBoxEnable(GroupCalendarAutoConfigPlayer, true);
-			else
-				Calendar_SetEditBoxEnable(GroupCalendarAutoConfigPlayer, false);
-			end
-		else
-			Calendar_SetCheckButtonEnable(GroupCalendarStoreAutoConfig, false);
-			Calendar_SetEditBoxEnable(GroupCalendarAutoConfigPlayer, false);
-		end
-		
-		--Calendar_SetButtonEnable(GroupCalendarApplyChannelButton, GroupCalendar_ChannelPanelHasChanges());
-		Calendar_SetButtonEnable(GroupCalendarApplyChannelButton, true);
-		
-	elseif GroupCalendarFrame.selectedTab == 3 then
 		-- Update the trust frame
 		
-		if gGroupCalendar_PlayerSettings.Channel.AutoConfig then
+		if gGroupCalendar_PlayerGuildRank == nil or gGroupCalendar_PlayerGuild == nil or gGroupCalendar_PlayerGuildRank > 0 then -- Must be guild leader to modify trust
 			Calendar_SetDropDownEnable(GroupCalendarTrustGroup, false);
 			Calendar_SetDropDownEnable(GroupCalendarTrustMinRank, false);
+			GroupCalendarAddTrusted:EnableMouse(false);
+			GroupCalendarAddExcluded:EnableMouse(false);
+			GroupCalendarRemoveTrusted:EnableMouse(false);
+			CalendarTrustedPlayerName:EnableMouse(false);
 		else
 			GroupCalendar_SaveTrustGroup();
 			
 			Calendar_SetDropDownEnable(GroupCalendarTrustGroup, true);
 			Calendar_SetDropDownEnable(GroupCalendarTrustMinRank, UIDropDownMenu_GetSelectedValue(GroupCalendarTrustGroup) == 2);
+			GroupCalendarAddTrusted:EnableMouse(true);
+			GroupCalendarAddExcluded:EnableMouse(true);
+			GroupCalendarRemoveTrusted:EnableMouse(true);
+			CalendarTrustedPlayerName:EnableMouse(true);
 		end
 		
 		if UIDropDownMenu_GetSelectedValue(GroupCalendarTrustGroup) == 2 then
@@ -600,115 +520,18 @@ function GroupCalendar_UpdateEnabledControls()
 			GroupCalendarTrustMinRank:Hide();
 		end
 		
-	elseif GroupCalendarFrame.selectedTab == 4 then
+	elseif GroupCalendarFrame.selectedTab == 3 then
 		-- Update the ignore frame
 	
 	end
 end
 
-function GroupCalendar_SetAutoChannelConfig(pEnableAutoConfig)
-	GroupCalendarAutoChannelConfig:SetChecked(pEnableAutoConfig);
-	GroupCalendarManualChannelConfig:SetChecked(not pEnableAutoConfig);
-	
-	GroupCalendar_UpdateEnabledControls();
-end
-
-function GroupCalendar_EnableAutoConfigPlayer(pEnableStoreAutoConfig)
-	GroupCalendarStoreAutoConfig:SetChecked(pEnableStoreAutoConfig);
-	GroupCalendar_UpdateEnabledControls();
-end
-
 function GroupCalendar_SavePanel(pIndex)
-	if pIndex == 2 then
-		-- Channel panel
-		gGroupCalendar_PlayerSettings.Channel.AutoConfig = GroupCalendarAutoChannelConfig:GetChecked();
-		if gGroupCalendar_PlayerSettings.Channel.AutoConfig then
-		 
-			gGroupCalendar_PlayerSettings.Channel.Name = nil;
-			gGroupCalendar_PlayerSettings.Channel.Password = nil;
-			gGroupCalendar_PlayerSettings.Channel.AutoConfigPlayer = nil;
-
-			CalendarNetwork_ScheduleAutoConfig(0.5);
-			
-			GroupCalendar_ShowPanel(pIndex); -- Refresh the controls
-		else
-			gGroupCalendar_PlayerSettings.Channel.Name = GroupCalendarChannelName:GetText();
-
-			if gGroupCalendar_PlayerSettings.Channel.Name == "" then
-				gGroupCalendar_PlayerSettings.Channel.Name = nil;
-			end
-			
-			gGroupCalendar_PlayerSettings.Channel.Password = GroupCalendarChannelPassword:GetText();
-			
-			if gGroupCalendar_PlayerSettings.Channel.Password == "" then
-				gGroupCalendar_PlayerSettings.Channel.Password = nil;
-			end
-			
-			--CalendarNetwork_JoinChannel2(nil);
-			--CalendarNetwork_SetChannel(gGroupCalendar_PlayerSettings.Channel.Name, gGroupCalendar_PlayerSettings.Channel.Password);
-			
-			if GroupCalendarStoreAutoConfig:GetChecked() then
-				gGroupCalendar_PlayerSettings.Channel.AutoConfigPlayer = GroupCalendarAutoConfigPlayer:GetText();
-				CalendarNetwork_SetAutoConfigData(gGroupCalendar_PlayerSettings.Channel.AutoConfigPlayer);
-			elseif gGroupCalendar_PlayerSettings.Channel.AutoConfigPlayer then
-				gGroupCalendar_PlayerSettings.Channel.AutoConfigPlayer = nil;
-
-				if CanEditPublicNote() then
-					CalendarNetwork_RemoveAllAutoConfigData();
-				end
-			end
-		end
-	elseif pIndex == 3 then
-		-- Trust panel
-		
-		if not gGroupCalendar_PlayerSettings.Channel.AutoConfig then
-			GroupCalendar_SaveTrustGroup();
-		end
+	if pIndex == 2 then		
+		GroupCalendar_SaveTrustGroup();		
 	end
 	
 	GroupCalendar_UpdateEnabledControls();
-end
-
-function GroupCalendar_ChannelPanelHasChanges()
-
-	if (GroupCalendarAutoChannelConfig:GetChecked() == 1)
-	~= gGroupCalendar_PlayerSettings.Channel.AutoConfig then
-		return true;
-	end
-	
-	if GroupCalendarManualChannelConfig:GetChecked() then
-		local	vChannelName = gGroupCalendar_PlayerSettings.Channel.Name;
-		
-		if not vChannelName then
-			vChannelName = "";
-		end
-		
-		local	vChannelPassword = gGroupCalendar_PlayerSettings.Channel.Password;
-		
-		if not vChannelPassword then
-			vChannelPassword = "";
-		end
-		
-		if GroupCalendarChannelName:GetText() ~= vChannelName
-		or GroupCalendarChannelPassword:GetText() ~= vChannelPassword then
-			return true;
-		end
-	end
-	
-	local	vStoreAutoConfigIsEnabled = (not gGroupCalendar_PlayerSettings.Channel.AutoConfig)
-	                               and (gGroupCalendar_PlayerSettings.Channel.AutoConfigPlayer ~= nil);
-
-	if (GroupCalendarStoreAutoConfig:GetChecked() == 1)
-	~= vStoreAutoConfigIsEnabled then
-		return true;
-	end
-	
-	if GroupCalendarStoreAutoConfig:GetChecked()
-	and GroupCalendarAutoConfigPlayer:GetText() ~= gGroupCalendar_PlayerSettings.Channel.AutoConfigPlayer then
-		return true;
-	end
-	
-	return false;
 end
 
 function GroupCalendar_SaveTrustGroup()
@@ -746,14 +569,7 @@ function GroupCalendar_SaveTrustGroup()
 		vChanged = true;
 	end
 	
-	if vChanged then
-		-- Update auto-config string with the trust config
-		
-		if CanEditPublicNote()
-		and gGroupCalendar_PlayerSettings.Channel.AutoConfigPlayer then
-			CalendarNetwork_SetAutoConfigData(gGroupCalendar_PlayerSettings.Channel.AutoConfigPlayer);
-		end
-		
+	if vChanged then		
 		CalendarTrust_TrustSettingsChanged();
 	end
 end
@@ -778,68 +594,14 @@ function GroupCalendar_ShowPanel(pPanelIndex)
 		CalendarEditor_Close();
 	end
 	
-	if pPanelIndex ~= 4 then
+	if pPanelIndex ~= 3 then
 		GroupCalendarDatabasesList_Close();
 	end
 
 	-- Update the control values
 	
-	if pPanelIndex == 1 then
+	if pPanelIndex == 1 then			
 	elseif pPanelIndex == 2 then
-		-- Channel panel
-		
-		if gGroupCalendar_PlayerSettings.Channel.AutoConfig
-		and not IsInGuild() then
-			gGroupCalendar_PlayerSettings.Channel.AutoConfig = false;
-		end
-		GroupCalendarAutoChannelConfig:SetChecked(gGroupCalendar_PlayerSettings.Channel.AutoConfig);
-		GroupCalendarManualChannelConfig:SetChecked(not gGroupCalendar_PlayerSettings.Channel.AutoConfig);
-		
-		local	vChannelName;
-		local	vAutoConfigPlayer;
-		
-		if gGroupCalendar_PlayerSettings.Channel.AutoConfig then
-			vChannelName = gGroupCalendar_Channel.Name;
-			if gGroupCalendar_Channel.Password then
-				GroupCalendarChannelPassword:SetText("******");
-			else
-				GroupCalendarChannelPassword:SetText("");
-			end
-			
-			vAutoConfigPlayer = gGroupCalendar_Channel.AutoPlayer;
-		else
-			vChannelName = gGroupCalendar_PlayerSettings.Channel.Name;
-			vAutoConfigPlayer = gGroupCalendar_PlayerSettings.Channel.AutoConfigPlayer;
-			
-			if gGroupCalendar_PlayerSettings.Channel.Password then
-				GroupCalendarChannelPassword:SetText(gGroupCalendar_PlayerSettings.Channel.Password);
-			else
-				GroupCalendarChannelPassword:SetText("");
-			end
-		end
-		
-		if vChannelName ~= nil then
-			GroupCalendarChannelName:SetText(vChannelName);
-		else
-			GroupCalendarChannelName:SetText("");
-		end
-		
-		if vAutoConfigPlayer then
-			GroupCalendarAutoConfigPlayer:SetText(vAutoConfigPlayer);
-		else
-			GroupCalendarAutoConfigPlayer:SetText("");
-		end
-		
-		if not gGroupCalendar_PlayerSettings.Channel.AutoConfig
-		and gGroupCalendar_PlayerSettings.Channel.AutoConfigPlayer then
-			GroupCalendarStoreAutoConfig:SetChecked(true);
-		else
-			GroupCalendarStoreAutoConfig:SetChecked(false);
-		end
-		
-		GroupCalendar_UpdateChannelStatus();
-		
-	elseif pPanelIndex == 3 then
 		-- Trust panel
 		
 		GroupCalendarTrustGroup.ChangedValueFunc = GroupCalendar_UpdateEnabledControls;
@@ -874,7 +636,7 @@ function GroupCalendar_ShowPanel(pPanelIndex)
 		
 		CalendarPlayerList_SetItemFunction(CalendarExcludedPlayersList, GroupCalendar_GetIndexedExcludedPlayer);
 		CalendarPlayerList_SetSelectionChangedFunction(CalendarExcludedPlayersList, GroupCalendar_ExcludedPlayerSelected);
-	elseif pPanelIndex == 4 then
+	elseif pPanelIndex == 3 then
 	end
 	
 	GroupCalendar_UpdateEnabledControls();
@@ -900,18 +662,7 @@ function GroupCalendar_UpdateChannelStatus()
 	local	vStatusText = GroupCalendar_cChannelStatus[vChannelStatus];
 	
 	GroupCalendarChannelStatus:SetText(string.format(vStatusText.mText, gGroupCalendar_Channel.StatusMessage));
-	GroupCalendarChannelStatus:SetTextColor(vStatusText.mColor.r, vStatusText.mColor.g, vStatusText.mColor.b);
-	
-	if vChannelStatus == "Connected"
-	or vChannelStatus == "Synching" then
-		Calendar_SetButtonEnable(GroupCalendarConnectChannelButton, true);
-		GroupCalendarConnectChannelButton:SetText(GroupCalendar_cDisconnectChannel);
-	elseif vChannelStatus == "Disconnected" or vChannelStatus == "Error" then
-		Calendar_SetButtonEnable(GroupCalendarConnectChannelButton, true);
-		GroupCalendarConnectChannelButton:SetText(GroupCalendar_cConnectChannel);
-	else
-		Calendar_SetButtonEnable(GroupCalendarConnectChannelButton, false);
-	end
+	GroupCalendarChannelStatus:SetTextColor(vStatusText.mColor.r, vStatusText.mColor.g, vStatusText.mColor.b);		
 end
 
 function GroupCalendar_FixPlayerName(pName)
@@ -1188,20 +939,13 @@ function GroupCalendar_GetPlayerSettings(pPlayerName, pRealmName)
 		{
 			Security =
 			{
-				TrustAnyone = true,
-				TrustGuildies = false,
-				MinTrustedRank = 1,
+				TrustAnyone = false,
+				TrustGuildies = true,
+				MinTrustedRank = 0,
 				Player = {},
-			},
-			
-			Channel =
-			{
-				AutoConfig = IsInGuild(),
-				AutoConfigPlayer = nil,
-				Name = nil,
-				Password = nil,
-			},
-			
+				Version = nil,
+				Guild = nil,
+			},			
 			UI =
 			{
 				LockWindow = false,
@@ -1214,7 +958,17 @@ function GroupCalendar_GetPlayerSettings(pPlayerName, pRealmName)
 	
 	-- This setting was added in a newer version
 	if not vSettings.UI.DefaultRole then
-		vSettings.UI.DefaultRole = "U"
+		vSettings.UI.DefaultRole = "U";
+	end
+
+	-- Reset settings if not in a guild or the guild changes
+	if not vSettings.Security.Version then
+		vSettings.Security.TrustAnyone = false;
+		vSettings.Security.TrustGuildies = true;
+		vSettings.Security.MinTrustedRank = 0;
+		vSettings.Security.Player = {};
+		vSettings.Security.Version = 0;
+		vSettings.Security.Guild = nil
 	end
 
 	return vSettings;
@@ -1305,29 +1059,6 @@ function GroupCalendar_UpdateTimeTooltip()
 	GameTooltip:Show();
 end
 
-function GroupCalendar_ChannelChanged()
-	if GroupCalendarFrame then
-		--if CalendarNetwork_GetChannelStatus() == "Connected"
-		--or CalendarNetwork_GetChannelStatus() == "Synching" then
-		--	GroupCalendar_RegisterEvent(GroupCalendarFrame, "CHAT_MSG_CHANNEL", GroupCalendar_ChatMsgChannel);
-		--else
-		--	GroupCalendar_UnregisterEvent(GroupCalendarFrame, "CHAT_MSG_CHANNEL");
-		--end
-
-		if GroupCalendarFrame:IsVisible()
-		and (gGroupCalendar_CurrentPanel == 2
-		or gGroupCalendar_CurrentPanel == 3) then
-			if GroupCalendarAutoChannelConfig:GetChecked() then
-				GroupCalendar_ShowPanel(gGroupCalendar_CurrentPanel); -- Refresh the channel and auto-player names
-			end
-		
-			if gGroupCalendar_CurrentPanel == 2 then
-				GroupCalendar_UpdateChannelStatus();
-			end
-		end
-	end
-end
-
 function GroupCalendar_GetLocalizedStrings(pLocale)
 	local	vStrings = {};
 	
@@ -1376,34 +1107,6 @@ function GroupCalendar_SelectLanguage(pLanguageCode)
 	-- No luck, hope they know english!
 	
 	return nil;
-end
-
-function GroupCalendar_ToggleChannelConnection()
-	--local	vChannelStatus = CalendarNetwork_GetChannelStatus();
-	
-	--if vChannelStatus == "Initializing" then
-	--	return;
-	--end
-	
-	--if vChannelStatus == "Connected"
-	--or vChannelStatus == "Synching" then
-	--	gGroupCalendar_Channel.Disconnected = true;
-		
-	--	CalendarNetwork_LeaveChannel();
-	--else
-	--	gGroupCalendar_Channel.Disconnected = false;
-	--	CalendarNetwork_SetChannelStatus("Initializing");
-		
-	--	if gGroupCalendar_PlayerSettings.Channel.AutoConfig then
-	--		CalendarNetwork_ScheduleAutoConfig(0.5);
-	--	elseif gGroupCalendar_PlayerSettings.Channel.Name then
-	--		CalendarNetwork_SetChannel(
-	--				gGroupCalendar_PlayerSettings.Channel.Name,
-	--				gGroupCalendar_PlayerSettings.Channel.Password);
-	--	else
-	--		CalendarNetwork_SetChannelStatus("Disconnected");
-	--	end
-	--end
 end
 
 function GroupCalendar_ToggleCalendarDisplay()

@@ -1,4 +1,4 @@
-﻿gGroupCalendar_VersionString = "1.13.2.2.5";
+﻿gGroupCalendar_VersionString = "1.13.2.2.6";
 
 GroupCalendar_cTitle = "Group Calendar v%s";
 
@@ -45,22 +45,6 @@ GroupCalendar_cAbout = "About";
 GroupCalendar_cUseServerDateTime = "Use server dates and times";
 GroupCalendar_cUseServerDateTimeDescription = "Turn on to show events using the server date and time, turn off to use your local date and time";
 
-GroupCalendar_cChannelConfigTitle = "Data Channel Setup";
-GroupCalendar_cChannelConfigDescription = "The calendar data channel is used to send and receive events between players.  Anyone able to join the channel will be able to see your events if they choose to.  To keep your calendar private a channel password should be used.";
-GroupCalendar_cAutoChannelConfig = "Automatic channel configuration";
-GroupCalendar_cManualChannelConfig = "Manual channel configuration";
-GroupCalendar_cStoreAutoConfig = "Store auto. config data in player note";
-GroupCalendar_cAutoConfigPlayer = "Player name:";
-GroupCalendar_cApplyChannelChanges = "Apply Changes";
-GroupCalendar_cAutoConfigTipTitle = "Automatic Channel Configuration";
-GroupCalendar_cAutoConfigTipDescription = "Automatically gets channel information from your guilds roster.  You must be in a guild and the feature must be configured by a guild officer in order to use self.";
-GroupCalendar_cManualConfigTipDescription = "Allows you to manually enter the channel and password information.";
-GroupCalendar_cStoreAutoConfigTipDescription = "Allows a guild officer to store channel configuration information in the selected players note in the guild roster.";
-GroupCalendar_cAutoConfigPlayerTipDescription = "The name of the player in the guild roster containing the channel configuration data.";
-GroupCalendar_cChannelNameTipTitle = "Channel name";
-GroupCalendar_cChannelNameTipDescription = "The name of the chat channel which will be used to send and receive event data from other players";
-GroupCalendar_cConnectChannel = "Connect";
-GroupCalendar_cDisconnectChannel = "Disconnect";
 GroupCalendar_cChannelStatus =
 {
 	Starting = {mText = "Status: Starting up...", mColor = {r = 1, g = 1, b = 0.3}},
@@ -80,7 +64,7 @@ GroupCalendar_cAutoConfigNotFound = "Configuration data not found in the guild r
 GroupCalendar_cErrorAccessingNote = "Couldn't retrieve configuration data";
 
 GroupCalendar_cTrustConfigTitle = "Trust Setup";
-GroupCalendar_cTrustConfigDescription = "Trust determines who you allow to provide you with events.  It does NOT limit who can see events in your calendar.  Use a password on the data channel to restrict who can see your calendar.";
+GroupCalendar_cTrustConfigDescription = "Trust determines who can create events. Only the guild leader can modify these settings.";
 GroupCalendar_cTrustGroupLabel = "Trust:";
 GroupCalendar_cEvent = "Event";
 GroupCalendar_cAttendance = "Attendance";
