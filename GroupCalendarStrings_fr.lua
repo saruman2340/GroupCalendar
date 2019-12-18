@@ -46,11 +46,11 @@ if GetLocale() == "frFR" then
 		
 	GroupCalendar_cChannelStatus =
 	{
-		Starting = {mText = "Status: D\195\169marrage...", mColor = {r = 1, g = 1, b = 0.3}},
-		Synching = {mText = "Status: Synchronizing with network", mColor = {r = 0.3, g = 1, b = 0.3}},
-		Connected = {mText = "Status: Canal de donn\195\169s connect\195\169", mColor = {r = 0.3, g = 1, b = 0.3}},
-		Disconnected = {mText = "Status: Canal de donn\195\169es non connect\195\169", mColor = {r = 1, g = 0.2, b = 0.4}},
-		Initializing = {mText = "Status: Initialisation du canal de donn\195\169es", mColor = {r = 1, g = 1, b = 0.3}},
+		Starting = {mText = "Status: Départ", mColor = {r = 1, g = 1, b = 0.3}},
+		Synching = {mText = "Status: Synchronisation", mColor = {r = 0.3, g = 1, b = 0.3}},
+		Connected = {mText = "Status: Connecté", mColor = {r = 0.3, g = 1, b = 0.3}},
+		Disconnected = {mText = "Status: Débranché", mColor = {r = 1, g = 0.2, b = 0.4}},
+		Initializing = {mText = "Status: Initialisation", mColor = {r = 1, g = 1, b = 0.3}},
 		Error = {mText = "Error: %s", mColor = {r = 1, g = 0.2, b = 0.4}},
 	};
 

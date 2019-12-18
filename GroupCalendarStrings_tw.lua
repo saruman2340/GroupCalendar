@@ -52,11 +52,11 @@ if GetLocale() == "zhTW" then
 	
 	GroupCalendar_cChannelStatus =
 	{
-		Starting = {mText = "狀態: 啟動中...", mColor = {r = 1, g = 1, b = 0.3}},
-		Synching = {mText = "狀態: 與網絡同步中", mColor = {r = 0.3, g = 1, b = 0.3}},
-		Connected = {mText = "狀態: 資料頻道已連接", mColor = {r = 0.3, g = 1, b = 0.3}},
-		Disconnected = {mText = "狀態: 資料頻道尚未連接", mColor = {r = 1, g = 0.5, b = 0.2}},
-		Initializing = {mText = "狀態: 初始化資料頻道", mColor = {r = 1, g = 1, b = 0.3}},
+		Starting = {mText = "狀態: 開始", mColor = {r = 1, g = 1, b = 0.3}},
+		Synching = {mText = "狀態: 正在同步", mColor = {r = 0.3, g = 1, b = 0.3}},
+		Connected = {mText = "狀態: 連接的", mColor = {r = 0.3, g = 1, b = 0.3}},
+		Disconnected = {mText = "狀態: 斷線", mColor = {r = 1, g = 0.5, b = 0.2}},
+		Initializing = {mText = "狀態: 初始化中", mColor = {r = 1, g = 1, b = 0.3}},
 		Error = {mText = "錯誤: %s", mColor = {r = 1, g = 0.2, b = 0.4}},
 	};
 

@@ -1563,7 +1563,8 @@ function CalendarAttendanceList_SetItemToRSVP(pAttendanceList, pIndex, pCategory
 		race = EventDatabase_GetRaceByRaceCode(pRSVP.mRaceCode),
 		level = tostring(pRSVP.mLevel),
 		status = "",
-		role = EventDatabase_GetRoleByRoleCode(pRSVP.mRole)
+		role = EventDatabase_GetRoleByRoleCode(pRSVP.mRole),
+		statuscode = pRSVP.mStatus;
 	};
 	
 	-- Set the status
@@ -1812,15 +1813,15 @@ function CalendarAttendanceList_SetGroupItem(pAttendanceList, pItemIndex, pCateg
 	
 	local	vNameColumnFormat;
 	
-	if pCategory == "STANDBY" then	
-		vNameColumnFormat = "$name ($role $level $class)";
-	else
+	--if pCategory == "STANDBY" then	
+	--	vNameColumnFormat = "$name ($role $level $class)";
+	--else
 		if pCategoryType == gCategoryType_Class then
-			vNameColumnFormat = "$name - $role ($status)";
+			vNameColumnFormat = "($status)$name - $role";
 		else
-			vNameColumnFormat = "$name - $class ($status)";
+			vNameColumnFormat = "($status)$name - $class";
 		end
-	end
+	--end
 	
 	local	vSelected;
 	
@@ -1849,9 +1850,9 @@ end
 function CalendarAttendanceList_SetAttendanceItem(pAttendanceList, pItemIndex, pCategory, pItem, pCategoryType)
 	local	vNameFormat;
 	if pCategoryType == gCategoryType_Class then
-		vNameFormat = "$name ($role $level $race)";
+		vNameFormat = "($statuscode) $name ($role $level $race)";
 	else
-		vNameFormat = "$name ($class $level $race)";
+		vNameFormat = "($statuscode) $name ($class $level $race)";
 	end
 
 	if pItem.mType == "Whisper" then

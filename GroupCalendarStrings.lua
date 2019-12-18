@@ -1,4 +1,4 @@
-﻿gGroupCalendar_VersionString = "1.13.2.2.6";
+﻿gGroupCalendar_VersionString = "1.13.3.2.7";
 
 GroupCalendar_cTitle = "Group Calendar v%s";
 
@@ -47,11 +47,11 @@ GroupCalendar_cUseServerDateTimeDescription = "Turn on to show events using the 
 
 GroupCalendar_cChannelStatus =
 {
-	Starting = {mText = "Status: Starting up...", mColor = {r = 1, g = 1, b = 0.3}},
-	Synching = {mText = "Status: Synchronizing with network", mColor = {r = 0.3, g = 1, b = 0.3}},
-	Connected = {mText = "Status: Data channel is connected", mColor = {r = 0.3, g = 1, b = 0.3}},
-	Disconnected = {mText = "Status: Data channel is not connected", mColor = {r = 1, g = 0.5, b = 0.2}},
-	Initializing = {mText = "Status: Initializing data channel", mColor = {r = 1, g = 1, b = 0.3}},
+	Starting = {mText = "Status: Starting", mColor = {r = 1, g = 1, b = 0.3}},
+	Synching = {mText = "Status: Synchronizing", mColor = {r = 0.3, g = 1, b = 0.3}},
+	Connected = {mText = "Status: Connected", mColor = {r = 0.3, g = 1, b = 0.3}},
+	Disconnected = {mText = "Status: Disconnected", mColor = {r = 1, g = 0.5, b = 0.2}},
+	Initializing = {mText = "Status: Initializing", mColor = {r = 1, g = 1, b = 0.3}},
 	Error = {mText = "Error: %s", mColor = {r = 1, g = 0.2, b = 0.4}},
 };
 

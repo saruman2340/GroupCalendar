@@ -47,11 +47,11 @@ if GetLocale() == "ruRU" then
 		
 	GroupCalendar_cChannelStatus =
 	{
-		Starting = {mText = "Статус: Запуск...", mColor = {r = 1, g = 1, b = 0.3}},
-		Synching = {mText = "Статус: Синхронизация с сетью", mColor = {r = 0.3, g = 1, b = 0.3}},
-		Connected = {mText = "Статус: Канал передачи данных подключен", mColor = {r = 0.3, g = 1, b = 0.3}},
-		Disconnected = {mText = "Статус: Канал передачи данных не подключен", mColor = {r = 1, g = 0.5, b = 0.2}},
-		Initializing = {mText = "Статус: Инициализация канала передачи данных", mColor = {r = 1, g = 1, b = 0.3}},
+		Starting = {mText = "Статус: запуск", mColor = {r = 1, g = 1, b = 0.3}},
+		Synching = {mText = "Статус: синхронизирующий", mColor = {r = 0.3, g = 1, b = 0.3}},
+		Connected = {mText = "Статус: Связанный", mColor = {r = 0.3, g = 1, b = 0.3}},
+		Disconnected = {mText = "Статус: разъединенный", mColor = {r = 1, g = 0.5, b = 0.2}},
+		Initializing = {mText = "Статус: Инициализация", mColor = {r = 1, g = 1, b = 0.3}},
 		Error = {mText = "Error: %s", mColor = {r = 1, g = 0.2, b = 0.4}},
 	};
 

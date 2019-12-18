@@ -47,11 +47,11 @@ if GetLocale() == "koKR" then
 		
 	GroupCalendar_cChannelStatus =
 	{
-		Starting = {mText = "상태: 시동중...", mColor = {r = 1, g = 1, b = 0.3}},
-		Synching = {mText = "상태: Synchronizing with network", mColor = {r = 0.3, g = 1, b = 0.3}},
-		Connected = {mText = "상태: 데이터 채널에 연결되었습니다", mColor = {r = 0.3, g = 1, b = 0.3}},
-		Disconnected = {mText = "상태: 데이터 채널에 연결되지 않았습니다", mColor = {r = 1, g = 0.5, b = 0.2}},
-		Initializing = {mText = "상태: 데이터 채널을 초기화하고 있습니다", mColor = {r = 1, g = 1, b = 0.3}},
+		Starting = {mText = "상태: 시작", mColor = {r = 1, g = 1, b = 0.3}},
+		Synching = {mText = "상태: 동기화", mColor = {r = 0.3, g = 1, b = 0.3}},
+		Connected = {mText = "상태: 연결됨", mColor = {r = 0.3, g = 1, b = 0.3}},
+		Disconnected = {mText = "상태: 연결 해제", mColor = {r = 1, g = 0.5, b = 0.2}},
+		Initializing = {mText = "상태: 초기화", mColor = {r = 1, g = 1, b = 0.3}},
 		Error = {mText = "오류: %s", mColor = {r = 1, g = 0.2, b = 0.4}},
 	};
 

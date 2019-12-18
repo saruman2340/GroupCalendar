@@ -46,11 +46,11 @@
 	    
     GroupCalendar_cChannelStatus =
     {
-		Starting = {mText = "Status: Initialisiere...", mColor = {r = 1, g = 1, b = 0.3}},
-		Synching = {mText = "Status: Synchronizing with network", mColor = {r = 0.3, g = 1, b = 0.3}},
-        Connected = {mText = "Status: Mit Daten Channel verbunden", mColor = {r = 0.3, g = 1, b = 0.3}},
-        Disconnected = {mText = "Status: Nicht mit Daten Channel verbunden.", mColor = {r = 1, g = 0.2, b = 0.4}},
-        Initializing = {mText = "Status: Verbinde mit Daten Channel...", mColor = {r = 1, g = 1, b = 0.3}},
+		Starting = {mText = "Status: Beginnend", mColor = {r = 1, g = 1, b = 0.3}},
+		Synching = {mText = "Status: Synchronisieren", mColor = {r = 0.3, g = 1, b = 0.3}},
+        Connected = {mText = "Status: In Verbindung gebracht", mColor = {r = 0.3, g = 1, b = 0.3}},
+        Disconnected = {mText = "Status: Getrennt", mColor = {r = 1, g = 0.2, b = 0.4}},
+        Initializing = {mText = "Status: Initialisierung", mColor = {r = 1, g = 1, b = 0.3}},
 		Error = {mText = "Error: %s", mColor = {r = 1, g = 0.2, b = 0.4}},
     };
 

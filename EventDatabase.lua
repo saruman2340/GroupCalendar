@@ -2898,8 +2898,9 @@ function CalendarAttendanceList_AddPendingRequests(pAttendanceList, pDatabase, p
 			if vPendingRSVP then
 				if vPendingRSVP.mStatus == "Y" then
 					vPendingRSVP.mStatus = "P";
-				end
-				CalendarAttendanceList_AddItem(pAttendanceList, "PENDING", vPendingRSVP, pCategoryType);
+				end		
+				pAttendanceList.Items[vPendingRSVP.mName] = vPendingRSVP;
+				--CalendarAttendanceList_AddItem(pAttendanceList, "PENDING", vPendingRSVP, pCategoryType);
 			end
 		end
 	end
@@ -3031,7 +3032,7 @@ function CalendarAttendanceList_GetRSVPStatusCategory(pItem)
 	end
 	
 	if pItem.mStatus == "N" then
-		return "NO";
+		return "NO";	
 	elseif pItem.mStatus == "S" then
 		return "STANDBY";
 	elseif pItem.mStatus == "Q" then
@@ -3104,6 +3105,7 @@ function CalendarEvent_GetAttendanceCounts(pDatabase, pEvent, pCategoryType)
 	
 	CalendarAttendanceList_AddEventAttendanceItems(vAttendanceList, pDatabase, pEvent);
 	
+	CalendarAttendanceList_AddPendingRequests(vAttendanceList, pDatabase, pEvent);
 	-- Sort into categories
 	
 	local	vGetItemCategoryFunction;
@@ -3120,7 +3122,7 @@ function CalendarEvent_GetAttendanceCounts(pDatabase, pEvent, pCategoryType)
 	
 	-- Add pending requests
 	
-	CalendarAttendanceList_AddPendingRequests(vAttendanceList, pDatabase, pEvent);
+	-- CalendarAttendanceList_AddPendingRequests(vAttendanceList, pDatabase, pEvent);
 	
 	-- Calculate class totals
 	
