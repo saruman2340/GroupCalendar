@@ -1,4 +1,4 @@
-﻿gGroupCalendar_VersionString = "1.13.3.2.7";
+﻿gGroupCalendar_VersionString = "1.13.3.3.8";
 
 GroupCalendar_cTitle = "Group Calendar v%s";
 
@@ -24,8 +24,10 @@ GroupCalendar_Settings_ShowMinimap = "Show Minimap";
 GroupCalendar_Settings_ShowMinimapTip = "Show/Hide the minimap icon.";
 GroupCalendar_Settings_MondayFirstDay = "Monday first day of week";
 GroupCalendar_Settings_MondayFirstDayTip = "Display Monday as the first day in the calendar.";
+GroupCalendar_Settings_Use24HrTime = "Use 24hr Time";
+GroupCalendar_Settings_Use24HrTimeTip = "Use 24hr Time";
 
-GroupCalendar_cSelfWillAttend = "%s will attend";
+GroupCalendar_cSelfWillAttend = "Attending";
 
 GroupCalendar_cMonthNames = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
 GroupCalendar_cDayOfWeekNames = {GroupCalendar_cSunday, GroupCalendar_cMonday, GroupCalendar_cTuesday, GroupCalendar_cWednesday, GroupCalendar_cThursday, GroupCalendar_cFriday, GroupCalendar_cSaturday};
@@ -71,19 +73,15 @@ GroupCalendar_cAttendance = "Attendance";
 
 GroupCalendar_cAboutTitle = "About Group Calendar";
 GroupCalendar_cTitleVersion = "Group Calendar v"..gGroupCalendar_VersionString;
-GroupCalendar_cAuthor = "Welcome to Kronos";
-GroupCalendar_cTestersTitle = "Tips";
-GroupCalendar_cTestersNames = "Trust decide's who can create event's, the rank determine's who has the last word when decissions are made in an event. in addition you can decide to include or exclude players from being able to create event's";
-GroupCalendar_cSpecialThanksTitle = "Important:";
-GroupCalendar_cSpecialThanksNames = "Remember to change from Automatic to Manual Channel for calendar safety reasons :)";
+GroupCalendar_cAuthor = "Classic Author: Magne - Remulos".."\n".."Vanilla Author: Baylord - Thunderlord";
+GroupCalendar_cTestersTitle = "Testers";
+GroupCalendar_cTestersNames = "Kaezy (FEAR) - Shazzrah";
+GroupCalendar_cSpecialThanksTitle = "Special Thanks";
+GroupCalendar_cSpecialThanksNames = "Dracaratos - Thunderfury";
 
-GroupCalendar_cFrenchTranslation = "For more information please read the manual";
-GroupCalendar_cGermanTranslation = "which can be found within your";
-GroupCalendar_cChineseTranslation = "World Of Warcraft addon folder:";
-
-GroupCalendar_cGuildURL = "Addons/GroupCalendar/Documentation/Usermanual.html";
+GroupCalendar_cGuildURL = "";
 GroupCalendar_cRebuildDatabase = "Rebuild Database";
-GroupCalendar_cRebuildDatabaseDescription = "Rebuilds the event database for your character.  self may solve problems with people not seeing all of your events, but there is a slight risk that some event attendance replies could get lost.";
+GroupCalendar_cRebuildDatabaseDescription = "Rebuilds the event database for your character.  This may solve problems with people not seeing all of your events, but there is a slight risk that some event attendance replies could get lost.";
 
 GroupCalendar_cTrustGroups =
 {

@@ -23,6 +23,8 @@
 	GroupCalendar_Settings_ShowMinimapTip = "Show/Hide the minimap icon.";
 	GroupCalendar_Settings_MondayFirstDay = "Monday first day of week";
 	GroupCalendar_Settings_MondayFirstDayTip = "Display Monday as the first day in the calendar.";
+	GroupCalendar_Settings_Use24HrTime = "Verwenden Sie die 24-Stunden-Zeit";
+	GroupCalendar_Settings_Use24HrTimeTip = "Verwenden Sie die 24-Stunden-Zeit";
 
     GroupCalendar_cSelfWillAttend = "%s wird teilnehmen";
 
@@ -70,12 +72,9 @@
 
     GroupCalendar_cAboutTitle = "\195\156ber GroupCalendar";
     GroupCalendar_cTitleVersion = "GroupCalendar v"..gGroupCalendar_VersionString;
-    GroupCalendar_cAuthor = "Programmierung und Design von Baylord of Thunderlord";
-    GroupCalendar_cTestersTitle = "Beta Tester";
-    GroupCalendar_cTestersNames = "Agnosbear, Airmid, Allaric, Andrys, Chaz, Deathwave, Drizztt, Fizzlebang, Mistwalker, Ragdzar, Saracen, Thoros, Usps und Zya";
-    GroupCalendar_cSpecialThanksTitle = "Speziellen Dank an";
-    GroupCalendar_cSpecialThanksNames = "Agnosbear, Fizzlebang, Mistwalker und SFC Alliance";
-    GroupCalendar_cGuildURL = "http://www.starfleetclan.com";
+    GroupCalendar_cAuthor = "Klassischer Autor: Magne - Remulos".."\n".."Vanille-Autor: Baylord - Thunderlord";
+    GroupCalendar_cTestersTitle = "Testerinnen";
+    GroupCalendar_cSpecialThanksTitle = "Besonderer Dank";
     GroupCalendar_cRebuildDatabase = "Datenbank erneuern";
     GroupCalendar_cRebuildDatabaseDescription = "Erneuert den Event-Datenbestand deines Charakters.  Dies kann Probleme beheben, wenn andere Spieler nicht alle deine Events sehen k\195\182nnen. Es besteht ein geringes Risiko das einige Anmeldungs-Best\195\164tigungen verloren gehen k\195\182nnen.";
 
@@ -271,11 +270,6 @@
 
 	CalendarEventEditor_cNotTrustedMsg = "Ereignisse können aufgrund von Vertrauenseinstellungen nicht erstellt werden";
 	CalendarEventEditor_cOk = "in Ordnung";
-
-    GroupCalendar_cGermanTranslation = "Deutsche \195\156bersetzung: Palyr - Silberne Hand (EU)";
-    GroupCalendar_cFrenchTranslation = "Franz\195\182sische \195\156bersetzung: Kisanth of Dalaran (EU)";
-	GroupCalendar_cChineseTranslation = "Chinesische \195\156bersetzung von Aska of Royaltia (HK)";
-	GroupCalendar_cKoreanTranslation = "Koreanische \195\156bersetzung: 기괴한황혼 of 듀로탄 (KR)";
 
     CalendarEventEditor_cNotAttending = "Nicht angemeldet";
     CalendarEventEditor_cConfirmed = "Best\195\164tigt";

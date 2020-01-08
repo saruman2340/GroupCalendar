@@ -190,7 +190,7 @@ end
 
 function CalendarGroupInvites_GuildRosterChanged()
 	if gGroupCalendar_Invites.Group then
-		CalendarGroupInvites_UpdateGroup(gGroupCalendar_Invites.Group);
+		CalendarGroupInvites_UpdateGroup(gGroupCalendar_Invites.Group);	
 	end
 end
 
@@ -677,8 +677,7 @@ function CalendarGroupInvites_MergeEventAttendance(pGroup, pEvent, pSortByClass)
 		return;
 	end
 	
-	for vAttendeeName, vRSVPString in pairs(pEvent.mAttendance) do
-		local	vRSVP = EventDatabase_UnpackEventRSVP(nil, vAttendeeName, pEvent.mID, vRSVPString);
+	for vAttendeeName, vRSVP in pairs(pEvent.mAttendance) do		
 		local	vCategoryID = CalendarAttendanceList_GetRSVPClassCategory(vRSVP);
 		
 		if vCategoryID

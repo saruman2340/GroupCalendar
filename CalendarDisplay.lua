@@ -154,35 +154,101 @@ function Calendar_DebugDate(pDate)
 	Calendar_DebugMessage(vDateString);
 end
 
-function Calendar_DebugTimeStamp(pTimeStamp)
-	local	vDate, vTime = Calendar_GetDateTimeFromTimeStamp(pTimeStamp);
-	
-	local	vDateString = Calendar_GetLongDateString(vDate, true);
-	local	vTimeString = Calendar_GetShortTimeString(vTime);
-	
-	Calendar_DebugMessage(vDateString.." "..vTimeString);
-end
-
 function Calendar_GetCurrentYearMonthDayHourMinute()
 	local	vDate = date("*t");
 	
 	return vDate.year, vDate.month, vDate.day, vDate.hour, vDate.min, vDate.sec;
 end
 
-function Calendar_GetCurrentLocalDateTimeStamp()
-	local	vDate, vTime60 = Calendar_GetCurrentLocalDateTime60();
-	
-	return vDate * 86400 + vTime60;
-end
-
-function Calendar_GetDateTimeFromTimeStamp(pTimeStamp)
-	return math.floor(pTimeStamp / 86400), math.floor(math.fmod(pTimeStamp, 86400) / 60);
-end
 
 function Calendar_GetCurrentLocalDateTime60()
 	local	vDate = date("*t");
 	
 	return Calendar_ConvertMDYToDate(vDate.month, vDate.day, vDate.year), Calendar_ConvertHMSToTime60(vDate.hour, vDate.min, vDate.sec);
+end
+
+function Calendar_AddTime(vDate, vTime, vAddTime)
+	-- This works with negative numbers too
+	if vAddTime then		
+		local vNewTime = vTime + vAddTime;
+		local vDaysToAdd = math.floor(vNewTime / gCalendarMinutesPerDay);
+		vNewTime = vNewTime - (vDaysToAdd * gCalendarMinutesPerDay);
+			
+		return Calendar_AddDays(vDate, vDaysToAdd), vNewTime;		
+	else
+		return vDate, vTime;
+	end
+end
+
+function Calendar_AddTime60(vDate, vTime, vAddTime)
+	-- This works with negative numbers too
+	if vAddTime then		
+		local vNewTime = vTime + vAddTime;
+		local vDaysToAdd = math.floor(vNewTime / gCalendarSecondsPerDay);
+		vNewTime = vNewTime - (vDaysToAdd * gCalendarSecondsPerDay);
+			
+		return Calendar_AddDays(vDate, vDaysToAdd), vNewTime;		
+	else
+		return vDate, vTime;
+	end
+end
+
+function Calendar_AddDays(vDate, vDays)
+	if vDate then
+		local vMonth, vDay, vYear = Calendar_ConvertDateToMDY(vDate);
+		
+		if vDays > 0 then
+			-- Adding days;
+			local vRemaining = vDays;
+
+			while vRemaining > 0 do
+
+				local vDaysInMonth = gDaysInMonth[vMonth] - vDay;
+				
+				if vRemaining <= vDaysInMonth then
+					vDay = vDay + vRemaining;
+					vRemaining = 0;
+				else
+					vDay = 1;
+					vRemaining = vRemaining - vDaysInMonth - 1;
+					vMonth = vMonth + 1;
+					if vMonth > 12 then
+						vMonth = 1;
+						vYear = vYear + 1;
+					end
+				end				
+			end
+		elseif vDays < 0 then
+			-- Subtracting days;
+			local vRemaining = vDays * -1;
+
+			while vRemaining > 0 do
+
+				local vDaysInMonth = vDay;
+				
+				if vRemaining <= vDaysInMonth then
+					vDay = vDay - vRemaining;
+					vRemaining = 0;
+				else
+					vMonth = vMonth - 1;
+					if vMonth < 1 then
+						vMonth = 12;
+						vYear = vYear - 1;
+					end
+
+					vDay = gDaysInMonth[vMonth];
+					vRemaining = vRemaining - vDaysInMonth;				
+					
+				end				
+			end
+			
+		end
+	 
+
+		return Calendar_ConvertMDYToDate(vMonth, vDay, vYear);
+	else
+		return nil;
+	end
 end
 
 function Calendar_GetCurrentLocalDateTime()
@@ -227,13 +293,6 @@ end
 
 function Calendar_GetCurrentServerDateTime()
 	return Calendar_GetServerDateTimeFromLocalDateTime(Calendar_GetCurrentLocalDateTime());
-end
-
-function Calendar_GetCurrentDateTimeUT60()
-	local	vDate = date("!*t");
-	
-	return Calendar_ConvertMDYToDate(vDate.month, vDate.day, vDate.year) * gCalendarSecondsPerDay
-	     + Calendar_ConvertHMSToTime60(vDate.hour, vDate.min, vDate.sec);
 end
 
 function Calendar_SetCheckButtonEnable(pCheckButton, pEnabled)
@@ -344,8 +403,7 @@ function CalendarDropDown_SetSelectedValue(pDropDown, pValue)
 	-- All done if the item text got set successfully
 	
 	local	vItemText = UIDropDownMenu_GetText(pDropDown);
-	
-	if vItemText and vItemText ~= "" then
+	if vItemText and vItemText ~= "" and vItemText ~= "Custom" then
 		return;
 	end
 	
@@ -354,10 +412,9 @@ function CalendarDropDown_SetSelectedValue(pDropDown, pValue)
 	local	vRootListFrameName = "DropDownList1";
 	local	vRootListFrame = getglobal(vRootListFrameName);
 	local	vRootNumItems = vRootListFrame.numButtons;
-	
 	for vRootItemIndex = 1, vRootNumItems do
-		local	vItem = getglobal(vRootListFrameName.."Button"..vRootItemIndex);
-		
+		local	vItem = getglobal(vRootListFrameName.."Button"..vRootItemIndex);		
+
 		if vItem.hasArrow then
 			local	vSubMenuFrame = getglobal("DropDownList2");
 			
@@ -389,7 +446,7 @@ function Calendar_GetShortTimeString(pTime)
 		return nil;
 	end
 	
-	if TwentyFourHourTime then
+	if gGroupCalendar_Settings.Use24HrTime then
 		local	vHour, vMinute = Calendar_ConvertTimeToHM(pTime);
 		
 		return format(TIME_TWENTYFOURHOURS, vHour, vMinute);
@@ -623,7 +680,7 @@ function Calendar_GetEventTypeIconPath(pEventType)
 	return path;
 end
 
-function Calendar_UpdateCompiledEventIcon(pDate, pCompiledSchedule, pCutoffServerDateTime)
+function Calendar_UpdateCompiledEventIcon(pDate, pCompiledSchedule, pCutoffServerDate, pCutoffServerTime)
 	if pDate < gCalendarDisplayStartDate or pDate >= gCalendarDisplayEndDate then
 		return;
 	end
@@ -650,45 +707,49 @@ function Calendar_UpdateCompiledEventIcon(pDate, pCompiledSchedule, pCutoffServe
 		local		vGotDogEarEvent = false;
 		
 		for vEventIndex, vCompiledEvent in pairs(pCompiledSchedule) do
-			local	vPlayerIsQualified = EventDatabase_PlayerIsQualifiedForEvent(vCompiledEvent.mEvent, gGroupCalendar_PlayerLevel);
+			local	vPlayerIsQualified = EventDatabase_PlayerIsQualifiedForEvent(vCompiledEvent, gGroupCalendar_PlayerLevel);
 			
-			if vCompiledEvent.mEvent.mType then
+			if vCompiledEvent.mType then
 				-- Determine if the event is expired
 				
 				local	vEventIsExpired = false;
 				
-				if pCutoffServerDateTime
-				and vCompiledEvent.mEvent.mTime
-				and vCompiledEvent.mEvent.mDuration then
-					local	vEventStartDateTime = vCompiledEvent.mEvent.mDate * gCalendarMinutesPerDay + vCompiledEvent.mEvent.mTime;
-					local	vEventEndDateTime = vEventStartDateTime + vCompiledEvent.mEvent.mDuration;
+				if pCutoffServerDate
+				and pCutoffServerTime
+				and vCompiledEvent.mTime
+				and vCompiledEvent.mDuration then
+					local	vEventEndDate, vEventEndTime = Calendar_AddTime(vCompiledEvent.mDate, vCompiledEvent.mTime, vCompiledEvent.mDuration);
 					
-					vEventIsExpired = vEventEndDateTime <= pCutoffServerDateTime;
+					if vEventEndDate < pCutoffServerDate 
+						or (vEventEndDate == pCutoffServerDate and vEventEndTime < pCutoffServerTime) then
+
+						vEventIsExpired = true;
+					end
 				end
 				
 				-- Check for birthday events
 				
-				if vCompiledEvent.mEvent.mType == "Birth" then
+				if vCompiledEvent.mType == "Birth" then
 					vShowBirthdayIcon = true;
 				
 				-- Check for cooldown/reset events
 				
-				elseif EventDatabase_IsResetEventType(vCompiledEvent.mEvent.mType) then
+				elseif EventDatabase_IsResetEventType(vCompiledEvent.mType) then
 				
 					if vEventIsExpired then
 						if not vExpiredResetEventType then
-							vExpiredResetEventType = vCompiledEvent.mEvent.mType;
+							vExpiredResetEventType = vCompiledEvent.mType;
 						end
 					else
 						if not vResetEventType then
-							vResetEventType = vCompiledEvent.mEvent.mType;
+							vResetEventType = vCompiledEvent.mType;
 						end
 					end
 					
 				-- Check for ordinary events
 					
 				else
-					local	vIconPath = Calendar_GetEventTypeIconPath(vCompiledEvent.mEvent.mType);
+					local	vIconPath = Calendar_GetEventTypeIconPath(vCompiledEvent.mType);
 					
 					if not vPlayerIsQualified then
 						if vEventIsExpired then
@@ -716,7 +777,7 @@ function Calendar_UpdateCompiledEventIcon(pDate, pCompiledSchedule, pCutoffServe
 			
 			if (not vHasAppointment
 			or (vAppointmentIsDimmed and vPlayerIsQualified))
-			and EventDatabase_PlayerIsAttendingEvent(vCompiledEvent.mOwner, vCompiledEvent.mEvent) then
+			and EventDatabase_PlayerIsAttendingEvent(gGroupCalendar_PlayerName , vCompiledEvent) then
 				vHasAppointment = true;
 				vAppointmentIsDimmed = not vPlayerIsQualified;
 			end
@@ -800,35 +861,33 @@ end
 
 function Calendar_GetCurrentCutoffDateTime()
 	local		vCurrentDate, vCurrentTime;
-	local		vCurrentServerDateTime;
 	
 	if gGroupCalendar_Settings.ShowEventsInLocalTime then
 		local	vServerDate, vServerTime;
 		
 		vCurrentDate, vCurrentTime = Calendar_GetCurrentLocalDateTime();
 		vServerDate, vServerTime = Calendar_GetServerDateTimeFromLocalDateTime(vCurrentDate, vCurrentTime);
-		vCurrentServerDateTime = vServerDate * gCalendarMinutesPerDay + vServerTime;
 	else
 		vCurrentDate, vCurrentTime = Calendar_GetCurrentServerDateTime();
-		vCurrentServerDateTime = vCurrentDate * gCalendarMinutesPerDay + vCurrentTime;
 	end
 	
-	return vCurrentDate, vCurrentTime, vCurrentServerDateTime;
+	return vCurrentDate, vCurrentTime
 end
 
 function Calendar_UpdateEventIcons()
 	local		vIndex = gCalendarDisplayStartDayOfWeek;
-	local		vCurrentDate, vCurrentTime, vCurrentServerDateTime = Calendar_GetCurrentCutoffDateTime();
+	local		vCurrentDate, vCurrentTime = Calendar_GetCurrentCutoffDateTime();
 	
 	for vDate = gCalendarDisplayStartDate, gCalendarDisplayEndDate - 1 do
 		local	vCompiledSchedule = EventDatabase_GetCompiledSchedule(vDate);
-		local	vCutoffDateTime = nil;
+		local	vCutoffDate, vCutoffTime;
 		
 		if vDate == vCurrentDate then
-			vCutoffDateTime = vCurrentServerDateTime;
+			vCutoffDate = vCurrentDate;
+			vCutoffTime = vCurrentTime;
 		end
 		
-		Calendar_UpdateCompiledEventIcon(vDate, vCompiledSchedule, vCutoffDateTime);
+		Calendar_UpdateCompiledEventIcon(vDate, vCompiledSchedule, vCutoffDate, vCutoffTime);
 		
 		vIndex = vIndex + 1;
 	end
@@ -840,14 +899,15 @@ function Calendar_ScheduleChanged(pDate, pSchedule)
 	end
 	
 	local		vCompiledSchedule = EventDatabase_GetCompiledSchedule(pDate);
-	local		vCurrentDate, vCurrentTime, vCurrentServerDateTime = Calendar_GetCurrentCutoffDateTime();
-	local		vCutoffDateTime = nil;
+	local		vCurrentDate, vCurrentTime = Calendar_GetCurrentCutoffDateTime();
+	local		vCutoffDate, vCutoffTime;
 	
 	if pDate == vCurrentDate then
-		vCutoffDateTime = vCurrentServerDateTime;
+		vCutoffDate = vCurrentDate;
+		vCutoffTime = vCurrentTime;
 	end
 	
-	Calendar_UpdateCompiledEventIcon(pDate, vCompiledSchedule, vCutoffDateTime);
+	Calendar_UpdateCompiledEventIcon(pDate, vCompiledSchedule, vCutoffDate, vCutoffTime);
 end
 
 function Calendar_MajorDatabaseChange()
@@ -966,6 +1026,10 @@ function Calendar_GetDaysToDate(pMonth, pDay, pYear)
 end
 
 function Calendar_ConvertMDYToDate(pMonth, pDay, pYear)
+	return tonumber(tostring(pYear) .. string.format("%02d", pMonth) .. string.format("%02d", pDay));
+end
+
+function Calendar_ConvertMDYToDate_old(pMonth, pDay, pYear)
 	local		vDays = 0;
 	
 	for vYear = 2000, pYear - 1 do
@@ -976,6 +1040,24 @@ function Calendar_ConvertMDYToDate(pMonth, pDay, pYear)
 end
 
 function Calendar_ConvertDateToMDY(pDate)
+	
+	local str = tostring(pDate);
+	local yearstr = strsub(str, 1, 4);
+	local monthstr = strsub(str, 5, 6);
+	local daystr = strsub(str, 7, 8);
+	return tonumber(monthstr), tonumber(daystr), tonumber(yearstr);
+end
+
+function Calendar_ConvertOldDateToNewDate(pDate)
+	if pDate then
+		local m, d, y = Calendar_ConvertDateToMDY_old(pDate);
+		return Calendar_ConvertMDYToDate(m, d, y);
+	else
+		return nil;
+	end
+end
+
+function Calendar_ConvertDateToMDY_old(pDate)
 	local		vDays = pDate;
 	local		vYear = 2000;
 	local		vDaysInYear = Calendar_GetDaysInYear(vYear);
@@ -1060,7 +1142,7 @@ function CalendarMinuteDropDown_OnLoad(frame)
 end
 
 function CalendarAMPMDropDown_OnLoad(frame)
-	if TwentyFourHourTime then
+	if gGroupCalendar_Settings.Use24HrTime then
 		self:Hide();
 	else
 		UIDropDownMenu_Initialize(frame, CalendarAMPMDropDown_Initialize);
@@ -1151,7 +1233,7 @@ function CalendarHourDropDown_Initialize(vFrame, level, menuList)
 	--local	vFrame = getglobal(UIDROPDOWNMENU_INIT_MENU);
 	local	vStartHour, vEndHour;
 	
-	if TwentyFourHourTime then
+	if gGroupCalendar_Settings.Use24HrTime then
 		vStartHour = 0;
 		vEndHour = 23;
 	else
@@ -1285,8 +1367,8 @@ function CalendarEventTypeDropDown_AddEventGroupSubMenu(pFrame, pEventGroupName)
 
 	vItem.text = vEventTypes.Title;
 	vItem.owner = pFrame;
-	vItem.hasArrow = 1;
-	--vItem.notCheckable = 1;
+	vItem.hasArrow = true;
+	vItem.notCheckable = true;
 	vItem.value = pEventGroupName;
 	vItem.func = nil;
 
@@ -1384,7 +1466,7 @@ end
 
 function CalendarCharactersDropDown_Initialize(vFrame, level, menuList)
 	--local	vFrame = getglobal(UIDROPDOWNMENU_INIT_MENU);
-	local	vOwnedDatabases = EventDatabase_GetOwnedDatabases();
+	local	vOwnedDatabases = EventDatabase_GetPlayerDatabases();
 	
 	for vIndex, vDatabase in pairs(vOwnedDatabases) do
 		local	vItem = UIDropDownMenu_CreateInfo();
@@ -1513,6 +1595,9 @@ function CalendarStatusDropDown_Initialize(vFrame, level, menuList)
 	UIDropDownMenu_AddButton(vItem);
 	
 	vItem = {text = GroupCalendar_cStandby, value = "S", owner = vFrame, func = CalendarDropDown_OnClick};
+	UIDropDownMenu_AddButton(vItem);
+
+	vItem = {text = GroupCalendar_cDeclined, value = "N", owner = vFrame, func = CalendarDropDown_OnClick};
 	UIDropDownMenu_AddButton(vItem);
 end
 
@@ -1937,10 +2022,10 @@ function Calendar_GetLocalDateTimeFromServerDateTime(pServerDate, pServerTime)
 	
 	if vLocalTime < 0 then
 		vLocalTime = vLocalTime + gCalendarMinutesPerDay;
-		vLocalDate = vLocalDate - 1;
+		vLocalDate = Calendar_AddDays(vLocalDate, -1);
 	elseif vLocalTime >= gCalendarMinutesPerDay then
 		vLocalTime = vLocalTime - gCalendarMinutesPerDay;
-		vLocalDate = vLocalDate + 1;
+		vLocalDate = Calendar_AddDays(vLocalDate, 1);
 	end
 	
 	return vLocalDate, vLocalTime;
@@ -1956,25 +2041,29 @@ function Calendar_GetServerDateTimeFromLocalDateTime(pLocalDate, pLocalTime)
 	
 	if vServerTime < 0 then
 		vServerTime = vServerTime + gCalendarMinutesPerDay;
-		vServerDate = vServerDate - 1;
+		vServerDate = Calendar_AddDays(vServerDate, -1);
 	elseif vServerTime >= gCalendarMinutesPerDay then
 		vServerTime = vServerTime - gCalendarMinutesPerDay;
-		vServerDate = vServerDate + 1;
+		vServerDate = Calendar_AddDays(vServerDate, 1);
 	end
 	
 	return vServerDate, vServerTime;
 end
 
 function Calendar_AddOffsetToDateTime(pDate, pTime, pOffset)
-	local	vDateTime = pDate * gCalendarMinutesPerDay + pTime + pOffset;
-	
-	return math.floor(vDateTime / gCalendarMinutesPerDay), math.fmod(vDateTime, gCalendarMinutesPerDay);
+	local	vNewTime = pTime + pOffset;
+	local vNewDate = Calendar_AddDays(pDate, math.floor(vNewTime / gCalendarMinutesPerDay));
+	vNewTime = math.fmod(vNewTime, gCalendarMinutesPerDay);
+
+	return vNewDate, vNewTime;
 end
 
 function Calendar_AddOffsetToDateTime60(pDate, pTime60, pOffset60)
-	local	vDateTime60 = pDate * gCalendarSecondsPerDay + pTime60 + pOffset60;
-	
-	return math.floor(vDateTime60 / gCalendarSecondsPerDay), math.fmod(vDateTime60, gCalendarSecondsPerDay);
+	local vNewSeconds = pTime60 + pOffset60;
+	local vNewDate = Calendar_AddDays(pDate, math.floor(vNewSeconds / gCalendarSecondsPerDay));
+	vNewSeconds = math.fmod(vNewSeconds, gCalendarSecondsPerDay);
+
+	return vNewDate, vNewSeconds;
 end
 
 function Calendar_GetServerDateTimeFromSecondsOffset(pSeconds)

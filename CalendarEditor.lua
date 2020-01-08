@@ -40,24 +40,24 @@ function CalendarEditor_BuildCompiledScheduleList(pCompiledSchedule)
 			local	vEventItemOwner = getglobal(vEventItemName.."Owner");
 			local	vEventItemCircled = getglobal(vEventItemName.."Circled");
 			
-			if vCompiledEvent.mEvent.mType == "Birth" then
+			if vCompiledEvent.mType == "Birth" then
 				vEventItemTime:SetText(GroupCalendar_cBirthdayEventName);
 			else
 				local	vTime;
 				
 				if gGroupCalendar_Settings.ShowEventsInLocalTime then
-					vTime = Calendar_GetLocalTimeFromServerTime(vCompiledEvent.mEvent.mTime);
+					vTime = Calendar_GetLocalTimeFromServerTime(vCompiledEvent.mTime);
 				else
-					vTime = vCompiledEvent.mEvent.mTime;
+					vTime = vCompiledEvent.mTime;
 				end
 				
 				vEventItemTime:SetText(Calendar_GetShortTimeString(vTime));
 			end
 			
-			vEventItemTitle:SetText(EventDatabase_GetEventDisplayName(vCompiledEvent.mEvent));
-			vEventItemOwner:SetText(vCompiledEvent.mOwner);
+			vEventItemTitle:SetText(EventDatabase_GetEventDisplayName(vCompiledEvent));
+			vEventItemOwner:SetText(gGroupCalendar_PlayerName);
 			
-			if EventDatabase_PlayerIsAttendingEvent(vCompiledEvent.mOwner, vCompiledEvent.mEvent) then
+			if EventDatabase_PlayerIsAttendingEvent(gGroupCalendar_PlayerName, vCompiledEvent) then
 				vEventItemCircled:Show();
 			else
 				vEventItemCircled:Hide();
@@ -132,11 +132,11 @@ function CalendarEditor_OnHide()
 end
 
 function CalendarEditor_NewEvent()
-	if CalendarTrust_CalcUserTrustExplicit(gGroupCalendar_PlayerName) >= 2 then
-		local	vDatabase = EventDatabase_GetDatabase(gGroupCalendar_PlayerName, true);
-		local	vEvent = EventDatabase_NewEvent(vDatabase, gCalendarEditor_SelectedDate);
+	local trustlvl = CalendarTrust_CalcUserTrustExplicit(gGroupCalendar_PlayerName);
+	if trustlvl >= 2 then		
+		local	vEvent = EventDatabase_NewEvent(gGroupCalendar_GuildDatabase, gCalendarEditor_SelectedDate);
 		vEvent.mType = "Act"; -- Default to general event type
-		CalendarEventEditor_EditEvent(vDatabase, vEvent, true);
+		CalendarEventEditor_EditEvent(gGroupCalendar_GuildDatabase, vEvent, true);
 	else
 		StaticPopup_Show("CALENDAR_NOT_TRUSTED");
 	end
@@ -144,14 +144,14 @@ end
 
 function CalendarEditor_EditIndexedEvent(pIndex)
 	local		vCompiledEvent = gCalendarEditor_CompiledSchedule[pIndex];
-	local		vDatabase = EventDatabase_GetDatabase(vCompiledEvent.mOwner);
 	
-	if vDatabase then
-		if vDatabase.IsPlayerOwned
-		and not EventDatabase_IsResetEventType(vCompiledEvent.mEvent.mType) then
-			CalendarEventEditor_EditEvent(vDatabase, vCompiledEvent.mEvent, false);
+	if gGroupCalendar_GuildDatabase then
+		local trustlvl = CalendarTrust_CalcUserTrustExplicit(gGroupCalendar_PlayerName);
+
+		if not EventDatabase_IsResetEventType(vCompiledEvent.mType) and trustlvl >= 2 then
+			CalendarEventEditor_EditEvent(gGroupCalendar_GuildDatabase, vCompiledEvent, false);
 		else
-			CalendarEventViewer_ViewEvent(vDatabase, vCompiledEvent.mEvent);
+			CalendarEventViewer_ViewEvent(gGroupCalendar_GuildDatabase, vCompiledEvent);
 		end
 	end
 end

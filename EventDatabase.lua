@@ -6,10 +6,24 @@ gGroupCalendar_Database =
 	Databases = {},
 };
 
+gGroupCalendar_Database2 =
+{
+	Format = GroupCalendar_cDatabaseFormat,
+	Databases = {},
+};
+
+gGroupCalendar_PlayerDatabases = 
+{
+	Format = GroupCalendar_cDatabaseFormat,
+	Databases = {},
+}
+
+gGroupCalendar_PlayerVersions = {};
+
 gGroupCalendar_UserDatabase = nil;
+gGroupCalendar_GuildDatabase = nil;
 
 gGroupCalendar_MaximumEventAge = 30;
-gGroupCalendar_MinimumEventDate = nil;
 
 gCategoryType_Class = 1;
 gCategoryType_Role = 2;
@@ -250,90 +264,40 @@ gGroupCalendar_RaceNamesByRaceCode =
 	U = {name = GroupCalendar_cUndeadRaceName, faction="Horde"},
 };
 
-function EventDatabase_DatabaseIsVisible(pDatabase)
-	return pDatabase
+function EventDatabase_DatabaseIsVisible(pDatabase)	
+	return	pDatabase
 		and pDatabase.Realm == gGroupCalendar_RealmName
-		and (pDatabase.IsPlayerOwned
-		or (pDatabase.LocalUsers
-			and pDatabase.LocalUsers[gGroupCalendar_PlayerName]));
+		and pDatabase.Guild == gGroupCalendar_PlayerGuild
 end
 
-function EventDatabase_FixUserName(pUserName)
-	local	vUserName = strlower(pUserName);
+function EventDatabase_SetUserName(pUserName)
+	gGroupCalendar_UserDatabase = EventDatabase_GetPlayerDatabase(gGroupCalendar_PlayerName, true);
+	gGroupCalendar_UserDatabase.UserName = gGroupCalendar_PlayerName;
+	gGroupCalendar_UserDatabase.PlayerRaceCode = EventDatabase_GetRaceCodeByRace(UnitRace("PLAYER"));
 	
-	for vUserRealm, vDatabase in pairs(gGroupCalendar_Database.Databases) do
-		if vDatabase.Realm == gGroupCalendar_RealmName then
-			if strlower(vDatabase.UserName) == vUserName then
-				return vDatabase.UserName;
+	gGroupCalendar_UserDatabase.PlayerClassCode = EventDatabase_GetClassCodeByClass(UnitClass("PLAYER"));
+
+	gGroupCalendar_UserDatabase.PlayerLevel = UnitLevel("PLAYER");
+end
+
+function EventDatabase_IsPlayer(pPlayerName)	
+	
+	for vRealmUser, vDatabase in pairs(gGroupCalendar_PlayerDatabases.Databases) do
+		if EventDatabase_DatabaseIsVisible(vDatabase) then
+			if pPlayerName == vDatabase.UserName then
+				return true;
 			end
 		end
 	end
 	
-	return pUserName;
+	return false;
 end
 
-function EventDatabase_GetDatabase(pUserName, pCreate)
-	if not pUserName then
-		Calendar_DebugMessage("EventDatabase_GetDatabase: pUserName is nil");
-		return;
-	end
-	
-	local	vDatabase = gGroupCalendar_Database.Databases[gGroupCalendar_RealmName.."_"..pUserName];
-	
-	if not vDatabase then
-		if pCreate then
-			vDatabase = {};
-			
-			vDatabase.UserName = pUserName;
-			vDatabase.IsPlayerOwned = pUserName == gGroupCalendar_PlayerName;
-			vDatabase.CurrentEventID = 0;
-			vDatabase.Realm = gGroupCalendar_RealmName;
-			vDatabase.Events = {};
-			vDatabase.Changes = nil;
-			vDatabase.RSVPs = nil;
-			vDatabase.LocalUsers = {};
-			vDatabase.Guild = gGroupCalendar_PlayerGuild;
-			
-			gGroupCalendar_Database.Databases[gGroupCalendar_RealmName.."_"..pUserName] = vDatabase;
-			
-			if vDatabase.IsPlayerOwned then
-				gGroupCalendar_PlayerCharacters[gGroupCalendar_PlayerName] = true;
-			end
-		else
-			return nil;
-		end
-	end
-	
-	if not vDatabase.IsPlayerOwned
-	and (not vDatabase.LocalUsers
-	or not vDatabase.LocalUsers[gGroupCalendar_PlayerName]) then
-		if not pCreate then
-			return nil;
-		end
-		
-		if not vDatabase.LocalUsers then
-			vDatabase.LocalUsers = {};
-		end
-		
-		vDatabase.LocalUsers[gGroupCalendar_PlayerName] = true;
-	end
-	
-	if vDatabase
-	and not vDatabase.IsPlayerOwned
-	and pUserName == gGroupCalendar_PlayerName then
-		vDatabase.IsPlayerOwned = true;
-	end
-	
-	return vDatabase;
-end
-
-function EventDatabase_GetOwnedDatabases()
+function EventDatabase_GetPlayerDatabases()
 	local	vOwnedDatabases = {};
 	
-	for vRealmUser, vDatabase in pairs(gGroupCalendar_Database.Databases) do
-		if EventDatabase_DatabaseIsVisible(vDatabase)
-		and vDatabase.IsPlayerOwned
-		and vDatabase.PlayerLevel then -- Skip databases which haven't been visited since self version
+	for vRealmUser, vDatabase in pairs(gGroupCalendar_PlayerDatabases.Databases) do
+		if EventDatabase_DatabaseIsVisible(vDatabase) then
 			table.insert(vOwnedDatabases, vDatabase);
 		end
 	end
@@ -341,63 +305,113 @@ function EventDatabase_GetOwnedDatabases()
 	return vOwnedDatabases;
 end
 
-function EventDatabase_AssumeDatabase(pUserName)
-	local	vDatabase = gGroupCalendar_Database.Databases[gGroupCalendar_RealmName.."_"..pUserName];
-	
-	if not vDatabase then
-		return nil;
-	end
-	
-	if not vDatabase.IsPlayerOwned
-	and not vDatabase.LocalUsers[gGroupCalendar_PlayerName] then
-		vDatabase.LocalUsers[gGroupCalendar_PlayerName] = true;
-		GroupCalendar_MajorDatabaseChange(vDatabase);
-	end
-	
-	return vDatabase;
-end
-
-function EventDatabase_DeleteDatabase(pUserName)
-	local	vDatabase = gGroupCalendar_Database.Databases[gGroupCalendar_RealmName.."_"..pUserName];
-	
-	if not vDatabase then
+function EventDatabase_GetPlayerDatabase(pPlayerName, pCreate)
+	if not pPlayerName then
+		Calendar_DebugMessage("EventDatabase_GetPlayerDatabase: pPlayerName is nil");
 		return;
 	end
 	
-	if vDatabase.LocalUsers then
-		vDatabase.LocalUsers[gGroupCalendar_PlayerName] = nil;
-	end
+	local	vDatabase = gGroupCalendar_PlayerDatabases.Databases[gGroupCalendar_RealmName.."_"..pPlayerName];
 	
-	if Calendar_ArrayIsEmpty(vDatabase.LocalUsers) then
-		gGroupCalendar_Database.Databases[gGroupCalendar_RealmName.."_"..pUserName] = nil;
+	if not vDatabase then
+		if pCreate then
+			vDatabase = {};			
+			vDatabase.Realm = gGroupCalendar_RealmName;
+			vDatabase.Events = {};
+			vDatabase.Guild = pGuildName;
+			
+			gGroupCalendar_PlayerDatabases.Databases[gGroupCalendar_RealmName.."_"..pPlayerName] = vDatabase;			
+		else
+			return nil;
+		end
 	end
-	
-	GroupCalendar_MajorDatabaseChange(vDatabase);
+
+	return vDatabase;
 end
 
-function EventDatabase_GetChanges(pDatabase)
-	local	vChanges = pDatabase.Changes;
-	
-	if not vChanges then
-		vChanges = CalendarChanges_New();
-		pDatabase.Changes = vChanges;
+function EventDatabase_GetEventRSVP(pEvent)
+	for DBindex, vPlayerDB in pairs (EventDatabase_GetPlayerDatabases()) do
+		for vAttendeeName, vRSVP in pairs(pEvent.mAttendance) do
+			if vAttendeeName == vPlayerDB.UserName and (vRSVP.mStatus == "Y" or vRSVP.mStatus == "S") then
+				return vAttendeeName, vRSVP;
+			end
+		end
 	end
-	
-	return vChanges;
 end
 
-function EventDatabase_SetUserName(pUserName)
-	gGroupCalendar_UserDatabase = EventDatabase_GetDatabase(gGroupCalendar_PlayerName, true);
+function EventDatabase_GetDatabase(pGuildName, pCreate, pRealmName)
+	if not pGuildName then
+		Calendar_DebugMessage("EventDatabase_GetDatabase: pGuildName is nil");
+		return;
+	end
 	
-	gGroupCalendar_UserDatabase.PlayerRaceCode = EventDatabase_GetRaceCodeByRace(UnitRace("PLAYER"));
-	
-	gGroupCalendar_UserDatabase.PlayerClassCode = EventDatabase_GetClassCodeByClass(UnitClass("PLAYER"));
+	if not pRealmName then
+		pRealmName = gGroupCalendar_RealmName;
+	end
 
+	local	vDatabase = gGroupCalendar_Database2.Databases[pRealmName.."_"..pGuildName];
+	
+	if not vDatabase then
+		if pCreate then
+			vDatabase = {};
+			--vDatabase.CurrentEventID = 0;
+			vDatabase.Realm = pRealmName;
+			vDatabase.Events = {};
+			vDatabase.Guild = pGuildName;
+			
+			gGroupCalendar_Database2.Databases[pRealmName.."_"..pGuildName] = vDatabase;			
+		else
+			return nil;
+		end
+	end
+
+	return vDatabase;
+end
+
+function EventDatabase_DeleteDatabase(pGuildName)
+	local	vDatabase = gGroupCalendar_Database.Databases[gGroupCalendar_RealmName.."_"..pGuildName];
+	
+	if not vDatabase then
+		return;
+	end	
+	
+	gGroupCalendar_Database.Databases[gGroupCalendar_RealmName.."_"..pGuildName] = nil;	
+end
+
+
+function EventDatabase_GenerateGUID(vDatabase)
+	local guid = gGroupCalendar_PlayerName..tostring(time());
+	local guid_len = strlen(guid);
+	-- Check that the ID is really unique
+	local vIncrement = 1;
+	if vDatabase and vDatabase.Events then
+		for vDate, vSchedule in pairs(vDatabase.Events) do
+			for vEventIndex, vEvent in pairs(vSchedule) do
+				if strsub(vEvent.mGUID, 1, guid_len) == guid then
+					-- found a match. Get its incremented value on the end if it has one.
+					local foundIncrement = strsub(vEvent.mGUID, guid_len + 1);
+					if foundIncrement then
+						local vNewIncrement = tonumber(foundIncrement) + 1;
+						if vNewIncrement > vIncrement then
+							vIncrement = vNewIncrement;
+						end
+					end
+				end
+			end
+		end
+	end
+
+	return guid .. vIncrement;
 end
 
 function EventDatabase_NewEvent(pDatabase, pDate)
 	local	vEvent = {};
 	
+	vEvent.mStatus = "A";
+	local	vDate, vTime60 = EventDatabase_GetServerDateTime60Stamp();	
+	vEvent.mChangedDate = vDate;
+	vEvent.mChangedTime = vTime60;
+
 	vEvent.mType = nil;
 	vEvent.mTitle = nil;
 	
@@ -415,8 +429,8 @@ function EventDatabase_NewEvent(pDatabase, pDate)
 	vEvent.mManualConfirm = false;
 	vEvent.mLimits = nil;
 	
-	pDatabase.CurrentEventID = pDatabase.CurrentEventID + 1;
-	vEvent.mID = pDatabase.CurrentEventID;
+	vEvent.mGUID = EventDatabase_GenerateGUID(pDatabase);
+	vEvent.mAttendance = {};
 	
 	return vEvent;
 end
@@ -427,12 +441,8 @@ function EventDatabase_AddEvent(pDatabase, pEvent, pSilent)
 	if vSchedule == nil then
 		vSchedule = {};
 		pDatabase.Events[pEvent.mDate] = vSchedule;
-	end
-	
-	if pEvent.mID > pDatabase.CurrentEventID then
-		pDatabase.CurrentEventID =  pEvent.mID;
-	end
-	
+	end	
+		
 	-- append the event
 	table.insert(vSchedule, pEvent);
 	
@@ -455,64 +465,85 @@ function EventDatabase_GetCompiledSchedule(pDate)
 			vDate2 = pDate + 1;
 		elseif gGroupCalendar_ServerTimeZoneOffset > 0 then
 			vDate2 = pDate - 1;
-		end
+		end		
 		
-		for vRealmUser, vDatabase in pairs(gGroupCalendar_Database.Databases) do
-			if EventDatabase_DatabaseIsVisible(vDatabase) then
-				for vDateIndex = 1, 2 do
-					local	vDate;
+		for vDateIndex = 1, 2 do
+			local	vDate;
 					
-					if vDateIndex == 1 then
-						vDate = pDate;
-					else
-						if not vDate2 then
-							break;
-						end
+			if vDateIndex == 1 then
+				vDate = pDate;
+			else
+				if not vDate2 then
+					break;
+				end
 						
-						vDate = vDate2;
-					end
+				vDate = vDate2;
+			end
 					
-					local	vSchedule = vDatabase.Events[vDate];
+			if gGroupCalendar_UserDatabase then
+				local	vSchedule = gGroupCalendar_UserDatabase.Events[vDate];
 					
-					if vSchedule then
-						for vIndex, vEvent in pairs(vSchedule) do
-							-- Calculate the local date/time and see if it's still the right date
+				if vSchedule then
+					for vIndex, vEvent in pairs(vSchedule) do						
+						-- Calculate the local date/time and see if it's still the right date							
+						local	vLocalDate, vLocalTime = Calendar_GetLocalDateTimeFromServerDateTime(vDate, vEvent.mTime);
 							
+						if vLocalDate == pDate then								
+							table.insert(vCompiledSchedule, vEvent);
+						end						
+					end
+				end
+			end
+
+			if gGroupCalendar_GuildDatabase then
+				local	vSchedule = gGroupCalendar_GuildDatabase.Events[vDate];
+					
+				if vSchedule then
+					for vIndex, vEvent in pairs(vSchedule) do
+						if vEvent.mStatus ~= "D" then
+							-- Calculate the local date/time and see if it's still the right date							
 							local	vLocalDate, vLocalTime = Calendar_GetLocalDateTimeFromServerDateTime(vDate, vEvent.mTime);
 							
-							if vLocalDate == pDate then
-								local	vCompiledEvent = {mOwner = vDatabase.UserName, mEvent = vEvent};
-								
-								table.insert(vCompiledSchedule, vCompiledEvent);
+							if vLocalDate == pDate then								
+								table.insert(vCompiledSchedule, vEvent);
 							end
 						end
 					end
 				end
 			end
 		end
-	else
-		for vRealmUser, vDatabase in pairs(gGroupCalendar_Database.Databases) do
-			if EventDatabase_DatabaseIsVisible(vDatabase) then
-				local	vSchedule = vDatabase.Events[pDate];
+	else		
+		if gGroupCalendar_UserDatabase then
+			local	vSchedule = gGroupCalendar_UserDatabase.Events[pDate];
 				
-				if vSchedule then
-					for vIndex, vEvent in pairs(vSchedule) do
-						local	vCompiledEvent = {mOwner = vDatabase.UserName, mEvent = vEvent};
-						
-						table.insert(vCompiledSchedule, vCompiledEvent);
+			if vSchedule then
+				for vIndex, vEvent in pairs(vSchedule) do
+					table.insert(vCompiledSchedule, vEvent);
+				end
+			end
+		end
+
+		if gGroupCalendar_GuildDatabase then
+			local	vSchedule = gGroupCalendar_GuildDatabase.Events[pDate];
+				
+			if vSchedule then
+				for vIndex, vEvent in pairs(vSchedule) do
+					if vEvent.mStatus ~= "D" then
+						table.insert(vCompiledSchedule, vEvent);
 					end
 				end
 			end
 		end
+		
 	end
 	
 	table.sort(vCompiledSchedule, EventDatabase_CompareCompiledEvents);
-	
+
 	return vCompiledSchedule;
 end
 
 function EventDatabase_CompareCompiledEvents(pCompiledEvent1, pCompiledEvent2)
-	return EventDatabase_CompareEvents(pCompiledEvent1.mEvent, pCompiledEvent2.mEvent);
+	return EventDatabase_CompareEvents(pCompiledEvent1, pCompiledEvent2);
 end
 
 function EventDatabase_GetEventDisplayName(pEvent)
@@ -527,6 +558,20 @@ function EventDatabase_GetEventDisplayName(pEvent)
 		else
 			return "";
 		end
+	end
+end
+
+function EventDatabase_SecondDateTimeNewer(pDate1, pTime1, pDate2, pTime2)
+	if not pDate2 then
+		return false;
+	elseif not pDate1 and pDate2 then
+		return true;
+	elseif pDate2 > pDate1 then
+		return true;
+	elseif pDate2 == pDate1 and pTime2 >= pTime1 then
+		return true;
+	else 
+		return false;
 	end
 end
 
@@ -577,10 +622,10 @@ function EventDatabase_ScheduleIsEmpty(pSchedule)
 	return true;
 end
 
-function EventDatabase_FindEventByID(pDatabase, pEventID)
+function EventDatabase_FindEventByID(pDatabase, pGUID)
 	for vDate, vSchedule in pairs(pDatabase.Events) do
 		for vEventIndex, vEvent in pairs(vSchedule) do
-			if vEvent.mID == pEventID then
+			if vEvent.mGUID == pGUID then
 				return vEvent, vDate;
 			end
 		end
@@ -589,47 +634,68 @@ function EventDatabase_FindEventByID(pDatabase, pEventID)
 	return nil;
 end
 
-function EventDatabase_DeleteEvent(pDatabase, pEvent, pSilent)
-	return EventDatabase_DeleteEventFromDate(pDatabase, pEvent.mDate, pEvent, pSilent);
+function EventDatabase_DeleteEvent(pDatabase, pEvent, vForce)
+	if not vForce and not pEvent.mPrivate then
+		-- Mark the event as deleted and remove the attendance
+		local	vDate, vTime60 = EventDatabase_GetServerDateTime60Stamp();	
+		pEvent.mStatus = "D";
+		pEvent.mChangedTime = vTime60;
+		pEvent.mChangedDate = vDate;
+		pEvent.mAttendance = {};
+	
+		CalendarNetwork_SendEventUpdate(pEvent);
+		--CalendarNetwork_RemovingEvent(pDatabase, pEvent);	
+		-- Notify that the schedule changed
+	
+		GroupCalendar_ScheduleChanged(pDatabase, pEvent.mDate);
+	
+		return true;
+	else
+		local pDate = pEvent.mDate;
+		local	vSchedule = pDatabase.Events[pDate];
+	
+		if vSchedule == nil then
+			return false;
+		end
+	
+		-- Find the event index	
+		local	vEventIndex = EventDatabase_GetEventIndex(vSchedule, pEvent);
+	
+		if vEventIndex == 0 then			
+			return false;
+		end	
+	
+		-- Remove any pending RSVPs for the event
+		if pEvent.mAttendance then
+			pEvent.mAttendance = {};
+		end
+		--EventDatabase_RemoveAllRSVPsForEvent(pDatabase, pEvent, false);
+	
+		-- Remove the event
+	
+		table.remove(vSchedule, vEventIndex);
+	
+		if EventDatabase_ScheduleIsEmpty(vSchedule) then
+			pDatabase.Events[pDate] = nil;
+			vSchedule = nil;
+		end
+	
+		-- Notify that the schedule changed
+	
+		GroupCalendar_ScheduleChanged(pDatabase, pDate);
+	
+		return true;
+	end
 end
 
-function EventDatabase_DeleteEventFromDate(pDatabase, pDate, pEvent, pSilent)
-	-- Get the event's schedule
+function EventDatabase_CancelEvent(pDatabase, pEvent)
+	-- Mark the event as deleted and remove the attendance
+	local	vDate, vTime60 = EventDatabase_GetServerDateTime60Stamp();	
+	pEvent.mStatus = "C";
+	pEvent.mChangedTime = vTime60;
+	pEvent.mChangedDate = vDate;
 	
-	local	vSchedule = pDatabase.Events[pDate];
-	
-	if vSchedule == nil then
-		return false;
-	end
-	
-	-- Find the event index
-	
-	local	vEventIndex = EventDatabase_GetEventIndex(vSchedule, pEvent);
-	
-	if vEventIndex == 0 then
-		return false;
-	end
-	
-	-- Notify that the event is being removed
-	
-	if not pSilent
-	and pDatabase.IsPlayerOwned then
-		CalendarNetwork_RemovingEvent(pDatabase, pEvent);
-	end
-	
-	-- Remove any pending RSVPs for the event
-	
-	EventDatabase_RemoveAllRSVPsForEvent(pDatabase, pEvent, false);
-	
-	-- Remove the event
-	
-	table.remove(vSchedule, vEventIndex);
-	
-	if EventDatabase_ScheduleIsEmpty(vSchedule) then
-		pDatabase.Events[pDate] = nil;
-		vSchedule = nil;
-	end
-	
+	--CalendarNetwork_RemovingEvent(pDatabase, pEvent);	
 	-- Notify that the schedule changed
 	
 	GroupCalendar_ScheduleChanged(pDatabase, pDate);
@@ -688,825 +754,33 @@ function EventDatabase_EventAdded(pDatabase, pEvent)
 	GroupCalendar_ScheduleChanged(pDatabase, pEvent.mDate);
 	
 	-- Notify the network	
-	CalendarNetwork_NewEvent(pDatabase, pEvent);
+	--CalendarNetwork_NewEvent(pDatabase, pEvent);
 end
 
 function EventDatabase_EventChanged(pDatabase, pEvent, pChangedFields)
-	-- If the date changed then move the event to the appropriate slot
-	
+	-- If the date changed then move the event to the appropriate slot	
 	if pChangedFields and pChangedFields.mDate then
-		local	vEvent, vDate = EventDatabase_FindEventByID(pDatabase, pEvent.mID);
+		local	vEvent, vDate = EventDatabase_FindEventByID(pDatabase, pEvent.mGUID);
 		
 		if vDate ~= pEvent.mDate then
-			EventDatabase_DeleteEventFromDate(pDatabase, vDate, pEvent, true);
+			EventDatabase_DeleteEvent(pDatabase, pEvent, true);
 			EventDatabase_AddEvent(pDatabase, pEvent, true);
 		end
 	end
-	
-	-- Update pending RSVPs based on event contents
-	
-	if pChangedFields and pChangedFields.mAttendance then
-		if pChangedFields.mAttendance.op == "UPD" then
-			for vAttendeeName, vRSVPString in pairs(pChangedFields.mAttendance.val) do
-				local	vDatabase = EventDatabase_GetDatabase(vAttendeeName, false);
-				
-				if vDatabase then
-					-- Remove any older (or same) RSVP for self person
-					
-					local	vRSVP = EventDatabase_UnpackEventRSVP(pDatabase.UserName, vAttendeeName, pEvent.mID, vRSVPString);
-					EventDatabase_RemoveOlderRSVP(vDatabase, vRSVP)
-				end
-			end
-		else
-			Calendar_DumpArray("EventDatabase_EventChanged: ", pChangedFields);
-			Calendar_DebugMessage("EventDatabase_EventChanged: Attendance op "..pChangedFields.mAttendance.op.." not recognized");
-		end
-	end
-	
-	-- Notify the calendar
-	
+		
+	-- Notify the calendar	
 	GroupCalendar_EventChanged(pDatabase, pEvent, pChangedFields);
 	
-	-- Notify the network
-	
+	-- Notify the network	
 	CalendarNetwork_EventChanged(pDatabase, pEvent, pChangedFields);
 end
 
-StaticPopupDialogs["CALENDAR_SYNCH_WARNING"] = {
-	text = GroupCalendar_cChangesDelayedMessage,
-	button1 = "OKAY",
-	OnAccept = function() end,
-	OnCancel = function() end,
-	timeout = 0,
-	whileDead = 1,
-	hideOnEscape = 1,
-	showAlert = 1,
-};
-
-function EventDatabase_GetCurrentChangeList(pDatabase)	
-	local	vChanges = EventDatabase_GetChanges(pDatabase);
-	local	vChangeList, vRevisionChanged = CalendarChanges_GetCurrentChangeList(vChanges);
-	
-	if vRevisionChanged and pDatabase.IsPlayerOwned then	
-		if CalendarNetwork_CanSendSelfUpdates() then
-			CalendarNetwork_ProcessChangesRFU(vChanges, "DB", true, 2, pDatabase.UserName, vChanges.ID, vChanges.Revision - 1, vChanges.Revision - 1);
-		else
-			StaticPopup_Show("CALENDAR_SYNCH_WARNING");
-		end
-		CalendarNetwork_QueueDatabaseNOU(pDatabase);
-	end
-	
-	return vChangeList;
-end
-
-function EventDatabase_GetDBRevisionPath(pUserName, pDatabaseID, pRevision, pAuthRevision)
-	return CalendarChanges_GetRevisionPath("DB", pUserName, pDatabaseID, pRevision, pAuthRevision);
-end
-
-function EventDatabase_GetRSVPRevisionPath(pUserName, pDatabaseID, pRevision, pAuthRevision)
-	return CalendarChanges_GetRevisionPath("RAT", pUserName, pDatabaseID, pRevision, pAuthRevision);
-end
-
 function EventDatabase_GetEventPath(pEvent)
-	return "EVT:"..pEvent.mID.."/";
+	return "EVT:"..pEvent.mGUID.."/";
 end
 
-function EventDatabase_GenerateEventChangeString(pOpcode, pEvent, pEventPath)
-	local		vChange;
-	
-	-- Basic fields: type, date, time, duration, minLevel, maxLevel
-
-	vChange = pEventPath..pOpcode..":";
-	
-	if pEvent.mType ~= nil then
-		vChange = vChange..pEvent.mType..",";
-	else
-		vChange = vChange..",";
-	end
-
-	if pEvent.mDate ~= nil then
-		vChange = vChange..pEvent.mDate..",";
-	else
-		vChange = vChange..",";
-	end
-
-	if pEvent.mTime ~= nil then
-		vChange = vChange..pEvent.mTime..",";
-	else
-		vChange = vChange..",";
-	end
-
-	if pEvent.mDuration ~= nil then
-		vChange = vChange..pEvent.mDuration..",";
-	else
-		vChange = vChange..",";
-	end
-
-	if pEvent.mMinLevel ~= nil then
-		vChange = vChange..pEvent.mMinLevel..",";
-	else
-		vChange = vChange..",";
-	end
-
-	if pEvent.mMaxLevel ~= nil then
-		vChange = vChange..pEvent.mMaxLevel;
-	end
-	
-	return vChange;
-end
-
-function EventDatabase_AppendNewEvent(pChangeList, pEvent, pEventPath)
-	-- Basic fields: type, date, time, duration, minLevel, maxLevel
-	
-	table.insert(pChangeList, EventDatabase_GenerateEventChangeString("NEW", pEvent, pEventPath));
-	
-	-- Title
-	
-	if pEvent.mTitle then
-		table.insert(pChangeList, pEventPath.."TIT:"..pEvent.mTitle);
-	end
-
-	if pEvent.mDescription ~= nil then
-		table.insert(pChangeList, pEventPath.."DSC:"..pEvent.mDescription);
-	end
-	
-	if pEvent.mManualConfirm then
-		table.insert(pChangeList, pEventPath.."CNF:MAN");
-	elseif pEvent.mLimits then
-		local	vConfConfigString = "CNF:AUT";
-		
-		if pEvent.mLimits.mMaxAttendance then
-			vConfConfigString = vConfConfigString.."/MAX:"..pEvent.mLimits.mMaxAttendance;
-		end
-		
-		if pEvent.mLimits.mClassLimits then
-			for vClassCode, vClassLimit in pairs(pEvent.mLimits.mClassLimits) do
-				vConfConfigString = vConfConfigString.."/"..vClassCode..":";
-				
-				if vClassLimit.mMin then
-					vConfConfigString = vConfConfigString..vClassLimit.mMin;
-				end
-				
-				if vClassLimit.mMax then
-					vConfConfigString = vConfConfigString..","..vClassLimit.mMax;
-				end
-			end
-		end
-		
-		table.insert(pChangeList, pEventPath..vConfConfigString);
-	end
-
-	-- Add attendance info
-	
-	if pEvent.mAttendance then
-		for vAttendeeName, vAttendance in pairs(pEvent.mAttendance) do
-			table.insert(pChangeList, pEventPath.."ATT:"..vAttendeeName..","..vAttendance);
-		end
-	end
-	
-	table.insert(pChangeList, pEventPath.."END");
-end
-
-function EventDatabase_AppendEventUpdate(pChangeList, pEvent, pEventPath, pChangedFields)
-	local	vNeedUpdateWrapper = false;
-	
-	-- See if fields sent in the NEW or UPD wrapper are being changed.  If so, the
-	-- wrapper needs to be sent, otherwise it can be omitted to save bandwidth
-	
-	if pChangedFields.mType
-	or pChangedFields.mDate
-	or pChangedFields.mTime
-	or pChangedFields.mDuration
-	or pChangedFields.mMinLevel
-	or pChangedFields.mMaxLevel then
-		vNeedUpdateWrapper = true;
-	end
-
-	-- Basic fields: type, date, time, duration, minLevel, maxLevel
-	
-	if vNeedUpdateWrapper then
-		table.insert(pChangeList, EventDatabase_GenerateEventChangeString("UPD", pEvent, pEventPath));
-	end
-	
-	-- Title
-	
-	if pChangedFields.mTitle ~= nil then
-		if pEvent.mTitle then
-			table.insert(pChangeList, pEventPath.."TIT:"..pEvent.mTitle);
-		end
-	end
-	
-	if pChangedFields.mDescription ~= nil then
-		if pEvent.mDescription ~= nil then
-			table.insert(pChangeList, pEventPath.."DSC:"..pEvent.mDescription);
-		end
-	end
-	
-	if pChangedFields.mManualConfirm ~= nil
-	or pChangedFields.mLimits ~= nil then
-		if pEvent.mManualConfirm then
-			table.insert(pChangeList, pEventPath.."CNF:MAN");
-		elseif pEvent.mLimits then
-			local	vConfConfigString = "CNF:AUT";
-			
-			if pEvent.mLimits.mMaxAttendance then
-				vConfConfigString = vConfConfigString.."/MAX:"..pEvent.mLimits.mMaxAttendance;
-			end
-			
-			if pEvent.mLimits.mClassLimits then
-				for vClassCode, vClassLimit in pairs(pEvent.mLimits.mClassLimits) do
-					vConfConfigString = vConfConfigString.."/"..vClassCode..":";
-					
-					if vClassLimit.mMin then
-						vConfConfigString = vConfConfigString..vClassLimit.mMin;
-					end
-					
-					if vClassLimit.mMax then
-						vConfConfigString = vConfConfigString..","..vClassLimit.mMax;
-					end
-				end
-			end
-			
-			table.insert(pChangeList, pEventPath..vConfConfigString);
-		end
-	end
-
-	if pChangedFields.mAttendance ~= nil then
-		if pChangedFields.mAttendance.op == "UPD" then
-			for vAttendeeName, vEventRSVPString in pairs(pChangedFields.mAttendance.val) do
-				local	vAttendeeRSVPString = pEvent.mAttendance[vAttendeeName];
-				local	vAttendeePath = pEventPath.."ATT:"..vAttendeeName;
-				
-				if not vAttendeeRSVPString then
-					table.insert(pChangeList, vAttendeePath);
-				else
-					table.insert(pChangeList, vAttendeePath..","..vAttendeeRSVPString);
-				end
-			end
-		else
-			Calendar_DebugMessage("EventDatabase_AppendEventUpdate: Unknown attendance opcode "..pChangedFields.mAttendance.op);
-		end
-	end
-	
-	if vNeedUpdateWrapper then
-		table.insert(pChangeList, pEventPath.."END");
-	end
-end
-
-function EventDatabase_RemoveEventChanges(pDatabase, pEvent)
-	-- Nothing to do if there are no changes
-	
-	if not pDatabase.Changes then
-		return;
-	end
-	
-	-- Remove all prior occurances for this event
-	
-	for vRevision, vChangeList in pairs(pDatabase.Changes.ChangeList) do
-		local	vEventPath = EventDatabase_GetEventPath(pEvent);
-		local	vPathLength = string.len(vEventPath);
-		
-		local	vNumChanges = table.getn(vChangeList);
-		local	vChangeIndex = 1;
-		
-		while vChangeIndex <= vNumChanges do
-			vChange = vChangeList[vChangeIndex];
-			
-			if vChange ~= nil
-			and string.sub(vChange, 1, vPathLength) == vEventPath then
-				table.remove(vChangeList, vIndex);
-				vNumChanges = vNumChanges - 1;
-			else
-				vChangeIndex = vChangeIndex + 1;
-			end
-		end
-		
-		if vNumChanges == 0 then
-			pDatabase.Changes.ChangeList[vRevision] = nil;
-		end
-	end
-end
-
-function EventDatabase_RebuildPlayerDatabases()
-	for vRealmUser, vDatabase in pairs(gGroupCalendar_Database.Databases) do
-		if vDatabase.IsPlayerOwned
-		and vDatabase.Realm == gGroupCalendar_RealmName then
-			EventDatabase_RebuildDatabase(vDatabase);
-		end
-	end -- for vRealmUser, vDatabase
-end
-
-----------------------------------------
--- EventDatabase_CalculateHighestUsedEventID
---     Calculates the highest event ID in use by the database
-----------------------------------------
-
-function EventDatabase_CalculateHighestUsedEventID(pDatabase)
-	local	vHighestID = nil;
-	
-	for vDate, vSchedule in pairs(pDatabase.Events) do
-		for vEventIndex, vEvent in pairs(vSchedule) do
-			if not vHighestID
-			or vHighestID < vEvent.mID then
-				vHighestID = vEvent.mID;
-			end
-		end -- for vEventIndex, vEvent
-	end -- for vDate, vSchedule
-end
-
-----------------------------------------
--- EventDatabase_RepairEventIDs
---     Scans the database an ensures that every event has
---     a unique ID
-----------------------------------------
-
-function EventDatabase_RepairEventIDs(pDatabase)
-	local	vCurrentID = EventDatabase_CalculateHighestUsedEventID(pDatabase);
-	
-	-- Just return if there are no events
-	
-	if not vCurrentID then
-		return;
-	end
-	
-	-- Adjust the highest ID if it is lower than current ID
-	
-	if vCurrentID < pDatabase.CurrentEventID then
-		vCurrentID = pDatabase.CurrentEventID;
-	end
-	
-	-- Start making a map of used event IDs and
-	-- use up the next ID if a collision is detected
-	
-	local	vUsedIDs = {};
-	
-	for vDate, vSchedule in pairs(pDatabase.Events) do
-		for vEventIndex, vEvent in pairs(vSchedule) do
-			if not vUsedIDs[vEvent.mID] then
-				vUsedIDs[vEvent.mID] = true;
-			else
-				-- Collision
-				
-				vCurrentID = vCurrentID + 1;
-				vEvent.mID = vCurrentID;
-			end
-		end -- for vEventIndex, vEvent
-	end -- for vDate, vSchedule
-	
-	-- Save the new current ID
-	
-	pDatabase.CurrentEventID = vCurrentID;
-end
-
-----------------------------------------
--- EventDatabase_RebuildDatabase
---     Builds a new change history from the existing events
-----------------------------------------
-
-function EventDatabase_RebuildDatabase(pDatabase)
-	-- Repair event IDs
-	
-	EventDatabase_RepairEventIDs(pDatabase);
-	
-	-- Clear the revisions
-	
-	pDatabase.Changes = nil;
-	
-	-- Start a new revision
-	
-	local	vChangeList = nil;
-	
-	-- Add each event to the revision
-	
-	for vDate, vSchedule in pairs(pDatabase.Events) do
-		for vEventIndex, vEvent in pairs(vSchedule) do
-			if not vChangeList then
-				vChangeList = EventDatabase_GetCurrentChangeList(pDatabase);
-			end
-			
-			local	vEventPath = EventDatabase_GetEventPath(vEvent);
-			
-			if not vEvent.mPrivate then
-				EventDatabase_AppendNewEvent(
-						vChangeList,
-						vEvent,
-						vEventPath);
-			end
-		end
-	end
-	
-	if not vChangeList then
-		CalendarNetwork_SendEmptyChanges(pDatabase.Changes, "DB", pDatabase.UserName)
-	end
-	
-	-- Compact the RSVP list and notify that they're updated
-	
-	EventDatabase_RebuildRSVPs(pDatabase);
-	
-	-- Notify the calendar that there was a major change
-	
-	GroupCalendar_MajorDatabaseChange(pDatabase);
-end
-
-function EventDatabase_RebuildRSVPs(pDatabase)
-	if pDatabase.RSVPs then
-		CalendarChanges_Compact(pDatabase.RSVPs);
-	end
-	
-	if not CalendarChanges_IsEmpty(pDatabase.RSVPs) then
-		CalendarNetwork_QueueRSVPNOU(pDatabase);
-	else
-		CalendarNetwork_SendEmptyChanges(pDatabase.RSVPs, "RAT", pDatabase.UserName)
-	end
-end
-
-----------------------------------------
--- EventDatabase_ReconstructDatabase
---     Reconstructs the event records by re-playing the
---     change history
-----------------------------------------
-
-function EventDatabase_ReconstructDatabase(pDatabase)
-	-- Clear the events
-	
+function EventDatabase_PurgeDatabase(pDatabase)
 	pDatabase.Events = {};
-	
-	-- Execute each change
-	
-	if pDatabase.Changes then
-		for vRevision, vChangeList in pairs(pDatabase.Changes.ChangeList) do
-			if gGroupCalendar_Settings.DebugReconstruct then
-				Calendar_DebugMessage("EventDatabase_ReconstructDatabase: Reconstruction revision "..vRevision.." in "..pDatabase.UserName);
-			end
-			
-			EventDatabase_ExecuteChangeList(pDatabase, vChangeList, false);
-		end
-	end
-	
-	GroupCalendar_MajorDatabaseChange(pDatabase);
-end
-
-function EventDatabase_ReprocessAllRSVPs(pDatabase)
-	local		vRSVPs = pDatabase.RSVPs;
-	
-	if not vRSVPs then	
-		return;
-	end
-
-	for vRevision, vChangeList in pairs(vRSVPs.ChangeList) do
-		EventDatabase_ExecuteRSVPChangeList(pDatabase, vChangeList, false);
-	end
-end
-
-function EventDatabase_ExecuteRSVPChangeList(pDatabase, pChangeList, pNotifyChanges)
-	pChangeList.IsOpen = nil; -- Make sure IsOpen is cleared, a bug may have caused it to remain open
-	
-	local	vIndex = 1;
-	local	vNumChanges = table.getn(pChangeList);
-	
-	while vIndex <= vNumChanges do
-		local	vChange = pChangeList[vIndex];
-		
-		if vChange then
-			local	vCommands = CalendarNetwork_ParseCommandSubString("/"..vChange);
-			
-			if not vCommands then
-				Calendar_DebugMessage("Invalid change entry found in RSVPs for "..pDatabase.UserName);
-				return;
-			end
-			
-			local	vOpcode = vCommands[1].opcode;
-			local	vOperands = vCommands[1].operands;
-			
-			table.remove(vCommands, 1);
-			
-			if vOpcode == "EVT" then
-				local	vRSVP = EventDatabase_UnpackRSVPFieldArray(vOperands, pDatabase.UserName);
-				
-				if EventDatabase_ProcessRSVP(pDatabase, vRSVP) then
-					-- Processing the RSVP may have removed it from the list already so
-					-- update the length and see if the request is still there.  Remove
-					-- it if it is
-					
-					vNumChanges = table.getn(pChangeList);
-					
-					if vIndex <= vNumChanges
-					and vChange == pChangeList[vIndex] then
-						table.remove(pChangeList, vIndex);
-					end
-					
-					-- Bump the index back so that it ends up staying the same after the
-					-- increment later in the loop
-					
-					vIndex = vIndex - 1;
-				end
-			elseif gGroupCalendar_Settings.DebugErrors then
-				Calendar_DebugMessage("GroupCalendar: Unknown RSVP opcode "..vOpcode); 
-			end
-		end
-		
-		vIndex = vIndex + 1;
-	end
-end
-
-function EventDatabase_ExecuteChangeList(pDatabase, pChangeList, pNotifyChanges)
-	local	vEvent = nil;
-	local	vNewEvent = false;
-	local	vQuickEvent = false;
-	local	vEventDateChanged = false;
-
-	pChangeList.IsOpen = nil; -- Make sure IsOpen is cleared, a bug may have caused it to remain open
-	
-	for vIndex, vChange in pairs(pChangeList) do
-		local	vCommands = CalendarNetwork_ParseCommandSubString("/"..vChange);
-		
-		if not vCommands then
-			Calendar_DebugMessage("Invalid change entry found in database for "..pDatabase.UserName);
-			return;
-		end
-		
-		local	vOpcode = vCommands[1].opcode;
-		local	vOperands = vCommands[1].operands;
-		
-		table.remove(vCommands, 1);
-		
-		if vOpcode == "EVT" then
-			local	vEventID = tonumber(vOperands[1]);
-			
-			local	vEvtOpcode = vCommands[1].opcode;
-			local	vEvtOperands = vCommands[1].operands;
-			
-			table.remove(vCommands, 1);
-		
-			if vEvtOpcode == "NEW" then
-				if vEvent and gGroupCalendar_Settings.DebugErrors then
-					Calendar_DebugMessage("GroupCalendar: Starting new event while previous event is still open in database for "..pDatabase.UserName);
-				end
-				
-				if gGroupCalendar_Settings.Debug then
-					Calendar_DebugMessage("Adding event "..vEventID.." for "..pDatabase.UserName);
-				end
-				
-				if not EventDatabase_FindEventByID(pDatabase, vEventID) then
-					local	vDate = tonumber(vEvtOperands[2]);
-					
-					if vDate >= gGroupCalendar_MinimumEventDate then
-						-- Create the event record
-						
-						vEvent = {};
-						vNewEvent = true;
-						
-						vEvent.mID = vEventID;
-						vEvent.mType = vEvtOperands[1];
-						vEvent.mDate = tonumber(vEvtOperands[2]);
-						vEvent.mTime = tonumber(vEvtOperands[3]);
-						vEvent.mDuration = tonumber(vEvtOperands[4]);
-						vEvent.mMinLevel = tonumber(vEvtOperands[5]);
-						vEvent.mMaxLevel = tonumber(vEvtOperands[6]);
-						
-						EventDatabase_AddEvent(pDatabase, vEvent, true);
-					end
-				elseif gGroupCalendar_Settings.DebugErrors then
-					Calendar_DebugMessage("GroupCalendar: Event "..vEventID.." already exists in database for "..pDatabase.UserName);
-				end
-				
-			elseif vEvtOpcode == "UPD" then
-				if vEvent and gGroupCalendar_Settings.DebugErrors then
-					Calendar_DebugMessage("GroupCalendar: Updating event while previous event is still open in database for "..pDatabase.UserName);
-				end
-				
-				vEvent = EventDatabase_FindEventByID(pDatabase, vEventID);
-				
-				if vEvent then
-					local	vDate = vEvent.mDate;
-					
-					vEvent.mID = vEventID;
-					vEvent.mType = vEvtOperands[1];
-					vEvent.mDate = tonumber(vEvtOperands[2]);
-					vEvent.mTime = tonumber(vEvtOperands[3]);
-					vEvent.mDuration = tonumber(vEvtOperands[4]);
-					vEvent.mMinLevel = tonumber(vEvtOperands[5]);
-					vEvent.mMaxLevel = tonumber(vEvtOperands[6]);
-					
-					vNewEvent = false;
-					vEventDateChanged = vEvent.mDate ~= vDate;
-				elseif gGroupCalendar_Settings.DebugErrors then
-					Calendar_DebugMessage("GroupCalendar: Event "..vEventID.." not found in database for "..pDatabase.UserName);
-				end
-			
-			elseif vEvtOpcode == "TIT" then
-				if not vEvent then
-					vEvent = EventDatabase_FindEventByID(pDatabase, vEventID);
-					vQuickEvent = true;
-				end
-				
-				if vEvent then
-					vEvent.mTitle = vEvtOperands[1];
-				elseif gGroupCalendar_Settings.DebugErrors then
-					Calendar_DebugMessage("GroupCalendar: Event "..vEventID.." not found in database for "..pDatabase.UserName);
-				end
-				
-			elseif vEvtOpcode == "DSC" then
-				if not vEvent then
-					vEvent = EventDatabase_FindEventByID(pDatabase, vEventID);
-					vQuickEvent = true;
-				end
-				
-				if vEvent then
-					vEvent.mDescription = vEvtOperands[1];
-				elseif gGroupCalendar_Settings.DebugErrors then
-					Calendar_DebugMessage("GroupCalendar: Event "..vEventID.." not found in database for "..pDatabase.UserName);
-				end
-			
-			elseif vEvtOpcode == "CNF" then
-				if not vEvent then
-					vEvent = EventDatabase_FindEventByID(pDatabase, vEventID);
-					vQuickEvent = true;
-				end
-				
-				if vEvent then
-					if vEvtOperands[1] == "MAN" then
-						vEvent.mManualConfirm = true;
-					
-					elseif vEvtOperands[1] == "AUT" then
-						vEvent.mManualConfirm = nil;
-						vEvent.mLimits = {mClassLimits = {}};
-						
-						while table.getn(vCommands) > 0 do
-							local	vCNFOpcode = vCommands[1].opcode;
-							local	vCNFOperands = vCommands[1].operands;
-							
-							table.remove(vCommands, 1);
-							
-							if vCNFOpcode == "MAX" then
-								vEvent.mLimits.mMaxAttendance = tonumber(vCNFOperands[1]);
-							else
-								local	vMin = tonumber(vCNFOperands[1]);
-								local	vMax = tonumber(vCNFOperands[2]);
-								
-								vEvent.mLimits.mClassLimits[vCNFOpcode] = {mMin = vMin, mMax = vMax};
-							end
-						end
-						
-					elseif gGroupCalendar_Settings.DebugErrors then
-						Calendar_DebugMessage("GroupCalendar: Unknown event configuration "..vEvtOperands[1]); 
-					end
-				
-				-- Didn't find the specified event
-				
-				elseif gGroupCalendar_Settings.DebugErrors then
-					Calendar_DebugMessage("GroupCalendar: Event "..vEventID.." not found in database for "..pDatabase.UserName);
-				end
-		
-			elseif vEvtOpcode == "ATT" then
-				if not vEvent then
-					vEvent = EventDatabase_FindEventByID(pDatabase, vEventID);
-					vQuickEvent = true;
-				end
-				
-				if vEvent then
-					local	vAttendeeName = vEvtOperands[1];
-					
-					if not vEvent.mAttendance then
-						vEvent.mAttendance = {};
-					end
-					
-					-- Add/update their attendance
-					
-					local	vNumOperands = table.getn(vEvtOperands);
-					local	vAttendanceString = nil;
-					
-					if vNumOperands > 1 then
-						for vOperandIndex = 2, vNumOperands do
-							local	vOperand = vEvtOperands[vOperandIndex];
-							
-							if vAttendanceString == nil then
-								vAttendanceString = "";
-							else
-								vAttendanceString = vAttendanceString..",";
-							end
-							
-							if vOperand then
-								vAttendanceString = vAttendanceString..vOperand;
-							end
-						end
-						
-					end
-					
-					vEvent.mAttendance[vAttendeeName] = vAttendanceString;
-					
-					-- Remove any older (or same) RSVP for self person
-					
-					EventDatabase_RemoveOldAttendeeRSVP(vAttendeeName, pDatabase.UserName, vEventID, vAttendanceString);
-				
-				-- Didn't find the specified event
-				
-				elseif gGroupCalendar_Settings.DebugErrors then
-					Calendar_DebugMessage("GroupCalendar: Event "..vEventID.." not found in database for "..pDatabase.UserName);
-				end
-
-			elseif vEvtOpcode == "END" then
-				if vEvent then
-					if pNotifyChanges then
-						-- Notify the calendar
-						
-						if vNewEvent then
-							GroupCalendar_ScheduleChanged(pDatabase, vEvent.mDate);
-							
-							if not pDatabase.IsPlayerOwned then	
-								GroupCalendar_AddedNewEvent(pDatabase, vEvent);
-							end
-						else
-							if vEventDateChanged then
-								local	vEvent2, vDate = EventDatabase_FindEventByID(pDatabase, vEvent.mID);
-								
-								if vDate ~= vEvent.mDate then
-									EventDatabase_DeleteEventFromDate(pDatabase, vDate, pEvent, true);
-									EventDatabase_AddEvent(pDatabase, vEvent, true);
-								end
-							end
-							
-							GroupCalendar_EventChanged(pDatabase, vEvent, nil); -- only notify the calendar
-						end
-					end
-					
-					vEvent = nil;
-				elseif gGroupCalendar_Settings.DebugErrors then
-					Calendar_DebugMessage("GroupCalendar: Event not open when attemping to end update for "..pDatabase.UserName);
-				end
-			
-			elseif vEvtOpcode == "DEL" then
-				vEvent = EventDatabase_FindEventByID(pDatabase, vEventID);
-				vQuickEvent = true;
-				
-				if vEvent then
-					EventDatabase_DeleteEvent(pDatabase, vEvent, true);
-				elseif gGroupCalendar_Settings.DebugErrors then
-					Calendar_DebugMessage("GroupCalendar: Can't delete event "..vEventID..": Event not found in database for "..pDatabase.UserName);
-				end
-				
-			elseif gGroupCalendar_Settings.DebugErrors then
-				Calendar_DebugMessage("GroupCalendar: Unknown change operator "..vEvtOpcode); 
-			end
-			
-			if vQuickEvent then
-				vEvent = nil;
-				vQuickEvent = false;
-			end	
-		end
-	end
-end
-
-function EventDatabase_PurgeDatabase(pDatabase, pDatabaseID)
-	EventDatabase_RemoveAllRSVPsForDatabase(pDatabase, false)
-	
-	pDatabase.CurrentEventID = 0;
-	pDatabase.Events = {};
-	
-	pDatabase.Changes = CalendarChanges_New();
-	pDatabase.Changes.ID = pDatabaseID;
-	
-	GroupCalendar_MajorDatabaseChange(pDatabase);
-end
-
-function EventDatabase_PurgeRSVPs(pDatabase, pDatabaseID)
-	pDatabase.RSVPs = CalendarChanges_New();
-	pDatabase.RSVPs.ID = pDatabaseID;
-	
-	GroupCalendar_MajorDatabaseChange(pDatabase);
-end
-
-function EventDatabase_CheckDatabase(pDatabase)
-	-- Remove empty RSVP changelists
-	
-	if pDatabase.RSVPs then
-		for vRevision, vChangeList in pairs(pDatabase.RSVPs.ChangeList) do
-			if table.getn(vChangeList) == 0 then
-				pDatabase.RSVPs.ChangeList[vRevision] = nil;
-			end
-		end
-	end
-	
-	-- Remove events with duplicate IDs
-	
-	for vDate, vEvents in pairs(pDatabase.Events) do
-		local	vEventIndex = 1;
-		local	vNumEvents = table.getn(vEvents);
-		
-		while vEventIndex <= vNumEvents do
-			local	vEvent = vEvents[vEventIndex];
-			
-			if not vEvent
-			or EventDatabase_FindEventByID(pDatabase, vEvent.mID) ~= vEvent then
-				Calendar_DebugMessage("EventDatabase_CheckDatabase: Removing extra event ID "..vEvent.mID.." from database for "..pDatabase.UserName);
-				
-				table.remove(vEvents, vEventIndex);
-				vNumEvents = vNumEvents - 1;
-			else
-				vEventIndex = vEventIndex + 1;
-			end
-		end
-	end
 end
 
 function EventDatabase_ScanForNewlines(pDatabase)
@@ -1516,836 +790,79 @@ function EventDatabase_ScanForNewlines(pDatabase)
 				vEvent.mDescription = string.gsub(vEvent.mDescription, "\n", "&n;");
 			end
 		end
-	end
-
-	if pDatabase.Changes and pDatabase.Changes.ChangeList then
-		for vRevision, vChanges in pairs(pDatabase.Changes.ChangeList) do
-			for vIndex, vChange in pairs(vChanges) do
-				if type(vIndex) == "number" then
-					vChanges[vIndex] = string.gsub(vChange, "\n", "&n;");
-				end
-			end
-		end
-	end
+	end	
 end
 
 function EventDatabase_Initialize()
-	EventDatabase_CheckDatabases();
-	
-	-- Update the list of player-owned databases
-	
-	gGroupCalendar_PlayerCharacters = {};
-	
-	for vRealmUser, vDatabase in pairs(gGroupCalendar_Database.Databases) do
-		if EventDatabase_DatabaseIsVisible(vDatabase)
-		and vDatabase.IsPlayerOwned then
-			gGroupCalendar_PlayerCharacters[vDatabase.UserName] = true;
-		end
-	end
+	EventDatabase_CheckDatabases();	
 end
 
 function EventDatabase_CheckDatabases()
-	-- Upgrade the database to format 4 (just purge all non-owned databases
-	-- and rebuild the owned ones)
-	
-	if gGroupCalendar_Database.Format < 4 then
-		for vRealmUser, vDatabase in pairs(gGroupCalendar_Database.Databases) do
-			if vDatabase.IsPlayerOwned then
-				EventDatabase_RebuildDatabase(vDatabase);
-			else
-				gGroupCalendar_Database.Databases[vRealmUser] = nil;
-			end
-		end
-		
-		gGroupCalendar_Database.Format = 4;
-	end
-	
-	-- Upgrade the database to format 5 (scan for newlines in event fields and escape them)
-	
-	if gGroupCalendar_Database.Format < 5 then
-		for vRealmUser, vSettings in pairs(gGroupCalendar_Settings) do
-			if type(vSettings) == "array" and vSettings.EventTemplates then
-				for vEventID, vEventTemplate in pairs(vSettings.EventTemplates) do
-					if vEventTemplate.mDescription then
-						vEventTemplate.mDescription = string.gsub(vEventTemplate.mDescription, "\n", "&n;");
-					end
-				end
-			end
-		end
-		
-		for vRealmUser, vDatabase in pairs(gGroupCalendar_Database.Databases) do
-			EventDatabase_ScanForNewlines(vDatabase);
-		end
-		
-		gGroupCalendar_Database.Format = 5;
-	end
+	-- Update databases to new versions here...
 
-	-- Upgrade the database to format 6 (just purge all non-owned databases
-	-- and rebuild the owned ones again)
-	
-	if gGroupCalendar_Database.Format < 6 then
-		for vRealmUser, vDatabase in pairs(gGroupCalendar_Database.Databases) do
-			if vDatabase.IsPlayerOwned then
-				EventDatabase_RebuildDatabase(vDatabase);
-			else
-				gGroupCalendar_Database.Databases[vRealmUser] = nil;
-			end
-		end
-		
-		gGroupCalendar_Database.Format = 6;
-	end
-	
-	-- Upgrade to format 7 (just purge all non-owned databases)
+	-- Eventually remove this once the new DB structure is in place long for 2 months.
+	--EventDatabase_ConvertOldEvents();
+	CalendarNetwork_QueueTask(
+			EventDatabase_ConvertOldEvents, nil,
+			5, "ConvertOldEvents");
 
-	if gGroupCalendar_Database.Format < 7 then
-		for vRealmUser, vDatabase in pairs(gGroupCalendar_Database.Databases) do
-			if not vDatabase.IsPlayerOwned then
-				gGroupCalendar_Database.Databases[vRealmUser] = nil;
-			end
-		end
-		
-		gGroupCalendar_Database.Format = 7;
-	end
-	
-	-- Upgrade to format 8 (rebuild all owned databases to force
-	-- them to the new version numbering system)
-	
-	if gGroupCalendar_Database.Format < 8 then
-		for vRealmUser, vDatabase in pairs(gGroupCalendar_Database.Databases) do
-			if vDatabase.IsPlayerOwned then
-				EventDatabase_RebuildDatabase(vDatabase);
-			end
-		end
-		
-		gGroupCalendar_Database.Format = 8;
-	end
 
-	-- Upgrade to format 9 (reconstruct non-owned databases to correct
-	-- parsing errors)
-	
-	if gGroupCalendar_Database.Format < 9 then
-		for vRealmUser, vDatabase in pairs(gGroupCalendar_Database.Databases) do
-			if not vDatabase.IsPlayerOwned then
-				EventDatabase_ReconstructDatabase(vDatabase);
-			end
-		end
-		
-		gGroupCalendar_Database.Format = 9;
-	end
 
-	-- Upgrade the database to format 10 (just purge all non-owned databases)
-	
-	if gGroupCalendar_Database.Format < 10 then
-		for vRealmUser, vDatabase in pairs(gGroupCalendar_Database.Databases) do
-			if not vDatabase.IsPlayerOwned then
-				gGroupCalendar_Database.Databases[vRealmUser] = nil;
-			end
-		end
-		
-		gGroupCalendar_Database.Format = 10;
-	end
-	
-	-- Upgrade the database to format 11 (ensure that RSVPs for deleted events have been removed
-	-- and that event IDs are numbers and not strings)
-	
-	if gGroupCalendar_Database.Format < 11 then
-		for vRealmUser, vDatabase in pairs(gGroupCalendar_Database.Databases) do
-			-- Convert all event IDs to a number to fix a bug
-			-- caused by earlier versions
-			
-			for vDate, vEvents in pairs(vDatabase.Events) do
-				for vIndex, vEvent in vEvents do
-					vEvent.mID = tonumber(vEvent.mID);
-				end
-			end
-		end
-		
-		for vRealmUser, vDatabase in pairs(gGroupCalendar_Database.Databases) do
-			if vDatabase.IsPlayerOwned then
-				EventDatabase_RemoveObsoleteRSVPs(vDatabase);
-				EventDatabase_RebuildRSVPs(vDatabase);
-			else
-				EventDatabase_ReprocessAllRSVPs(vDatabase);
-			end
-		end
-		
-		gGroupCalendar_Database.Format = 11;
-	end
-	
-	-- Upgrade to format 12 (reconstruct non-owned databases to correct
-	-- parsing errors)
-	
-	if gGroupCalendar_Database.Format < 12 then
-		for vRealmUser, vDatabase in pairs(gGroupCalendar_Database.Databases) do
-			if not vDatabase.IsPlayerOwned then
-				EventDatabase_ReconstructDatabase(vDatabase);
-			end
-		end
-		
-		gGroupCalendar_Database.Format = 12;
-	end
-	
-	-- Make sure the realm is set
-	
-	for vRealmUser, vDatabase in pairs(gGroupCalendar_Database.Databases) do
-		if not vDatabase.Realm then
-			local	vStartIndex, vEndIndex, vRealmName = string.find(vRealmUser, "([^_]+)");
-			
-			if vStartIndex ~= nil then
-				vDatabase.Realm = vRealmName;
-			end
-		end
-		
-		EventDatabase_CheckDatabase(vDatabase);
-	end
-	
-	-- Remove old events
-	
-	for vRealmUser, vDatabase in pairs(gGroupCalendar_Database.Databases) do
+	-- Remove old events	
+	for vRealmGuild, vDatabase in pairs(gGroupCalendar_Database2.Databases) do		
 		EventDatabase_DeleteOldEvents(vDatabase);
 	end
 end
 
-function EventDatabase_CheckDatabaseTrust()
-	-- Return if they're in a guild but the roster isn't loaded
-	-- so that we don't go and delete a bunch of guildie calendars
-	-- by mistake
-	
-	if IsInGuild() and GetNumGuildMembers() == 0 then
-		if gGroupCalendar_Settings.DebugInit then
-			Calendar_DebugMessage("CheckDatabaseTrust: Roster isn't loaded, scheduling a load");
-		end
-		
-		CalendarNetwork_LoadGuildRoster();
-		return;
-	end
-	
-	if gGroupCalendar_Settings.DebugInit then
-		Calendar_DebugMessage("CheckDatabaseTrust: Verifying trust");
-	end
-	
-	-- Verify that each database is still trusted
-	
-	for vRealmUser, vDatabase in pairs(gGroupCalendar_Database.Databases) do
-		-- Only check databases for the current realm
-		
-		if EventDatabase_DatabaseIsVisible(vDatabase) then
-			
-			-- See if they're still trusted
-			
-			if not vDatabase.IsPlayerOwned
-			and not CalendarTrust_UserIsTrusted(vDatabase.UserName) then
-				-- not trusted anymore, remove their database
-				
-				EventDatabase_DeleteDatabase(vDatabase.UserName);
-			end
-		end
-	end
-end
+function EventDatabase_ConvertOldEvents()
+	if gGroupCalendar_Database then
+		for vRealmUser, vDatabase in pairs(gGroupCalendar_Database.Databases) do	
+			if vDatabase.IsPlayerOwned and vDatabase.Realm == gGroupCalendar_RealmName then	
+				for vEventDate, vEventList in pairs(vDatabase.Events) do
+					for vEventID, vEvent in pairs(vEventList) do
+						if not vEvent.mPrivate then
+							local vGuildDatabase = EventDatabase_GetDatabase(vDatabase.Guild, true, vDatabase.Realm);
+							local vNewEvent = EventDatabase_NewEvent(vGuildDatabase, Calendar_ConvertOldDateToNewDate(vEvent.mDate));
+							vNewEvent.mTime = vEvent.mTime;
+							vNewEvent.mManualConfirm = vEvent.mManualConfirm;
+							vNewEvent.mDuration = vEvent.mDuration;
+							vNewEvent.mTitle = vEvent.mTitle;
+							vNewEvent.mType = vEvent.mType;
+							vNewEvent.mMinLevel = vEvent.mMinLevel;
+							vNewEvent.mMaxLevel = vEvent.mMaxLevel;
+							vNewEvent.mLimits = vEvent.mLimits;
 
-function EventDatabase_GetDateTime60Stamp()
-	local	vYear, vMonth, vDay, vHour, vMinute, vSecond = Calendar_GetCurrentYearMonthDayHourMinute();
-	
-	local	vDate = Calendar_ConvertMDYToDate(vMonth, vDay, vYear);
-	local	vTime60 = Calendar_ConvertHMSToTime60(vHour, vMinute, vSecond);
-	
-	return vDate, vTime60;
-end
+							if vEvent.mAttendance then
+								for vAttendeeName, vRSVPstring in pairs(vEvent.mAttendance) do
+									local vRSVP = EventDatabase_UnpackEventRSVP(gGroupCalendar_PlayerName, vAttendeeName, vEvent.mID, vRSVPstring);
+									local vNewRSVP = {};
 
-function EventDatabase_GetServerDateTime60Stamp()
-	local	vYear, vMonth, vDay, vHour, vMinute, vSecond = Calendar_GetCurrentYearMonthDayHourMinute();
-	
-	local	vDate = Calendar_ConvertMDYToDate(vMonth, vDay, vYear);
-	local	vTime = Calendar_ConvertHMToTime(vHour, vMinute);
-	
-	vDate, vTime = Calendar_GetServerDateTimeFromLocalDateTime(vDate, vTime);
-	
-	return vDate, vTime * 60 + vSecond;
-end
+									vNewRSVP.mName = vAttendeeName;
+									vNewRSVP.mRole = vRSVP.mRole;
+									vNewRSVP.mDate = Calendar_ConvertOldDateToNewDate(vRSVP.mDate);
+									vNewRSVP.mTime = vRSVP.mTime;
+									vNewRSVP.mStatus = vRSVP.mStatus;
+									vNewRSVP.mOriginalDate = Calendar_ConvertOldDateToNewDate(vRSVP.mOriginalDate);
+									vNewRSVP.mOriginalTime = vRSVP.mOriginalTime;								
+									vNewRSVP.mClassCode = vRSVP.mClassCode;
+									vNewRSVP.mRaceCode = vRSVP.mRaceCode;
+									vNewRSVP.mLevel = vRSVP.mLevel;
+									vNewRSVP.mGuildRank = vRSVP.mGuildRank			
 
-function EventDatabase_GetRSVPs(pDatabase)
-	local	vRSVPs = pDatabase.RSVPs;
-	
-	if not vRSVPs then
-		vRSVPs = CalendarChanges_New();
-		pDatabase.RSVPs = vRSVPs;
-	end
-	
-	return vRSVPs;
-end
+									vNewEvent.mAttendance[vAttendeeName] = vNewRSVP;
 
-function EventDatabase_GetCurrentRSVPChangeList(pDatabase)
-	local	vRSVPs = EventDatabase_GetRSVPs(pDatabase);
-	local	vChangeList, vRevisionChanged = CalendarChanges_GetCurrentChangeList(vRSVPs);
-	
-	if vRevisionChanged and pDatabase.IsPlayerOwned then
-		if CalendarNetwork_CanSendSelfUpdates() then
-			CalendarNetwork_ProcessChangesRFU(vRSVPs, "RAT", true, 2, pDatabase.UserName, vRSVPs.ID, vRSVPs.Revision - 1, vRSVPs.Revision - 1);
-		else
-			StaticPopup_Show("CALENDAR_SYNCH_WARNING");
-		end
-		
-		CalendarNetwork_QueueRSVPNOU(pDatabase);
-	end
-	
-	return vChangeList;
-end
+								end
+							end
 
-function EventDatabase_AddEventRSVP(pDatabase, pEvent, pAttendeeName, pRSVP)
-	-- Verify that the attendance request is newer than the existing one
-	
-	local	vExistingRSVP = EventDatabase_FindEventRSVP(pDatabase.UserName, pEvent, pAttendeeName);
+							EventDatabase_AddEvent(vGuildDatabase, vNewEvent);
 
-	if vExistingRSVP then
-		if vExistingRSVP.mDate > pRSVP.mDate
-		or (vExistingRSVP.mDate == pRSVP.mDate
-		and vExistingRSVP.mTime > pRSVP.mTime) then
-			-- Adjust the date/time to be one second later than the previous request
-			-- if it's older
-			
-			pRSVP.mDate = vExistingRSVP.mDate;
-			pRSVP.mTime = vExistingRSVP.mTime + 1;
-			
-			if pRSVP.mTime >= 86400 then
-				pRSVP.mTime = 0;
-				pRSVP.mDate = pRSVP.mDate + 1;
-			end
-		end
-	end
-
-	-- Update the event attendance list
-
-	if gGroupCalendar_Settings.DebugRSVP then
-		Calendar_DebugMessage("EventDatabase_AddEventRSVP: Updating event attendance for "..pAttendeeName.." for ".." event "..pRSVP.mEventID);
-	end
-
-	if not pEvent.mAttendance then
-		pEvent.mAttendance = {};
-	end
-	
-	local	vEventRSVPString = EventDatabase_PackEventRSVP(pRSVP);
-	pEvent.mAttendance[pAttendeeName] = vEventRSVPString;
-
-	-- Notify the network of the change
-
-	local	vChangedFields =
-	{
-		mAttendance =
-		{
-			op = "UPD",
-			val =
-			{
-			}
-		}
-	};
-	
-	vChangedFields.mAttendance.val[pAttendeeName] = vEventRSVPString;
-	
-	EventDatabase_EventChanged(pDatabase, pEvent, vChangedFields);
-end
-
-function EventDatabase_RemoveEventRSVP(pDatabase, pEvent, pAttendeeName)
-	if not pEvent.mAttendance then
-		return;
-	end
-	
-	pEvent.mAttendance[pAttendeeName] = nil;
-
-	-- Notify the network of the change
-
-	local	vChangedFields =
-	{
-		mAttendance =
-		{
-			op = "UPD",
-			val =
-			{
-				[pAttendeeName] = "-",
-			}
-		}
-	};
-	
-	EventDatabase_EventChanged(pDatabase, pEvent, vChangedFields);
-end
-
-function EventDatabase_AddRSVPRequest(pDatabase, pRSVP)
-	-- Remove any existing RSVP for the same event
-	
-	if not EventDatabase_RemoveOlderRSVP(pDatabase, pRSVP) then
-		if gGroupCalendar_Settings.Debug then
-			Calendar_DebugMessage("EventDatabase_AddRSVPRequest: Ignoring "..pDatabase.UserName..","..pRSVP.mEventID..": "..pRSVP.mStatus);
-		end
-		
-		return; -- A newer request already exists so disregard self one
-	end
-
-	-- Add the new RSVP
-
-	local	vChangeList = EventDatabase_GetCurrentRSVPChangeList(pDatabase);
-	
-	local	vRSVPString = EventDatabase_PackRSVPRequest(pRSVP);
-	local	vRSVPAltsString = EventDatabase_GetRSVPAltsString(pRSVP);
-	
-	if vRSVPAltsString then
-		vRSVPString = vRSVPString.."/ALTS:"..vRSVPAltsString;
-	end
-	
-	if gGroupCalendar_Settings.Debug then
-		Calendar_DebugMessage("EventDatabase_AddRSVPRequest: Adding string "..vRSVPString);
-	end
-	
-	table.insert(vChangeList, vRSVPString);
-	
-	GroupCalendar_MajorDatabaseChange(pDatabase);
-end
-
-function EventDatabase_GetRSVPOriginalDateTime(pRSVP)
-	if pRSVP.mOriginalDate then
-		return pRSVP.mOriginalDate, pRSVP.mOriginalTime;
-	else
-		return pRSVP.mDate, pRSVP.mTime;
-	end
-end
-
-function EventDatabase_RemoveAllRSVPsForEvent(pDatabase, pEvent, pOwnedDatabasesOnly)
-	local	vPrefix = "EVT:"..pDatabase.UserName..","..pEvent.mID..",";
-	local	vPrefixLength = string.len(vPrefix);
-	
-	EventDatabase_RemoveAllRSVPsByPrefix(pDatabase.Realm, vPrefix, vPrefixLength, pOwnedDatabasesOnly);
-end
-
-function EventDatabase_RemoveAllRSVPsForDatabase(pDatabase, pOwnedDatabasesOnly)
-	local	vPrefix = "EVT:"..pDatabase.UserName..",";
-	local	vPrefixLength = string.len(vPrefix);
-	
-	EventDatabase_RemoveAllRSVPsByPrefix(pDatabase.Realm, vPrefix, vPrefixLength, pOwnedDatabasesOnly);
-end
-
-function EventDatabase_RemoveAllRSVPsByPrefix(pRealm, pPrefix, pPrefixLength, pOwnedDatabasesOnly)
-	for vRealmUser, vDatabase in pairs(gGroupCalendar_Database.Databases) do
-		if vDatabase.Realm == pRealm
-		and (not pOwnedDatabasesOnly or vDatabase.IsPlayerOwned) then
-			EventDatabase_RemoveRSVPsByPrefix(vDatabase, pPrefix, pPrefixLength);
-		end
-	end
-end
-
-function EventDatabase_RemoveRSVPsByPrefix(pDatabase, pPrefix, pPrefixLength)
-	local	vRSVPString, vIndex, vRevision = EventDatabase_FindRSVPPrefixString(pDatabase, pPrefix, pPrefixLength)
-	
-	while vRSVPString do
-		local	vChangeList = pDatabase.RSVPs.ChangeList[vRevision];
-		
-		table.remove(vChangeList, vIndex);
-		
-		if table.getn(vChangeList) == 0 then
-			pDatabase.RSVPs.ChangeList[vRevision] = nil;
-		end
-		
-		vRSVPString, vIndex, vRevision = EventDatabase_FindRSVPPrefixString(pDatabase, pPrefix, pPrefixLength)
-	end
-end
-
-function EventDatabase_ProcessRSVP(pDatabase, pRSVP)
-	local	vEventDatabase = EventDatabase_GetDatabase(pRSVP.mOrganizerName, false);
-	
-	-- Nothing to do if the database isn't one we own
-	
-	if not vEventDatabase or not vEventDatabase.IsPlayerOwned then
-		return false;
-	end
-	
-	-- Process the request into our database
-	
-	local	vEvent = EventDatabase_FindEventByID(vEventDatabase, pRSVP.mEventID);
-	
-	if not vEvent then
-		if gGroupCalendar_Settings.DebugRSVP then
-			Calendar_DebugMessage("EventDatabase_ProcessRSVP: Discarding request from "..pDatabase.UserName.." for ".." event "..pRSVP.mEventID..": Event no longer exists");
-		end
-		
-		return true; -- Have the request deleted
-	end
-	
-	-- Look up an existing RSVP
-	
-	local	vExistingRSVP = EventDatabase_FindEventRSVP(pDatabase.UserName, vEvent, pRSVP.mName);
-	
-	-- If the player has been banned (removed) from the event then ignore any
-	-- requests from them
-	
-	if vExistingRSVP
-	and vExistingRSVP.mStatus == "-" then
-		if gGroupCalendar_Settings.DebugRSVP then
-			Calendar_DebugMessage("EventDatabase_ProcessRSVP: Discarding request from "..pDatabase.UserName.." for ".." event "..pRSVP.mEventID..": Player was manually removed from the event");
-		end
-		
-		-- Don't change the status but update the date/time stamp so that the request
-		-- gets discarded
-		
-		pRSVP.mStatus = "-";
-		
-	-- If the player is requesting attendance then figure out how to handle the request
-	
-	elseif pRSVP.mStatus == "Y" then
-		-- If they're already accepted on the list then preserve their current
-		-- status
-		
-		if vExistingRSVP
-		and (vExistingRSVP.mStatus == "Y"
-		or vExistingRSVP.mStatus == "S") then
-			if gGroupCalendar_Settings.DebugRSVP then
-				Calendar_DebugMessage("EventDatabase_ProcessRSVP: Using existing RSVP status for "..pDatabase.UserName.." for event "..pRSVP.mEventID..": Manual attendance mode is enabled");
-			end
-			
-			pRSVP.mOriginalDate, pRSVP.mOriginalTime = EventDatabase_GetRSVPOriginalDateTime(vExistingRSVP);
-			pRSVP.mStatus = vExistingRSVP.mStatus;
-		
-		-- Otherwise put them on standby if using manual confirmations
-		
-		elseif vEvent.mManualConfirm then
-			if gGroupCalendar_Settings.DebugRSVP then
-				Calendar_DebugMessage("EventDatabase_ProcessRSVP: Putting "..pDatabase.UserName.." on standby for event "..pRSVP.mEventID..": Manual attendance mode is enabled");
-			end
-			
-			pRSVP.mStatus = "S";
-		
-		-- Check availablility to determine how to handle automatic confirmations
-		
-		else
-			local	vAvailableSlots = EventAvailableSlots_CountSlots(pDatabase, vEvent);
-			
-			if not EventAvailableSlots_AcceptPlayer(vAvailableSlots, pRSVP.mClassCode) then
-				if gGroupCalendar_Settings.DebugRSVP then
-					Calendar_DebugMessage("EventDatabase_ProcessRSVP: Putting "..pDatabase.UserName.." on standby for event "..pRSVP.mEventID..": Class limit already reached");
+						end
+					end
 				end
-				
-				pRSVP.mStatus = "S";
 			end
 		end
+		gGroupCalendar_Database = nil;
 	end
-	
-	-- Add the RSVP
-	
-	EventDatabase_AddEventRSVP(vEventDatabase, vEvent, pDatabase.UserName, pRSVP);
-	
-	return true;
-end
-
-function EventDatabase_AddRSVP(pDatabase, pRSVP)
-	if gGroupCalendar_Settings.Debug then
-		if not pRSVP.mName then
-			Calendar_DumpArray("Missing attendee: ", pRSVP);
-			return;
-		end
-	end
-	
-	if not EventDatabase_ProcessRSVP(pDatabase, pRSVP) then
-		EventDatabase_AddRSVPRequest(pDatabase, pRSVP);
-	end
-end
-
-function EventDatabase_RemoveOldAttendeeRSVP(pAttendeeName, pOrganizerName, pEventID, pAttendanceString)
-	local	vAttendeeDatabase = EventDatabase_GetDatabase(pAttendeeName, false);
-	
-	-- Just leave if we've never heard of them
-	
-	if not vAttendeeDatabase then
-		return;
-	end
-	
-	-- Just leave if it's a delete request, we don't know how to handle these yet
-	
-	if not pAttendanceString then
-		return;
-	end
-	
-	-- Remove the RSVP request if it exists in their database
-	
-	local	vRSVP = EventDatabase_UnpackEventRSVP(pOrganizerName, pAttendeeName, pEventID, pAttendanceString);
-	
-	EventDatabase_RemoveOlderRSVP(vAttendeeDatabase, vRSVP)
-end
-
-function EventDatabase_RemoveOlderRSVP(pDatabase, pRSVP)
-	if gGroupCalendar_Settings.Debug then
-		Calendar_DebugMessage("EventDatabase_RemoveOlderRSVP: Removing RSVP for "..pRSVP.mName.." from "..pDatabase.UserName..","..pRSVP.mEventID);
-	end
-	
-	local	vRSVPString, vIndex, vRevision = EventDatabase_FindRSVPRequestString(pDatabase, pRSVP.mOrganizerName, pRSVP.mEventID);
-	
-	while vRSVPString ~= nil do
-		if gGroupCalendar_Settings.Debug then
-			Calendar_DebugMessage("EventDatabase_RemoveOlderRSVP: "..pRSVP.mOrganizerName..","..pRSVP.mEventID.." from position "..vRevision..","..vIndex);
-		end
-		
-		-- If the existing RSVP is newer than the specified date/time then disregard the request
-		
-		if pRSVP.mDate ~= nil then
-			local	vRSVP = EventDatabase_UnpackRSVPRequest(vRSVPString, pRSVP.mName);
-			
-			if vRSVP.mDate > pRSVP.mDate
-			or (vRSVP.mDate == pRSVP.mDate and vRSVP.mTime > pRSVP.mTime) then
-				if gGroupCalendar_Settings.Debug then
-					Calendar_DebugMessage("EventDatabase_RemoveOlderRSVP: Newer request already exists");
-				end
-				
-				return false; -- Fail to indicate that a newer request is already in the database
-			end
-		end
-		
-		-- Remove the old one
-		
-		local	vChangeList = pDatabase.RSVPs.ChangeList[vRevision];
-		table.remove(vChangeList, vIndex);
-		
-		if table.getn(vChangeList) == 0 then
-			pDatabase.RSVPs.ChangeList[vRevision] = nil;
-		end
-		
-		-- Keep removing in case the database has become corrupted with multiple copies
-		
-		vRSVPString, vIndex, vRevision = EventDatabase_FindRSVPRequestString(pDatabase, pRSVP.mOrganizerName, pRSVP.mEventID);
-	end
-	
-	return true; -- Everything's ok, no newer RSVP was found
-end
-
-function EventDatabase_FindRSVPRequestString(pDatabase, pOrganizerName, pEventID)
-	if not pEventID then
-		Calendar_DebugMessage("EventDatabase_FindRSVPRequestString: pEventID IS NIL!");
-	end
-	
-	if not pOrganizerName then
-		Calendar_DebugMessage("EventDatabase_FindRSVPRequestString: pOrganizerName IS NIL!");
-	end
-	
-	local	vRSVPPrefix = "EVT:"..pOrganizerName..","..pEventID..",";
-	local	vRSVPPrefixLength = string.len(vRSVPPrefix);
-	
-	return EventDatabase_FindRSVPPrefixString(pDatabase, vRSVPPrefix, vRSVPPrefixLength);
-end
-
-function EventDatabase_FindRSVPPrefixString(pDatabase, pPrefixString, pPrefixLength)
-	local	vRSVPs = EventDatabase_GetRSVPs(pDatabase);
-	
-	for vRevision, vChangeList in pairs(vRSVPs.ChangeList) do
-		local	vNumChanges = table.getn(vChangeList);
-		
-		for vIndex = 1, vNumChanges do
-			local	vRSVP = vChangeList[vIndex];
-			
-			if string.sub(vRSVP, 1, pPrefixLength) == pPrefixString then
-				return vRSVP, vIndex, vRevision;
-			end
-		end
-	end
-	
-	return nil, nil, nil;
-end
-
-function EventDatabase_FindRSVPRequestData(pDatabase, pOrganizerName, pEventID)
-	if not pEventID then
-		Calendar_DebugMessage("EventDatabase_FindRSVPRequestData: pEventID is nil!");
-	end
-	
-	if not pOrganizerName then
-		Calendar_DebugMessage("EventDatabase_FindRSVPRequestData: pOrganizerName IS NIL!");
-	end
-	
-	local	vRSVPString = EventDatabase_FindRSVPRequestString(pDatabase, pOrganizerName, pEventID);
-	
-	if not vRSVPString then
-		return nil;
-	end
-	
-	return EventDatabase_UnpackRSVPRequest(vRSVPString, pDatabase.UserName);
-end
-
-function EventDatabase_FindEventRSVPString(pEvent, pAttendeeName)
-	if not pEvent.mAttendance then
-		return nil;
-	end
-	
-	return pEvent.mAttendance[pAttendeeName];
-end
-
-function EventDatabase_FindEventRSVP(pEventOwner, pEvent, pAttendeeName)
-	local	vEventRSVPString = EventDatabase_FindEventRSVPString(pEvent, pAttendeeName);
-	
-	if not vEventRSVPString then
-		return nil;
-	end
-	
-	return EventDatabase_UnpackEventRSVP(pEventOwner, pAttendeeName, pEvent.ID, vEventRSVPString);
-end
-
-function EventDatabase_EventExists(pEventOwner, pEventID)
-	local	vDatabase = EventDatabase_GetDatabase(pEventOwner, false);
-	
-	if not vDatabase then
-		return false;
-	end
-	
-	if not EventDatabase_FindEventByID(vDatabase, pEventID) then
-		return false;
-	end
-	
-	return true;
-end
-
-function EventDatabase_RemoveObsoleteRSVPs(pDatabase)
-	local	vRSVPs = EventDatabase_GetRSVPs(pDatabase);
-	
-	for vRevision, vChangeList in pairs(vRSVPs.ChangeList) do
-		local	vNumChanges = table.getn(vChangeList);
-		local	vIndex = 1;
-		
-		while vIndex <= vNumChanges do
-			local	vRSVP = EventDatabase_UnpackRSVPRequest(vChangeList[vIndex], pDatabase.UserName);
-			
-			if not EventDatabase_EventExists(vRSVP.mOrganizerName, vRSVP.mEventID) then
-				table.remove(vChangeList, vIndex);
-				vNumChanges = vNumChanges - 1;
-			else
-				vIndex = vIndex + 1;
-			end
-		end
-		
-		if vNumChanges == 0 then
-			vRSVPs.ChangeList[vRevision] = nil;
-		end
-	end
-end
-
-function EventDatabase_GetRSVPAltsString(pRSVP)
-	local	vAltsString = nil;
-	
-	if not pRSVP.mAlts then
-		return nil;
-	end
-	
-	for vPlayerName, _ in pairs(pRSVP.mAlts) do
-		if not vAltsString then
-			vAltsString = vPlayerName;
-		else
-			vAltsString = vAltsString..","..vPlayerName;
-		end
-	end
-	
-	return vAltsString;
-end
-
-function EventDatabase_PackRSVPRequest(pRSVP)
-	local	vRequest = "EVT:"..pRSVP.mOrganizerName..","..pRSVP.mEventID..","..pRSVP.mDate..","..pRSVP.mTime..","..pRSVP.mStatus..","..EventDatabase_PackCharInfo(pRSVP)..",";
-	
-	if pRSVP.mComment then
-		vRequest = vRequest..pRSVP.mComment;
-	end
-	
-	if pRSVP.mGuild then
-		vRequest = vRequest..","..pRSVP.mGuild..","..pRSVP.mGuildRank;
-	else
-		vRequest = vRequest..",,";
-	end
-	
-	vRequest = vRequest..",".. pRSVP.mRole
-	return vRequest;
-end
-
-function EventDatabase_UnpackRSVPRequest(pRSVPString, pAttendee)
-	local	vCommands = CalendarNetwork_ParseCommandSubString("/"..pRSVPString);
-	local	vOpcode = vCommands[1].opcode;
-	
-	if vOpcode ~= "EVT" then
-		return false;
-	end
-	
-	local	vOperands = vCommands[1].operands;
-	
-	return EventDatabase_UnpackRSVPFieldArray(vOperands, pAttendee);
-end
-
-function EventDatabase_FillInRSVPGuildInfo(pRSVP)
-	if pRSVP.mGuild then	
-		return;
-	end
-	
-	vIsInGuild, vRankIndex = CalendarNetwork_UserIsInSameGuild(pRSVP.mName);
-	
-	if not vIsInGuild then
-		return;
-	end
-	
-	pRSVP.mGuild = gGroupCalendar_PlayerGuild;
-	pRSVP.mGuildRank = vRankIndex;
-end
-
-function tablelength(T)
-	local count = 0
-	for _ in pairs(T) do count = count + 1 end
-	return count
-end
-
-function EventDatabase_UnpackRSVPFieldArray(pArray, pAttendee)
-
-	local pRole = "U";
-	local pLength = tablelength(pArray);
-	if pLength >= 10 then
-		pRole = pArray[10]
-	end
-
-	local	vRSVP =
-	{
-		mOrganizerName = pArray[1],
-		mName = pAttendee;
-		mEventID = tonumber(pArray[2]),
-		mDate = tonumber(pArray[3]),
-		mTime = tonumber(pArray[4]),
-		mStatus = pArray[5],
-		mComment = pArray[7],
-		mGuild = pArray[8],
-		mGuildRank = tonumber(pArray[9]),
-		mRole = pRole
-	};
-	
-	if vRSVP.mGuild == "" then
-		vRSVP.mGuild = nil;
-	end
-	
-	EventDatabase_UnpackCharInfo(pArray[6], vRSVP);
-	
-	EventDatabase_FillInRSVPGuildInfo(vRSVP);
-	
-	return vRSVP;
-end
-
-function EventDatabase_PackEventRSVP(pEventRSVP)
-	local	vEventRSVPString = ""..pEventRSVP.mDate..","..pEventRSVP.mTime..","..pEventRSVP.mStatus..","..EventDatabase_PackCharInfo(pEventRSVP)..",";
-	
-	if pEventRSVP.mComment then
-		vEventRSVPString = vEventRSVPString..pEventRSVP.mComment;
-	end
-	
-	if pEventRSVP.mGuild then
-		if not pEventRSVP.mGuildRank then
-			pEventRSVP.mGuildRank = "";
-		end
-		
-		vEventRSVPString = vEventRSVPString..","..pEventRSVP.mGuild..","..pEventRSVP.mGuildRank;
-	else
-		vEventRSVPString = vEventRSVPString..",,";
-	end
-	
-	if pEventRSVP.mOriginalDate then
-		vEventRSVPString = vEventRSVPString..","..pEventRSVP.mOriginalDate..","..pEventRSVP.mOriginalTime;
-	else
-		vEventRSVPString = vEventRSVPString..",,";
-	end
-
-	vEventRSVPString = vEventRSVPString..","..pEventRSVP.mRole;
-
-	return vEventRSVPString;
 end
 
 function EventDatabase_UnpackEventRSVP(pOrganizerName, pAttendeeName, pEventID, pEventRSVPString)
@@ -2383,28 +900,71 @@ function EventDatabase_UnpackEventRSVP(pOrganizerName, pAttendeeName, pEventID, 
 	return vRSVPFields;
 end
 
-function EventDatabase_PackCharInfo(pCharInfo)
-	local	vRaceCode, vClassCode, vLevel;
-	
-	vRaceCode = pCharInfo.mRaceCode;
-	
-	if not vRaceCode then
-		vRaceCode = "?";
-	end
-	
-	vClassCode = pCharInfo.mClassCode;
-	
-	if not vClassCode then
-		vClassCode = "?";
-	end
-	
-	if pCharInfo.mLevel then
-		vLevel = pCharInfo.mLevel;
+function EventDatabase_UnpackCharInfo(pString, rCharInfo)
+	if not pString then
+		rCharInfo.mRaceCode = "?";
+		rCharInfo.mClassCode = "?";
+		rCharInfo.mLevel = 0;
 	else
-		vLevel = 0;
+		rCharInfo.mRaceCode = string.sub(pString, 1, 1);
+		rCharInfo.mClassCode = string.sub(pString, 2, 2);
+		rCharInfo.mLevel = tonumber(string.sub(pString, 3));
+	end
+end
+
+function EventDatabase_FillInRSVPGuildInfo(pRSVP)
+	if pRSVP.mGuild then	
+		return;
 	end
 	
-	return vRaceCode..vClassCode..vLevel;
+	vIsInGuild, vRankIndex = CalendarNetwork_UserIsInSameGuild(pRSVP.mName);
+	
+	if not vIsInGuild then
+		return;
+	end
+	
+	pRSVP.mGuild = gGroupCalendar_PlayerGuild;
+	pRSVP.mGuildRank = vRankIndex;
+end
+
+function EventDatabase_GetDateTime60Stamp()
+	local	vYear, vMonth, vDay, vHour, vMinute, vSecond = Calendar_GetCurrentYearMonthDayHourMinute();
+	
+	local	vDate = Calendar_ConvertMDYToDate(vMonth, vDay, vYear);
+	local	vTime60 = Calendar_ConvertHMSToTime60(vHour, vMinute, vSecond);
+	
+	return vDate, vTime60;
+end
+
+function EventDatabase_GetServerDateTime60Stamp()
+	local	vYear, vMonth, vDay, vHour, vMinute, vSecond = Calendar_GetCurrentYearMonthDayHourMinute();
+	
+	local	vDate = Calendar_ConvertMDYToDate(vMonth, vDay, vYear);
+	local	vTime = Calendar_ConvertHMToTime(vHour, vMinute);
+	
+	vDate, vTime = Calendar_GetServerDateTimeFromLocalDateTime(vDate, vTime);
+	
+	return vDate, vTime * 60 + vSecond;
+end
+
+function EventDatabase_EventExists(pEventGUID)
+	local vDatabase = EventDatabase_GetDatabase(gGroupCalendar_PlayerGuild, false)
+
+	if not vDatabase then
+		return false;
+	end
+	
+	if not EventDatabase_FindEventByID(vDatabase, pEventGUID) then
+		return false;
+	end
+	
+	return true;
+end
+
+function tablelength(T)
+	local count = 0
+	for _ in pairs(T) do count = count + 1 end
+	return count
 end
 
 function EventDatabase_GetRaceCodeByRace(pRace)
@@ -2470,18 +1030,6 @@ function EventDatabase_GetRoleByRoleCode(pRoleCode)
 		return GroupCalendar_cUnknownRoleLabel;
 	else
 		return vRoleInfo.name;
-	end
-end
-
-function EventDatabase_UnpackCharInfo(pString, rCharInfo)
-	if not pString then
-		rCharInfo.mRaceCode = "?";
-		rCharInfo.mClassCode = "?";
-		rCharInfo.mLevel = 0;
-	else
-		rCharInfo.mRaceCode = string.sub(pString, 1, 1);
-		rCharInfo.mClassCode = string.sub(pString, 2, 2);
-		rCharInfo.mLevel = tonumber(string.sub(pString, 3));
 	end
 end
 	
@@ -2585,179 +1133,6 @@ function EventDatabase_EventTypeUsesTime(pEventType)
 	end
 	
 	return true;
-end
-
-function CalendarChanges_New(pID)
-	local	vID;
-	
-	if pID then
-		vID = pID;
-	else
-		vID = Calendar_GetCurrentDateTimeUT60();
-	end
-	
-	return
-	{
-		ID = vID,
-		Revision = 0,
-		AuthRevision = 0,
-		ChangeList = {},
-	};
-end
-
-function CalendarChanges_Rebuild(pChanges)
-	pChanges.ID = Calendar_GetCurrentDateTimeUT60();
-	
-	pChanges.Revision = 0;
-	pChanges.AuthRevision = 0;
-	pChanges.ChangeList = {};
-end
-
-function CalendarChanges_Compact(pChanges)
-	local	vNewChanges = nil;
-	
-	for vRevision, vChanges in pairs(pChanges.ChangeList) do
-		for vIndex, vChange in pairs(vChanges) do
-			if not vNewChanges then
-				vNewChanges = {};
-			end
-			
-			if type(vIndex) == "number" then
-				table.insert(vNewChanges, vChange);
-			end
-		end
-	end
-	
-	pChanges.ID = Calendar_GetCurrentDateTimeUT60();
-	pChanges.ChangeList = {};
-	
-	if vNewChanges then
-		pChanges.Revision = 1;
-		pChanges.AuthRevision = 0;
-		pChanges.ChangeList[1] = vNewChanges;
-	else
-		pChanges.Revision = 0;
-		pChanges.AuthRevision = 0;
-	end
-end
-
-function CalendarChanges_Open(pChanges, pRevision)
-	
-	local	vChangeList = pChanges.ChangeList[pRevision];
-	
-	if not vChangeList then
-		vChangeList = {};
-		pChanges.ChangeList[pRevision] = vChangeList;
-		pChanges.Revision = pRevision;
-	end
-	
-	vChangeList.IsOpen = nil;
-	
-	return vChangeList;
-end
-
-function CalendarChanges_Close(pChanges, pRevision)
-	
-	local	vChangeList = pChanges.ChangeList[pRevision];
-	
-	if not vChangeList then
-		return;
-	end
-	
-	vChangeList.IsOpen = nil;
-end
-
-function CalendarChanges_SetChangeList(pChanges, pRevision, pChangeList)
-	pChanges.ChangeList[pRevision] = pChangeList;
-	
-	if pRevision > pChanges.Revision then
-		pChanges.Revision = pRevision;
-	end
-end
-
-function CalendarChanges_GetCurrentChangeList(pChanges)
-	local	vChangeList = nil;
-	local	vRevisionChanged = false;
-	
-	if pChanges.Revision > 0 then
-		vChangeList = pChanges.ChangeList[pChanges.Revision];
-	end
-	
-	--[[
-	if vChangeList == nil
-	or not vChangeList.IsOpen then
-		pChanges.Revision = pChanges.Revision + 1;
-		
-		vChangeList = {};
-		pChanges.ChangeList[pChanges.Revision] = vChangeList;
-		vChangeList.IsOpen = true;
-		
-		vRevisionChanged = true;
-	end
-	]]--
-
-	pChanges.Revision = pChanges.Revision + 1
-	
-	vChangeList = {}
-	pChanges.ChangeList[pChanges.Revision] = vChangeList
-	
-	vRevisionChanged = true
-
-	return vChangeList, vRevisionChanged;
-end
-
-function CalendarChanges_LockdownCurrentChangeList(pChanges)
-	-- Just return if there are no changes yet
-	
-	if pChanges.Revision == 0 then
-		return;
-	end
-	
-	-- See if the current list exists and is open
-	
-	local		vChangeList = pChanges.ChangeList[pChanges.Revision];
-	
-	if not vChangeList
-	or not vChangeList.IsOpen then
-		return;
-	end
-	
-	-- Close the change list
-	
-	vChangeList.IsOpen = nil;
-end
-
-function CalendarChanges_GetRevisionPath(pLabel, pUserName, pDatabaseID, pRevision, pAuthRevision)
-	local	vPath = pLabel..":"..pUserName..",";
-	
-	if pDatabaseID then
-		vPath = vPath..pDatabaseID;
-	end
-	
-	vPath = vPath..","..pRevision;
-	
-	if pAuthRevision then
-		vPath = vPath..","..pAuthRevision;
-	end
-	
-	return vPath.."/";
-end
-
-function CalendarChanges_IsEmpty(pChanges)
-	if not pChanges
-	or pChanges.Revision == 0 then
-		return true;
-	end
-	
-	for vRevision, vChanges in pairs(pChanges.ChangeList) do
-		return false;
-	end
-	
-	return true;
-end
-
-function CalendarChanges_GetChangeList(pChanges, pRevision)
-	return pChanges.ChangeList[pRevision];
 end
 
 function CalendarAttendanceList_New()
@@ -2878,34 +1253,6 @@ function CalendarAttendanceList_AddWhisper(pAttendanceList, pPlayerName, pWhispe
 			pCategoryType);
 end
 
-function CalendarAttendanceList_AddEventAttendanceItems(pAttendanceList, pDatabase, pEvent)
-	if not pEvent.mAttendance then
-		return;
-	end
-	
-	for vAttendeeName, vRSVPString in pairs(pEvent.mAttendance) do
-		local	vRSVP = EventDatabase_UnpackEventRSVP(pDatabase.UserName, vAttendeeName, pEvent.mID, vRSVPString);
-		
-		pAttendanceList.Items[vRSVP.mName] = vRSVP;
-	end
-end
-
-function CalendarAttendanceList_AddPendingRequests(pAttendanceList, pDatabase, pEvent, pCategoryType)
-	for vRealmUser, vDatabase in pairs(gGroupCalendar_Database.Databases) do
-		if EventDatabase_DatabaseIsVisible(vDatabase) then
-			local	vPendingRSVP = EventDatabase_FindRSVPRequestData(vDatabase, pDatabase.UserName, pEvent.mID);
-			
-			if vPendingRSVP then
-				if vPendingRSVP.mStatus == "Y" then
-					vPendingRSVP.mStatus = "P";
-				end		
-				pAttendanceList.Items[vPendingRSVP.mName] = vPendingRSVP;
-				--CalendarAttendanceList_AddItem(pAttendanceList, "PENDING", vPendingRSVP, pCategoryType);
-			end
-		end
-	end
-end
-
 function CalendarAttendanceList_CalculateClassTotals(pAttendanceList, pIsAttendingFunction)
 	pAttendanceList.ClassTotals = {};
 	
@@ -2943,7 +1290,8 @@ end
 function CalendarAttendanceList_RSVPIsAttending(pItem)
 	return pItem.mStatus ~= "-"
 	   and pItem.mStatus ~= "N"
-	   and pItem.mStatus ~= "C";
+	   and pItem.mStatus ~= "C"
+	   and pItem.mStatus ~= "S";
 end
 
 function CalendarAttendanceList_FindItem(pAttendanceList, pFieldName, pFieldValue, pCategoryID)
@@ -3066,7 +1414,7 @@ function CalendarAttendanceList_GetRSVPRoleCategory(pItem)
 	if not vCategoryID then
 		return nil;
 	end
-	
+
 	if vCategoryID ~= "YES" then
 		return vCategoryID;
 	end
@@ -3089,7 +1437,7 @@ function CalendarAttendanceList_GetRSVPRankCategory(pItem)
 		return vCategoryID;
 	end
 	
-	vCategoryID = EventDatabase_MapGuildRank(pItem.mGuild, pItem.mGuildRank);
+	vCategoryID = pItem.mGuildRank;
 	
 	if vCategoryID then
 		return vCategoryID;
@@ -3098,14 +1446,24 @@ function CalendarAttendanceList_GetRSVPRankCategory(pItem)
 	return "?";
 end
 
+function CalendarAttendanceList_AddEventAttendanceItems(pAttendanceList, pDatabase, pEvent)
+	if not pEvent.mAttendance then
+		return;
+	end
+	
+	for vAttendeeName, vRSVP in pairs(pEvent.mAttendance) do		
+		pAttendanceList.Items[vAttendeeName] = vRSVP;
+	end
+end
+
 function CalendarEvent_GetAttendanceCounts(pDatabase, pEvent, pCategoryType)
 	local	vAttendanceList = CalendarAttendanceList_New();
-	
+
 	-- Fill in the items list
 	
 	CalendarAttendanceList_AddEventAttendanceItems(vAttendanceList, pDatabase, pEvent);
 	
-	CalendarAttendanceList_AddPendingRequests(vAttendanceList, pDatabase, pEvent);
+	--CalendarAttendanceList_AddPendingRequests(vAttendanceList, pDatabase, pEvent);
 	-- Sort into categories
 	
 	local	vGetItemCategoryFunction;
@@ -3363,6 +1721,14 @@ function EventAvailableSlots_CountSlots(pDatabase, pEvent)
 	return vAvailableSlots;
 end
 
+function EventDatabase_GetRSVPOriginalDateTime(pRSVP)
+	if pRSVP.mOriginalDate then
+		return pRSVP.mOriginalDate, pRSVP.mOriginalTime;
+	else
+		return pRSVP.mDate, pRSVP.mTime;
+	end
+end
+
 function EventDatabase_CompareRSVPsByDate(pRSVP1, pRSVP2)
 	local	vRSVP1Date, vRSVP1Time = EventDatabase_GetRSVPOriginalDateTime(pRSVP1);
 	local	vRSVP2Date, vRSVP2Time = EventDatabase_GetRSVPOriginalDateTime(pRSVP2);
@@ -3389,8 +1755,8 @@ function EventDatabase_CompareRSVPsByName(pRSVP1, pRSVP2)
 end
 
 function EventDatabase_CompareRSVPsByRankAndDate(pRSVP1, pRSVP2)
-	local	vRank1 = EventDatabase_MapGuildRank(pRSVP1.mGuild, pRSVP1.mGuildRank);
-	local	vRank2 = EventDatabase_MapGuildRank(pRSVP2.mGuild, pRSVP2.mGuildRank);
+	local	vRank1 = pRSVP1.mGuildRank;
+	local	vRank2 = pRSVP2.mGuildRank;
 	
 	if not vRank1 then
 		if not vRank2 then
@@ -3480,32 +1846,17 @@ function EventDatabase_CreatePlayerRSVP(
 				pComment,
 				pGuild,
 				pGuildRank,
-				pAlts,
 				pRole)
 	local	vDate, vTime60 = EventDatabase_GetServerDateTime60Stamp();
-	local	vAlts = nil;
-	
-	--[[
-	if pAlts then
-		for vPlayerName, _ in pAlts do
-			if vPlayerName ~= pPlayerName then
-				if not vAlts then
-					vAlts = {};
-				end
-				
-				vAlts[vPlayerName] = true;
-			end
-		end
-	end
-	]]--
+	local	vAlts = nil;	
 	
 	return
 	{
-		mName = pPlayerName,
-		mOrganizerName = pDatabase.UserName,
-		mEventID = pEvent.mID,
+		mName = pPlayerName,		
 		mDate = vDate,
 		mTime = vTime60,
+		mOriginalDate = vDate,
+		mOriginalTime = vTime60,
 		mStatus = pStatus,
 		mComment = pComment,
 		mRaceCode = pPlayerRace,
@@ -3513,17 +1864,24 @@ function EventDatabase_CreatePlayerRSVP(
 		mLevel = pPlayeLevel,
 		mGuild = pGuild,
 		mGuildRank = pGuildRank,
-		mAlts = vAlts,
 		mRole = pRole
 	};
 end
 
 function EventDatabase_PlayerLevelChanged(pPlayerLevel)
-	if not gGroupCalendar_UserDatabase then
-		return;
+
+end
+
+function EventDatabase_PlayerIsAttendingEvent(pPlayerName, pEvent)
+	if pEvent.mAttendance then
+		for vPlayerName, vRSVP in pairs(pEvent.mAttendance) do
+			if vPlayerName == pPlayerName and vRSVP.mStatus == "Y" then
+				return true;
+			end
+		end
 	end
-	
-	gGroupCalendar_UserDatabase.PlayerLevel = pPlayerLevel;
+
+	return false;
 end
 
 function EventDatabase_PlayerIsQualifiedForEvent(pEvent, pPlayerLevel)
@@ -3560,37 +1918,39 @@ function EventDatabase_RescheduleEvent(pDatabase, pEvent, pNewDate)
 
 	EventDatabase_AddEvent(pDatabase, vNewEvent);
 
-	return EventDatabase_DeleteEvent(pDatabase, pEvent);
+	return EventDatabase_DeleteEvent(pDatabase, pEvent, true);
 end
 
 function EventDatabase_DeleteOldEvents(pDatabase)
 	if not pDatabase.Events then
 		return;
 	end
-	
+
 	for vDate, vEvents in pairs(pDatabase.Events) do
+
 		if vDate < gGroupCalendar_MinimumEventDate then
 			-- Remove or reschedule the events for self date
-			
+
 			local	vNumEvents = table.getn(vEvents);
 			local	vEventIndex = 1;
 			
 			for vIndex = 1, vNumEvents do
 				local	vEvent = vEvents[vEventIndex];
 				
-				if pDatabase.IsPlayerOwned and vEvent.mType == "Birth" then
-					Calendar_DebugMessage("GroupCalendar: Rescheduling birthday event "..vEvent.mID.." for "..pDatabase.UserName);
+				if vEvent.mType == "Birth" then
+					Calendar_DebugMessage("GroupCalendar: Rescheduling birthday event");
 					
 					local	vMonth, vDay, vYear = Calendar_ConvertDateToMDY(vDate);
 					vYear = vYear + 1;
 					local	vNewDate = Calendar_ConvertMDYToDate(vMonth, vDay, vYear);
 					
 					if not EventDatabase_RescheduleEvent(pDatabase, vEvent, vNewDate) then
-						Calendar_DebugMessage("GroupCalendar: Can't reschedule event "..vEvent.mID.." for "..pDatabase.UserName..": Unknown error");
+						Calendar_DebugMessage("GroupCalendar: Can't reschedule event: Unknown error");
 						vEventIndex = vEventIndex + 1;
 					end
-				elseif not EventDatabase_DeleteEvent(pDatabase, vEvent) then
-					Calendar_DebugMessage("GroupCalendar: Can't delete old event "..vEvent.mID.." for "..pDatabase.UserName..": Unknown error");
+				elseif not EventDatabase_DeleteEvent(pDatabase, vEvent, true) then
+
+					Calendar_DebugMessage("GroupCalendar: Can't delete old event: Unknown error");
 					vEventIndex = vEventIndex + 1;
 				end
 			end
@@ -3598,35 +1958,10 @@ function EventDatabase_DeleteOldEvents(pDatabase)
 	end
 end
 
-function EventDatabase_PlayerIsAttendingEvent(pEventOwner, pEvent)
-	for vPlayerName, vPlayerValue in pairs(gGroupCalendar_PlayerCharacters) do
-		local	vPlayerDatabase = EventDatabase_GetDatabase(vPlayerName, false);
-		local	vRSVP = nil;
-		
-		if vPlayerDatabase then
-			vRSVP = EventDatabase_FindRSVPRequestData(vPlayerDatabase, pEventOwner, pEvent.mID);
-		end
-		
-		if not vRSVP then
-			vRSVP = EventDatabase_FindEventRSVP(pEventOwner, pEvent, vPlayerName);
-		end
-		
-		if vRSVP then
-			local	vStatus1 = string.sub(vRSVP.mStatus, 1, 1);
-			
-			if vStatus1 == "Y" then
-				return true;
-			end
-		end
-	end
-	
-
-	return false;
-end
-
 function EventDatabase_RemoveSavedInstanceEvents(pDatabase, pCutoffDate)
 	for vDate, vSchedule in pairs(pDatabase.Events) do
 		if not pCutoffDate or vDate <= pCutoffDate then
+			
 			local	vEventIndex = 1;
 			local	vNumEvents = table.getn(vSchedule);
 			
@@ -3634,7 +1969,8 @@ function EventDatabase_RemoveSavedInstanceEvents(pDatabase, pCutoffDate)
 				local	vEvent = vSchedule[vEventIndex];
 				
 				if EventDatabase_IsDungeonResetEventType(vEvent.mType) then
-					EventDatabase_DeleteEvent(pDatabase, vEvent);
+					
+					EventDatabase_DeleteEvent(pDatabase, vEvent, true);
 					vNumEvents = vNumEvents - 1;
 				else
 					vEventIndex = vEventIndex + 1;
@@ -3653,7 +1989,7 @@ function EventDatabase_RemoveTradeskillEventByType(pDatabase, pEventType)
 			local	vEvent = vSchedule[vEventIndex];
 			
 			if vEvent.mType == pEventType then
-				EventDatabase_DeleteEvent(pDatabase, vEvent);
+				EventDatabase_DeleteEvent(pDatabase, vEvent, true);
 				vNumEvents = vNumEvents - 1;
 			else
 				vEventIndex = vEventIndex + 1;
@@ -3678,7 +2014,7 @@ function EventDatabase_ScheduleResetEvent(pDatabase, pType, pResetDate, pResetTi
 				-- Otherwise delete it and schedule a new one
 				
 				else
-					EventDatabase_DeleteEvent(pDatabase, vEvent);
+					EventDatabase_DeleteEvent(pDatabase, vEvent, true);
 					break;
 				end
 			end
@@ -3699,7 +2035,6 @@ end
 
 function EventDatabase_ScheduleSavedInstanceEvents()
 	local vCurrentServerDate, vCurrentServerTime = Calendar_GetCurrentServerDateTime();
-	
 	-- Remove the existing saved info
 	
 	EventDatabase_RemoveSavedInstanceEvents(gGroupCalendar_UserDatabase, vCurrentServerDate);
@@ -3730,7 +2065,7 @@ function EventDatabase_ScheduleSavedInstanceEvent(pDatabase, pName, pResetDate, 
 	
 	if vEventInfo.frequency then
 		vNumEvents = 4;
-		vFrequency = vEventInfo.frequency * gCalendarMinutesPerDay;
+		vFrequency = vEventInfo.frequency;
 	else
 		vNumEvents = 1;
 	end
@@ -3742,7 +2077,7 @@ function EventDatabase_ScheduleSavedInstanceEvent(pDatabase, pName, pResetDate, 
 		EventDatabase_ScheduleResetEvent(pDatabase, vType, vDate, vTime);
 		
 		if vEventInfo.frequency then
-			vDate, vTime = Calendar_AddOffsetToDateTime(vDate, vTime, vFrequency);
+			vDate = Calendar_AddDays(vDate, vEventInfo.frequency);
 		end
 	end
 end
@@ -3779,131 +2114,4 @@ function EventDatabase_UpdateCurrentTradeskillCooldown()
 	EventDatabase_UpdateTradeskillCooldown(gGroupCalendar_UserDatabase, vTradeskillID);
 end
 
-function EventDatabase_MapGuildRank(pFromGuild, pFromRank)
-	if not pFromGuild
-	or not pFromRank then
-		return nil;
-	end
-	
-	-- If it's the same guild then just return the rank
-	
-	if pFromGuild == gGroupCalendar_PlayerGuild then
-		return pFromRank;
-	end
-	
-	-- Force to zero if not in any guild
-	
-	if not IsInGuild() then
-		return nil;
-	end
-	
-	-- Just cover our eyes if the roster isn't loaded yet
-	
-	if GetNumGuildMembers() == 0 then
-		CalendarNetwork_LoadGuildRoster();
-		return pFromRank;
-	end
-	
-	local	vMaxGuildRank = GuildControlGetNumRanks() - 1;
-	
-	-- Get the mapping
-	
-	local	vToRankMap;
 
-	if gGroupCalendar_RealmSettings.RankMap then
-		vToRankMap = gGroupCalendar_RealmSettings.RankMap[gGroupCalendar_PlayerGuild];
-	end
-	
-	local	vRankMap;
-	
-	if vToRankMap then
-		vRankMap = vToRankMap[pFromGuild];
-	end
-	
-	if vRankMap then
-		local	vToRank = vRankMap[pFromRank];
-		
-		if vToRank then
-			return vToRank;
-		end
-		
-		-- If there's not a mapping for self rank, map it to the
-		-- same value as the next highest rank
-		
-		for vFromRank, vToRank in vRankMap do
-			if vFromRank > pFromRank then
-				return vToRank;
-			end
-		end
-	end
-	
-	-- Do a dumb mapping which simply ensures that the rank index
-	-- is valid for the current guild
-	
-	if pFromRank > vMaxGuildRank then
-		return vMaxGuildRank;
-	else
-		return pFromRank;
-	end
-end
-
-function EventDatabase_SetGuildRankMapping(pFromGuild, pFromRank, pToRank)
-	if not pFromGuild
-	or pFromGuild == ""
-	or not pFromRank then
-		return;
-	end
-	
-	-- If it's the same guild then there's nothing to do
-	
-	if pFromGuild == gGroupCalendar_PlayerGuild then
-		return;
-	end
-	
-	-- Make sure the maps exist
-	
-	if not gGroupCalendar_RealmSettings.RankMap then
-		gGroupCalendar_RealmSettings.RankMap = {};
-	end
-	
-	-- Make sure the to guild map exists
-	
-	local	vToGuildMap = gGroupCalendar_RealmSettings.RankMap[gGroupCalendar_PlayerGuild];
-	
-	if not vToGuildMap then
-		vToGuildMap = {};
-		gGroupCalendar_RealmSettings.RankMap[gGroupCalendar_PlayerGuild] = vToGuildMap;
-	end
-	
-	-- Make sure the from guild map exists
-	
-	local	vGuildMap = vToGuildMap[pFromGuild];
-	
-	if not vGuildMap then
-		vGuildMap = {};
-		vToGuildMap[pFromGuild] = vGuildMap;
-	end
-	
-	vGuildMap[pFromRank] = pToRank;
-end
-
-function EventDatabase_UpdateGuildRankCache()
-	if not gGroupCalendar_PlayerGuild
-	or not gGroupCalendar_Initialized then
-		return;
-	end
-	
-	if not gGroupCalendar_RealmSettings.GuildRanks then
-		gGroupCalendar_RealmSettings.GuildRanks = {};
-	end
-	
-	vGuildRanks = {};
-	
-	local	vNumRanks = GuildControlGetNumRanks();
-	
-	for vIndex = 1, vNumRanks do
-		vGuildRanks[vIndex - 1] = GuildControlGetRankName(vIndex);
-	end
-	
-	gGroupCalendar_RealmSettings.GuildRanks[gGroupCalendar_PlayerGuild] = vGuildRanks;
-end

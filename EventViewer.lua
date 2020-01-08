@@ -1,9 +1,9 @@
 gCalendarEventViewer_ShowScheduleEditor = false;
 gCalendarEventViewer_Active = false;
 
+gCalendarEventViewer_SelectedPlayerDatabase = nil;
 gCalendarEventViewer_Database = nil;
 gCalendarEventViewer_Event = nil;
-gCalendarEventViewer_SelectedPlayerDatabase = nil;
 
 gCalendarEventViewer_PanelFrames =
 {
@@ -16,8 +16,7 @@ gCalendarEventViewer_CurrentPanel = 1;
 function CalendarEventViewer_ViewEvent(pDatabase, pEvent)
 	gCalendarEventViewer_Database = pDatabase;
 	gCalendarEventViewer_Event = pEvent;
-	gCalendarEventViewer_SelectedPlayerDatabase = gGroupCalendar_UserDatabase;
-	
+
 	CalendarAttendanceList_SetEvent(CalendarEventViewerAttendance, pDatabase, pEvent);
 	CalendarEventViewer_UpdateControlsFromEvent(gCalendarEventViewer_Event, false);
 	
@@ -34,7 +33,7 @@ function CalendarEventViewer_DoneViewing()
 	if not gCalendarEventViewer_Active then
 		return;
 	end
-	
+
 	CalendarEventViewer_Close(true);
 end
 
@@ -55,107 +54,69 @@ end
 
 function CalendarEventViewer_Save()
 	-- Save attendance feedback
-	
 	if EventDatabase_EventTypeUsesAttendance(gCalendarEventViewer_Event.mType)
-	and EventDatabase_PlayerIsQualifiedForEvent(gCalendarEventViewer_Event, gCalendarEventViewer_SelectedPlayerDatabase.PlayerLevel) then
-		local	vPendingRSVP = EventDatabase_FindRSVPRequestData(gCalendarEventViewer_SelectedPlayerDatabase, gCalendarEventViewer_Database.UserName, gCalendarEventViewer_Event.mID);
-		local	vEventRSVP = EventDatabase_FindEventRSVP(gCalendarEventViewer_Database.UserName, gCalendarEventViewer_Event, gCalendarEventViewer_SelectedPlayerDatabase.UserName);
-		local	vChanged = false;
-		local	vHasResponse = false;
-		local	vStatus;
-		local	vComment;
-		local	vRole = "U";
+	and EventDatabase_PlayerIsQualifiedForEvent(gCalendarEventViewer_Event, gCalendarEventViewer_SelectedPlayerDatabase.PlayerLevel) 
+	and (CalendarEventViewerYes:GetChecked() or CalendarEventViewerNo:GetChecked())
+	then
+		local pCharacter = gCalendarEventViewer_SelectedPlayerDatabase.UserName;
+		local vNewComment = Calendar_EscapeString(CalendarEventViewerComment:GetText());
+		local pRoleCode = EventDatabase_GetRoleCodeByRole(UIDropDownMenu_GetSelectedValue(CalendarEventViewerRoleMenu));
 
-		if not vPendingRSVP then
-			if vEventRSVP then
-				vStatus = vEventRSVP.mStatus;
-				vComment = vEventRSVP.mComment;
-				if vEventRSVP.mRole then
-					vRole = vEventRSVP.mRole;
+		local	vDate, vTime = EventDatabase_GetServerDateTime60Stamp();
+
+		for DBindex, vPlayerDB in pairs (EventDatabase_GetPlayerDatabases()) do		
+			if  pCharacter == vPlayerDB.UserName then	
+				
+				local OldRSVP = gCalendarEventViewer_Event.mAttendance[pCharacter];
+				
+				local RSVP = {};			
+			
+				RSVP.mName = pCharacter;
+				RSVP.mRole = pRoleCode;
+				RSVP.mDate = vDate;
+				RSVP.mTime = vTime;
+				if CalendarEventViewerYes:GetChecked() then
+					if OldRSVP and OldRSVP.mStatus == "S" then
+						RSVP.mStatus = "S";
+					else
+						RSVP.mStatus = "Y";
+					end
+				else
+					RSVP.mStatus = "N";
 				end
-			else
-				vStatus = nil;
-				vComment = "";
-			end
-		else
-			vStatus = vPendingRSVP.mStatus;
-			vComment = vPendingRSVP.mComment;
-		end
-		
-		if not vComment then
-			vComment = "";
-		end
-		
-		-- Update the status
-		
-		if CalendarEventViewerYes:GetChecked() then
-			vHasResponse = true;
-			
-			if vStatus ~= "Y" then
-				vStatus = "Y";
-				vChanged = true;
-			end
-		elseif CalendarEventViewerNo:GetChecked() then
-			vHasResponse = true;
-			
-			if vStatus ~= "N" then
-				vStatus = "N";
-				vChanged = true;
-			end
-		--[[
-		elseif vStatus ~= nil
-		and vStatus ~= "-" then
-			vStatus = "-";
-			vChanged = true;
-		]]
-		end
-		
-		-- Update the comment
-		
-		if vHasResponse then
-			local	vNewComment = Calendar_EscapeString(CalendarEventViewerComment:GetText());
-			
-			if vComment ~= vNewComment then
-				vComment = vNewComment;
-				vChanged = true;
-			end
-		end
+				RSVP.mComment = vNewComment;
 
-		if vHasResponse then
+				if not OldRSVP or not OldRSVP.mOriginalDate then
+					RSVP.mOriginalDate = vDate;
+					RSVP.mOriginalTime = vTime;
+				else
+					RSVP.mOriginalDate = OldRSVP.mOriginalDate;
+					RSVP.mOriginalTime = OldRSVP.mOriginalTime;
+				end
+			
+				RSVP.mClassCode = vPlayerDB.PlayerClassCode;
+				RSVP.mRaceCode = vPlayerDB.PlayerRaceCode;
+				RSVP.mLevel = vPlayerDB.PlayerLevel;
+				RSVP.mGuildRank = vPlayerDB.GuildRank			
 
-			local vNewRole = EventDatabase_GetRoleCodeByRole(UIDropDownMenu_GetSelectedValue(CalendarEventViewerRoleMenu));
+				gCalendarEventViewer_Event.mAttendance[pCharacter] = RSVP;
+				CalendarNetwork_SendRSVPUpdate(gCalendarEventViewer_Event, RSVP);
 
-			if vNewRole and vRole ~= vNewRole then
-				vRole = vNewRole;
-				vChanged = true;
-				gGroupCalendar_PlayerSettings.UI.DefaultRole = vNewRole;
-			end
+				gCalendarEventViewer_SelectedPlayerDatabase.DefaultRole = pRoleCode;
+			elseif CalendarEventViewerYes:GetChecked() then -- don't change other characters unless we said we were going
+				local RSVP = gCalendarEventViewer_Event.mAttendance[vPlayerDB.UserName];
+				if RSVP and (RSVP.mStatus == "Y" or RSVP.mStatus == "S") then
+					RSVP.mStatus = "N";
+					RSVP.mDate = vDate;
+					RSVP.mTime = vTime;
+					CalendarNetwork_SendRSVPUpdate(gCalendarEventViewer_Event, RSVP);
+				end
+			end		
 		end
-
-		-- Add a new RSVP if it's changed
 		
-		if vChanged then
-			local	vRSVP = EventDatabase_CreatePlayerRSVP(
-									gCalendarEventViewer_Database,
-									gCalendarEventViewer_Event,
-									gCalendarEventViewer_SelectedPlayerDatabase.UserName,
-									gCalendarEventViewer_SelectedPlayerDatabase.PlayerRaceCode,
-									gCalendarEventViewer_SelectedPlayerDatabase.PlayerClassCode,
-									gCalendarEventViewer_SelectedPlayerDatabase.PlayerLevel,
-									vStatus,
-									vComment,
-									gGroupCalendar_PlayerGuild,
-									gGroupCalendar_PlayerGuildRank,
-									gGroupCalendar_PlayerCharacters,
-									vRole);
-			
-			EventDatabase_AddRSVP(gCalendarEventViewer_SelectedPlayerDatabase, vRSVP);
-			
-			-- Update the UI
-			
-			CalendarAttendanceList_EventChanged(CalendarEventViewerAttendance, gCalendarEventViewer_Database, gCalendarEventViewer_Event);
-			CalendarEventViewer_UpdateControlsFromEvent(gCalendarEventViewer_Event, false);
-		end
+		CalendarAttendanceList_EventChanged(CalendarEventViewerAttendance, gCalendarEventViewer_Database, gCalendarEventViewer_Event);
+		--CalendarEventViewer_UpdateControlsFromEvent(gCalendarEventViewer_Event, false);
+		
 	end
 end
 
@@ -197,17 +158,30 @@ function CalendarEventViewer_OnHide()
 end
 
 function CalendarEventViewer_SelectedCharacterChanged(pMenuFrame, pValue)
-	gCalendarEventViewer_SelectedPlayerDatabase = EventDatabase_GetDatabase(pValue, false);
-	CalendarEventViewer_UpdateControlsFromEvent(gCalendarEventViewer_Event, false);
+	gCalendarEventViewer_SelectedPlayerDatabase = EventDatabase_GetPlayerDatabase(pValue);
+	--CalendarEventViewer_UpdateControlsFromEvent(gCalendarEventViewer_Event, false);
 end
 
 
 function CalendarEventViewer_UpdateControlsFromEvent(pEvent, pSkipAttendanceFields)
 	-- Update the title
 
-	--CalendarDropDown_SetSelectedValue(CalendarEventViewerRoleMenu, gGroupCalendar_PlayerSettings.UI.DefaultRole);
+	
+	--CalendarDropDown_SetSelectedValue(CalendarEventViewerRoleMenu, gCalendarEventViewer_SelectedPlayerDatabase.DefaultRole);
 	CalendarEventViewerEventFrameEventTitle:SetText(EventDatabase_GetEventDisplayName(pEvent));
 	
+	local vPlayerName, vRSVP;
+
+	if EventDatabase_EventTypeUsesAttendance(pEvent.mType) then
+		vPlayerName, vRSVP = EventDatabase_GetEventRSVP(pEvent);
+
+		if vPlayerName then
+			gCalendarEventViewer_SelectedPlayerDatabase = EventDatabase_GetPlayerDatabase(vPlayerName);
+		else
+			gCalendarEventViewer_SelectedPlayerDatabase = EventDatabase_GetPlayerDatabase(gGroupCalendar_PlayerName);
+		end
+	end
+
 	-- Update the date and time
 	
 	if pEvent.mTime ~= nil then
@@ -277,6 +251,8 @@ function CalendarEventViewer_UpdateControlsFromEvent(pEvent, pSkipAttendanceFiel
 			CalendarEventViewerEventFrameLevels:Show();
 		end
 		
+		
+
 		if EventDatabase_PlayerIsQualifiedForEvent(gCalendarEventViewer_Event, gCalendarEventViewer_SelectedPlayerDatabase.PlayerLevel) then
 			CalendarEventViewerEventFrameLevels:SetTextColor(1.0, 0.82, 0);
 		else
@@ -303,17 +279,10 @@ function CalendarEventViewer_UpdateControlsFromEvent(pEvent, pSkipAttendanceFiel
 		local	vAttendanceComment = "";
 		local	vRoleCode = "U";
 
-		if gGroupCalendar_PlayerSettings.UI.DefaultRole then
-			vRoleCode = gGroupCalendar_PlayerSettings.UI.DefaultRole;
+		if gCalendarEventViewer_SelectedPlayerDatabase.DefaultRole then
+			vRoleCode = gCalendarEventViewer_SelectedPlayerDatabase.DefaultRole;
 		end
-
-		-- Check for an RSVP
-		local RSVP_str = EventDatabase_FindEventRSVPString(pEvent, gCalendarEventViewer_SelectedPlayerDatabase.UserName);
-		if RSVP_str then
-			local RSVP = EventDatabase_UnpackEventRSVP(nill, nill, nill, RSVP_str);
-			vRoleCode = RSVP.mRole;
-		end
-
+				
 		CalendarEventViewer_SetAttendanceVisible(true);
 		
 		if not pSkipAttendanceFields then
@@ -323,20 +292,9 @@ function CalendarEventViewer_UpdateControlsFromEvent(pEvent, pSkipAttendanceFiel
 		if EventDatabase_PlayerIsQualifiedForEvent(gCalendarEventViewer_Event, gCalendarEventViewer_SelectedPlayerDatabase.PlayerLevel) then
 			CalendarEventViewer_SetAttendanceEnabled(true);
 			
-			local	vPendingRSVP = EventDatabase_FindRSVPRequestData(gCalendarEventViewer_SelectedPlayerDatabase, gCalendarEventViewer_Database.UserName, gCalendarEventViewer_Event.mID);
-			local	vEventRSVP = EventDatabase_FindEventRSVP(gCalendarEventViewer_Database.UserName, gCalendarEventViewer_Event, gCalendarEventViewer_SelectedPlayerDatabase.UserName);
-			local	vRSVP;
-			
-			if (vEventRSVP and vEventRSVP.mStatus == "-")
-			or not vPendingRSVP then
-				vRSVP = vEventRSVP;
-			else
-				vRSVP = vPendingRSVP;
-			end
-			
 			if vRSVP then
 				vIsAttending = vRSVP.mStatus == "Y" or vRSVP.mStatus == "S";
-				vIsNotAttending = vRSVP.mStatus == "N";
+				vIsNotAttending = not vIsAttending;
 				vRoleCode = vRSVP.mRole;
 
 				if vRSVP.mComment then
@@ -344,17 +302,8 @@ function CalendarEventViewer_UpdateControlsFromEvent(pEvent, pSkipAttendanceFiel
 				end
 			end
 			
-			CalendarEventViewer_SetResponseStatus(vPendingRSVP, vEventRSVP);
+			CalendarEventViewerEventFrameStatus:SetText(CalendarEventViewer_cResponseMessage[vStatus]);			
 			
-			if vEventRSVP and vEventRSVP.mStatus == "-" then
-				CalendarEventViewerYes:Hide();
-				CalendarEventViewerNo:Hide();
-				CalendarEventViewerComment:Hide();
-			else
-				CalendarEventViewerYes:Show();
-				CalendarEventViewerNo:Show();
-				CalendarEventViewerComment:Show();
-			end
 		else
 			CalendarEventViewer_SetAttendanceEnabled(false);
 		end
@@ -437,12 +386,6 @@ function CalendarEventViewer_CalculateResponseStatus(pPendingRSVP, pEventRSVP)
 	else
 		return 1;
 	end
-end
-
-function CalendarEventViewer_SetResponseStatus(pPendingRSVP, pEventRSVP)
-	local	vStatus = CalendarEventViewer_CalculateResponseStatus(pPendingRSVP, pEventRSVP);
-	
-	CalendarEventViewerEventFrameStatus:SetText(CalendarEventViewer_cResponseMessage[vStatus]);
 end
 
 function CalendarEventViewer_ShowPanel(pPanelIndex)

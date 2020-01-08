@@ -23,6 +23,8 @@ if GetLocale() == "frFR" then
 	GroupCalendar_Settings_ShowMinimapTip = "Show/Hide the minimap icon.";
 	GroupCalendar_Settings_MondayFirstDay = "Monday first day of week";
 	GroupCalendar_Settings_MondayFirstDayTip = "Display Monday as the first day in the calendar.";
+	GroupCalendar_Settings_Use24HrTime = "Utiliser le temps de 24 heures";
+	GroupCalendar_Settings_Use24HrTimeTip = "Utiliser le temps de 24 heures";
 
 	GroupCalendar_cSelfWillAttend = "%s sera pr\195\169sent";
 
@@ -70,12 +72,10 @@ if GetLocale() == "frFR" then
 
 	GroupCalendar_cAboutTitle = "A propos de Group Calendar";
 	GroupCalendar_cTitleVersion = "Group Calendar "..gGroupCalendar_VersionString;
-	GroupCalendar_cAuthor = "Designed and written by Baylord of Thunderlord";
-	GroupCalendar_cTestersTitle = "Beta Testers";
-	GroupCalendar_cTestersNames = "Agnosbear, Airmid, Allaric, Andrys, Chaz, Deathwave, Drizztt, Fizzlebang, Mistwalker, Ragdzar, Saracen, Thoros, Usps and Zya";
-	GroupCalendar_cSpecialThanksTitle = "Special thanks for their extraordinary support to";
-	GroupCalendar_cSpecialThanksNames = "Agnosbear, Fizzlebang, Mistwalker and SFC Alliance";
-	GroupCalendar_cGuildURL = "http://www.starfleetclan.com";
+	GroupCalendar_cAuthor = "Auteur classique: Magne - Remulos".."\n".."Auteur vanille: Baylord - Thunderlord";
+	GroupCalendar_cTestersTitle = "Testeurs";
+	GroupCalendar_cSpecialThanksTitle = "Remerciement spécial";
+
 	GroupCalendar_cRebuildDatabase = "Reconstruire la base de donn\195\169es";
 	GroupCalendar_cRebuildDatabaseDescription = "Reconstruit la base de don\195\169es de votre personnage. Cela devrait r\195\169soudre les probl\195\168mes pour les personnes qui ne voient pas tous vos \195\169vents, Mais il y a un l\195\169ger risque que certaines r\195\169ponses d\'assistance d\'\195\169vent soient p\195\169rdues.";
 
@@ -272,10 +272,7 @@ if GetLocale() == "frFR" then
 	CalendarEventEditor_cNotTrustedMsg = "Impossible de créer des événements en raison des paramètres de confiance";
 	CalendarEventEditor_cOk = "d'accord";
 
-	GroupCalendar_cGermanTranslation = "Traduction allemande: Palyr de Silver Hand";
-	GroupCalendar_cFrenchTranslation = "Traduction fran\195\167aise: Kisanth de Dalaran (EU)";
-	GroupCalendar_cChineseTranslation = "Chinese translation by Aska of Royaltia (HK)";
-
+	
 	CalendarEventEditor_cNotAttending = "Ne viens pas";
 	CalendarEventEditor_cConfirmed = "Confirm\195\169";
 	CalendarEventEditor_cDeclined = "Declin\195\169";

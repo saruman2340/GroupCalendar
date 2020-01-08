@@ -27,6 +27,8 @@ if GetLocale() == "koKR" then
 	GroupCalendar_Settings_ShowMinimapTip = "Show/Hide the minimap icon.";
 	GroupCalendar_Settings_MondayFirstDay = "Monday first day of week";
 	GroupCalendar_Settings_MondayFirstDayTip = "Display Monday as the first day in the calendar.";
+	GroupCalendar_Settings_Use24HrTime = "24 시간 사용";
+	GroupCalendar_Settings_Use24HrTimeTip = "24 시간 사용";
 
 	GroupCalendar_cSelfWillAttend = "%s 출석에 포함";
 
@@ -71,12 +73,10 @@ if GetLocale() == "koKR" then
 
 	GroupCalendar_cAboutTitle = "About Group Calendar";
 	GroupCalendar_cTitleVersion = "Group Calendar v"..gGroupCalendar_VersionString;
-	GroupCalendar_cAuthor = "Designed and written by Baylord of Thunderlord";
-	GroupCalendar_cTestersTitle = "Beta Testers";
-	GroupCalendar_cTestersNames = "Agnosbear, Airmid, Allaric, Andrys, Chaz, Deathwave, Drizztt, Fizzlebang, Mistwalker, Ragdzar, Saracen, Thoros, Usps and Zya";
-	GroupCalendar_cSpecialThanksTitle = "Special thanks for their extraordinary support to";
-	GroupCalendar_cSpecialThanksNames = "Agnosbear, Fizzlebang, Mistwalker and SFC Alliance";
-	GroupCalendar_cGuildURL = "http://www.starfleetclan.com";
+	GroupCalendar_cAuthor = "클래식 작가: Magne - Remulos".."\n".."바닐라 작가: Baylord - Thunderlord";
+	GroupCalendar_cTestersTitle = "테스터";
+	GroupCalendar_cSpecialThanksTitle = "특별 감사";
+	
 	GroupCalendar_cRebuildDatabase = "데이터베이스 재구성";
 	GroupCalendar_cRebuildDatabaseDescription = "사용자의 이벤트 데이터베이스를 재구성합니다. 당신의 이벤트를 다른 사람들이 모두 볼 수 없을 때 해결 방법입니다. 그러나 이벤트 출석 여부에 대한 정보가 삭제될 수 있습니다.";
 
@@ -271,11 +271,6 @@ if GetLocale() == "koKR" then
 
 	CalendarEventEditor_cNotTrustedMsg = "트러스트 설정으로 인해 이벤트를 만들 수 없습니다";
 	CalendarEventEditor_cOk = "괜찮아";
-
-	GroupCalendar_cGermanTranslation = "German translation by Palyr of Silver Hand";
-	GroupCalendar_cFrenchTranslation = "French translation by Kisanth of Dalaran (EU)";
-	GroupCalendar_cChineseTranslation = "Chinese translation by Aska of Royaltia (HK)";
-	GroupCalendar_cKoreanTranslation = "Korean translation by 기괴한황혼 of 듀로탄 (KR)";
 
 	CalendarEventEditor_cNotAttending = "참석하지 않음";
 	CalendarEventEditor_cConfirmed = "승인";

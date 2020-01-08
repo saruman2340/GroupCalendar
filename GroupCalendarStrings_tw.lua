@@ -28,6 +28,8 @@ if GetLocale() == "zhTW" then
 	GroupCalendar_Settings_ShowMinimapTip = "Show/Hide the minimap icon.";
 	GroupCalendar_Settings_MondayFirstDay = "Monday first day of week";
 	GroupCalendar_Settings_MondayFirstDayTip = "Display Monday as the first day in the calendar.";
+	GroupCalendar_Settings_Use24HrTime = "使用24小時制";
+	GroupCalendar_Settings_Use24HrTimeTip = "使用24小時制";
 
 	GroupCalendar_cSelfWillAttend = "%s會出席";
 
@@ -76,12 +78,10 @@ if GetLocale() == "zhTW" then
 
 	GroupCalendar_cAboutTitle = "關於團體行事曆";
 	GroupCalendar_cTitleVersion = "團體行事曆 v"..gGroupCalendar_VersionString;
-	GroupCalendar_cAuthor = "由 Thunderlord 的 Baylord 設計及編寫";
+	GroupCalendar_cAuthor = "經典作者: Magne - Remulos".."\n".."Vanilla作者: Baylord - Thunderlord";
 	GroupCalendar_cTestersTitle = "測試人員";
+	GroupCalendar_cSpecialThanksTitle = "特別感謝";
 
-	GroupCalendar_cSpecialThanksTitle = "特別鳴謝";
-
-	GroupCalendar_cGuildURL = "http://www.andyaska.com";
 	GroupCalendar_cRebuildDatabase = "重新建立資料庫";
 	GroupCalendar_cRebuildDatabaseDescription = "重新建立活動資料庫給您的角色。有助解決無法觀看所有活動的問題，但是此舉動可能有機會會遺失出席回覆的資訊。";
 
@@ -277,10 +277,6 @@ if GetLocale() == "zhTW" then
 
 	CalendarEventEditor_cNotTrustedMsg = "由於信任設置而無法創建事件";
 	CalendarEventEditor_cOk = "好的";
-
-	GroupCalendar_cGermanTranslation = "德文翻譯由 Silver Hand 的 Palyr 提供";
-	GroupCalendar_cFrenchTranslation = "法文翻譯由 Dalaran (EU) 的 Kisanth 提供";
-	GroupCalendar_cChineseTranslation = "中文翻譯由 Royaltia (HK) 的 Aska 提供";
 
 	CalendarEventEditor_cNotAttending = "不出席";
 	CalendarEventEditor_cConfirmed = "已確定";

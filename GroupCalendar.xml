@@ -2,8 +2,8 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.blizzard.com/wow/ui/ http://wowprogramming.com/FrameXML/UI.xsd">
 	
-	<Script file="EventDatabase.lua"/>
-	<Script file="CalendarNetwork.lua"/>
+  <Script file="EventDatabase.lua"/>
+  <Script file="CalendarNetwork.lua"/>
 	<Script file="CalendarDisplay.lua"/>
 	<Script file="GroupCalendarMD5.lua"/>
 	<Script file="CalendarGroupInvites.lua"/>
@@ -1028,21 +1028,7 @@
 			</Frame>
 
 			<Frame name="GroupCalendarAboutFrame" hidden="true" setAllPoints="true">
-				<Layers>
-					<Layer level="BACKGROUND">
-						<Texture file="Interface\Addons\GroupCalendar\Textures\GuildLogo">
-							<Size>
-								<AbsDimension x="256" y="256"/>
-							</Size>
-							<Anchors>
-								<Anchor point="CENTER">
-									<Offset>
-										<AbsDimension x="7" y="-25"/>
-									</Offset>
-								</Anchor>
-							</Anchors>
-						</Texture>
-					</Layer>
+				<Layers>					
 					<Layer level="OVERLAY">
 						<FontString text="GroupCalendar_cAboutTitle" inherits="GameFontNormalLarge">
 							<Anchors>
@@ -1074,14 +1060,39 @@
 								</Anchor>
 							</Anchors>
 						</FontString>
-						<FontString name="GroupCalendarTestersTitle" text="GroupCalendar_cTestersTitle" inherits="GameFontNormal">
+            <FontString name="GroupCalendarSpecialThanksTitle" text="GroupCalendar_cSpecialThanksTitle" inherits="GameFontNormal">
+              <Size>
+                <AbsDimension x="310"/>
+              </Size>
+              <Anchors>
+                <Anchor point="TOP" relativeTo="GroupCalendarAboutAuthor" relativePoint="BOTTOM">
+                  <Offset>
+                    <AbsDimension x="0" y="-15"/>
+                  </Offset>
+                </Anchor>
+              </Anchors>
+            </FontString>
+            <FontString name="GroupCalendarSpecialThanksNames" text="GroupCalendar_cSpecialThanksNames" inherits="GameFontHighlightSmall">
+              <Size>
+                <AbsDimension x="310"/>
+              </Size>
+              <Anchors>
+                <Anchor point="TOP" relativeTo="GroupCalendarSpecialThanksTitle" relativePoint="BOTTOM">
+                  <Offset>
+                    <AbsDimension x="0" y="-5"/>
+                  </Offset>
+                </Anchor>
+              </Anchors>
+            </FontString>
+            
+            <FontString name="GroupCalendarTestersTitle" text="GroupCalendar_cTestersTitle" inherits="GameFontNormal">
 							<Size>
 								<AbsDimension x="310"/>
 							</Size>
 							<Anchors>
-								<Anchor point="TOP" relativeTo="GroupCalendarAboutTitleVersion" relativePoint="TOP">
+								<Anchor point="TOP" relativeTo="GroupCalendarSpecialThanksNames" relativePoint="BOTTOM">
 									<Offset>
-										<AbsDimension x="0" y="-50"/>
+										<AbsDimension x="0" y="-15"/>
 									</Offset>
 								</Anchor>
 							</Anchors>
@@ -1097,79 +1108,7 @@
 									</Offset>
 								</Anchor>
 							</Anchors>
-						</FontString>
-						<FontString name="GroupCalendarGuildURL" text="GroupCalendar_cGuildURL" inherits="GameFontHighlightSmall">
-							<Size>
-								<AbsDimension x="310" y="13"/>
-							</Size>
-							<Anchors>
-								<Anchor point="BOTTOM">
-									<Offset>
-										<AbsDimension x="0" y="68"/>
-									</Offset>
-								</Anchor>
-							</Anchors>
-						</FontString>
-						<FontString name="GroupCalendarChineseTranslation" text="GroupCalendar_cChineseTranslation" inherits="GameFontHighlightSmall">
-							<Size>
-								<AbsDimension x="310" y="11"/>
-							</Size>
-							<Anchors>
-								<Anchor point="BOTTOM" relativeTo="GroupCalendarGuildURL" relativePoint="TOP">
-									<Offset>
-										<AbsDimension x="0" y="8"/>
-									</Offset>
-								</Anchor>
-							</Anchors>
-						</FontString>
-						<FontString name="GroupCalendarGermanTranslation" text="GroupCalendar_cGermanTranslation" inherits="GameFontHighlightSmall">
-							<Size>
-								<AbsDimension x="310" y="11"/>
-							</Size>
-							<Anchors>
-								<Anchor point="BOTTOM" relativeTo="GroupCalendarChineseTranslation" relativePoint="TOP">
-									<Offset>
-										<AbsDimension x="0" y="4"/>
-									</Offset>
-								</Anchor>
-							</Anchors>
-						</FontString>
-						<FontString name="GroupCalendarFrenchTranslation" text="GroupCalendar_cFrenchTranslation" inherits="GameFontHighlightSmall">
-							<Size>
-								<AbsDimension x="310" y="11"/>
-							</Size>
-							<Anchors>
-								<Anchor point="BOTTOM" relativeTo="GroupCalendarGermanTranslation" relativePoint="TOP">
-									<Offset>
-										<AbsDimension x="0" y="4"/>
-									</Offset>
-								</Anchor>
-							</Anchors>
-						</FontString>
-						<FontString name="GroupCalendarSpecialThanksTitle" text="GroupCalendar_cSpecialThanksTitle" inherits="GameFontNormal">
-							<Size>
-								<AbsDimension x="310"/>
-							</Size>
-							<Anchors>
-								<Anchor point="TOP" relativeTo="GroupCalendarFrenchTranslation" relativePoint="TOP">
-									<Offset>
-										<AbsDimension x="0" y="65"/>
-									</Offset>
-								</Anchor>
-							</Anchors>
-						</FontString>
-						<FontString name="GroupCalendarSpecialThanksNames" text="GroupCalendar_cSpecialThanksNames" inherits="GameFontHighlight">
-							<Size>
-								<AbsDimension x="310"/>
-							</Size>
-							<Anchors>
-								<Anchor point="TOP" relativeTo="GroupCalendarSpecialThanksTitle" relativePoint="BOTTOM">
-									<Offset>
-										<AbsDimension x="0" y="-5"/>
-									</Offset>
-								</Anchor>
-							</Anchors>
-						</FontString>
+						</FontString>						
 					</Layer>
 				</Layers>
 				<Frames>
@@ -1202,31 +1141,7 @@
 								GameTooltip:Hide();
 							</OnLeave>
 						</Scripts>
-					</Button>
-					<Button name="GroupCalendarRebuildButton" inherits="UIPanelButtonTemplate" text="GroupCalendar_cRebuildDatabase">
-						<Size>
-							<AbsDimension x="250" y="21"/>
-						</Size>
-						<Anchors>
-							<Anchor point="BOTTOM">
-								<Offset>
-									<AbsDimension x="0" y="40"/>
-								</Offset>
-							</Anchor>
-						</Anchors>
-						<Scripts>
-							<OnClick>
-								PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON );
-								EventDatabase_RebuildPlayerDatabases();
-							</OnClick>
-							<OnEnter>
-                GameTooltip_AddNewbieTip(self, GroupCalendar_cRebuildDatabase, 1.0, 1.0, 1.0, GroupCalendar_cRebuildDatabaseDescription, 1);
-              </OnEnter>
-							<OnLeave>
-								GameTooltip:Hide();
-							</OnLeave>
-						</Scripts>
-					</Button>
+					</Button>					
 				</Frames>
 			</Frame>
 			

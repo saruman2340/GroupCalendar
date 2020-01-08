@@ -24,6 +24,8 @@ if GetLocale() == "ruRU" then
 	GroupCalendar_Settings_ShowMinimapTip = "Показать миникарту";
 	GroupCalendar_Settings_MondayFirstDay = "Понедельник первый день недели";
 	GroupCalendar_Settings_MondayFirstDayTip = "Понедельник первый день недели";
+	GroupCalendar_Settings_Use24HrTime = "Используйте 24-часовое время";
+	GroupCalendar_Settings_Use24HrTimeTip = "Используйте 24-часовое время";
 
 	GroupCalendar_cSelfWillAttend = "%s будет присутствовать";
 
@@ -71,17 +73,10 @@ if GetLocale() == "ruRU" then
 
 	GroupCalendar_cAboutTitle = "О Group Calendar";
 	GroupCalendar_cTitleVersion = "Group Calendar v"..gGroupCalendar_VersionString;
-	GroupCalendar_cAuthor = "Добро пожаловать";
-	GroupCalendar_cTestersTitle = "Подсказки";
-	GroupCalendar_cTestersNames = "Доступ определяет, кто может создать событие, звание определяет, кто имеет приоритет, при настройке события. кроме того, вы можете включить или отключить игрокам из возможность создавать события.";
-	GroupCalendar_cSpecialThanksTitle = "Важно:";
-	GroupCalendar_cSpecialThanksNames = "Не забудьте переключиться с автоматического канала на ручной для безопасности календаря :)";
+	GroupCalendar_cAuthor = "Классический Автор: Magne - Remulos".."\n".."Автор ванили: Baylord - Thunderlord";
+	GroupCalendar_cTestersTitle = "Тестеры";
+	GroupCalendar_cSpecialThanksTitle = "Специальная благодарность:";
 
-	GroupCalendar_cFrenchTranslation = "Для получения дополнительной информации, пожалуйста, прочитайте руководство";
-	GroupCalendar_cGermanTranslation = "которое можно найти в вашей";
-	GroupCalendar_cChineseTranslation = "папке с аддонами World Of Warcraft:";
-
-	GroupCalendar_cGuildURL = "Addons/GroupCalendar/Documentation/Usermanual.html";
 	GroupCalendar_cRebuildDatabase = "Восстановить базу данных";
 	GroupCalendar_cRebuildDatabaseDescription = "Перестроить базу данных событий для вашего персонажа. Это может решить проблемы людей, не видящих все ваши события, но есть небольшой риск, что некоторые ответы на посещение событий могут быть потеряны.";
 

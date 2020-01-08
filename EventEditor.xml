@@ -378,7 +378,7 @@
 						<Anchors>
 							<Anchor point="TOPLEFT" relativeTo="CalendarEventDescriptionFrame" relativePoint="BOTTOMLEFT">
 								<Offset>
-									<AbsDimension x="-4" y="0"/>
+									<AbsDimension x="-75" y="0"/>
 								</Offset>
 							</Anchor>
 						</Anchors>
@@ -388,15 +388,24 @@
 								getglobal(self:GetName().."Text"):SetJustifyH("LEFT");
 							</OnLoad>
 							<OnClick>
-								CalendarEventEditor_SetSelfAttend(self:GetChecked());
+								CalendarEventEditor_SetSelfAttend();
 							</OnClick>
 						</Scripts>
 					</CheckButton>
+          <Frame name="CalendarEventEditorCharacter" inherits="CalendarCharactersTemplate">
+            <Anchors>
+              <Anchor point="TOPRIGHT" relativeTo="CalendarEventDescriptionFrame" relativePoint="BOTTOMRIGHT">
+                <Offset>
+                  <AbsDimension x="-20" y="-3"/>
+                </Offset>
+              </Anchor>
+            </Anchors>
+          </Frame>
           <Frame name="CalendarEventEditorRole" inherits="CalendarRolesTemplate">
             <Anchors>
-              <Anchor point="TOPLEFT" relativeTo="CalendarEventDescriptionFrame" relativePoint="BOTTOMLEFT">
+              <Anchor point="TOPRIGHT" relativeTo="CalendarEventEditorCharacter" relativePoint="BOTTOMRIGHT">
                 <Offset>
-                  <AbsDimension x="-53" y="-27"/>
+                  <AbsDimension x="0" y="-7"/>
                 </Offset>
               </Anchor>
             </Anchors>            
@@ -453,14 +462,16 @@
 			</OnHide>
 		</Scripts>
 	</Frame>
-	
-	<Frame name="CalendarClassLimitsFrame" framelevel="128" parent="GroupCalendarFrame" hidden="true" frameStrata="DIALOG" inherits="CalendarClassLimitsTemplate">
-		<Anchors>
+
+
+  <Frame name="CalendarClassLimitsFrame" framelevel="128" parent="GroupCalendarFrame" hidden="true" frameStrata="DIALOG" inherits="CalendarClassLimitsTemplate">
+    <Anchors>
       <Anchor point="CENTER">
         <Offset>
           <AbsDimension x="200" y="0"/>
         </Offset>
       </Anchor>
-		</Anchors>
-	</Frame>
+    </Anchors>
+  </Frame>
+
 </UI>

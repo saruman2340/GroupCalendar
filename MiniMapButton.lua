@@ -26,7 +26,7 @@ local MiniMapLDB = LibStub:GetLibrary("LibDataBroker-1.1"):NewDataObject("GroupC
 		if GroupCalendarFrame:IsVisible() then
           HideUIPanel(GroupCalendarFrame);
         else
-          ShowUIPanel(GroupCalendarFrame);
+          ShowUIPanel(GroupCalendarFrame);		  
         end
 	end,
 })

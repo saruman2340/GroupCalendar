@@ -15,7 +15,7 @@ gCalendarEventEditor_EventTime = nil;
 gCalendarEventEditor_EventDateIsLocal = false;
 
 gGroupCalendar_cNumAttendanceItems = 12;
-gGroupCalendar_cNumAutoConfirmAttendanceItems = 10;
+gGroupCalendar_cNumAutoConfirmAttendanceItems = 11;
 gGroupCalendar_cNumPlainAttendanceItems = 16;
 gGroupCalendar_cAttendanceItemHeight = 16;
 
@@ -164,7 +164,7 @@ function CalendarEventEditor_OnHide()
 	CalendarAddPlayer_Cancel(); -- Force the dialog to close if it's open
 	
 	if not gCalendarEventEditor_ShowScheduleEditor then
-		CalendarEventEditor_SaveEvent();
+		--CalendarEventEditor_SaveEvent();
 		HideUIPanel(CalendarEditorFrame);
 	end
 	
@@ -184,7 +184,9 @@ end
 function CalendarEventEditor_UpdateControlsFromEvent(pEvent, pExistingValuesOnly)
 	if not pExistingValuesOnly
 	or pEvent.mType then
-		CalendarDropDown_SetSelectedValue(CalendarEventTypeEventType, pEvent.mType);	
+		--UIDropDownMenu_SetSelectedValue(CalendarEventTypeEventTypeMenu, pEvent.mType);
+		CalendarDropDown_SetSelectedValue(CalendarEventTypeEventType, pEvent.mType);
+		--CalendarEventEditor_SetEventType(pEvent.mType);
 	end
 	
 	if pEvent.mTitle and pEvent.mTitle ~= "" then
@@ -235,13 +237,24 @@ function CalendarEventEditor_UpdateControlsFromEvent(pEvent, pExistingValuesOnly
 	end
 
 	-- Get the RSVP/Role selected
-	local RSVP_str = EventDatabase_FindEventRSVPString(pEvent, gGroupCalendar_PlayerName);
-	if RSVP_str then
-		local RSVP = EventDatabase_UnpackEventRSVP(nill, nill, nill, RSVP_str)
-		CalendarDropDown_SetSelectedValue(CalendarEventEditorRoleMenu, EventDatabase_GetRoleByRoleCode(RSVP.mRole))	
+	local vPlayerName, vRSVP = EventDatabase_GetEventRSVP(pEvent);	
+	
+	if vRSVP then
+		CalendarDropDown_SetSelectedValue(CalendarEventEditorCharacterMenu, vPlayerName);	
+		CalendarDropDown_SetSelectedValue(CalendarEventEditorRoleMenu, EventDatabase_GetRoleByRoleCode(vRSVP.mRole))	
+		CalendarEventEditorSelfAttend:SetChecked(true);
 	else
-		CalendarDropDown_SetSelectedValue(CalendarEventEditorRoleMenu, EventDatabase_GetRoleByRoleCode(gGroupCalendar_PlayerSettings.UI.DefaultRole)); 
+		local playerDB = EventDatabase_GetPlayerDatabase(gGroupCalendar_PlayerName);
+		local defaultRole = "U";
+		if playerDB.DefaultRole then
+			defaultRole = playerDB.DefaultRole;
+		end
+		CalendarDropDown_SetSelectedValue(CalendarEventEditorRoleMenu, EventDatabase_GetRoleByRoleCode(defaultRole)); 
+		CalendarDropDown_SetSelectedValue(CalendarEventEditorCharacterMenu, gGroupCalendar_PlayerName);
+		CalendarEventEditorSelfAttend:SetChecked(false);
 	end
+	
+	CalendarEventEditor_SetSelfAttend();
 end
 
 function CalendarEventEditor_SaveClassLimits(pLimits)
@@ -384,50 +397,17 @@ function CalendarEventEditor_UpdateEventFromControls(rEvent, rChangedFields)
 		rEvent.mMaxLevel = vValue;
 		rChangedFields.mMaxLevel = "UPD";
 		vChanged = true;
-	end	
-	
-	-- Automatic confirmations
-	
-	local	vManualConfirm;
-	
-	if EventDatabase_IsQuestingEventType(rEvent.mType) then
-		vManualConfirm = CalendarAttendanceList_GetManualConfirmEnable(CalendarEventEditorAttendance);
-	else
-		-- Non-questing events are always auto-confirm (ie meetings)
+	end			
 		
-		vManualConfirm = nil;
-	end
-	
-	if vManualConfirm ~= rEvent.mManualConfirm then
-		rEvent.mManualConfirm = vManualConfirm;
-		rChangedFields.mManualConfirm = {op = "UPD", val = vManualConfirm};
-	end
-	
-	if EventDatabase_IsQuestingEventType(rEvent.mType) then
-		if gCalendarEventEditor_NewClassLimits
-		and CalendarClassLimits_ClassLimitsChanged(rEvent.mLimits, gCalendarEventEditor_NewClassLimits) then
-			rEvent.mLimits = gCalendarEventEditor_NewClassLimits;
-			rChangedFields.mLimits = {op = "UPD", val = rEvent.mLimits};
-		end
-	else
-		-- No limits on non-questing event types (ie, meetings)
-		
-		if rEvent.mLimits then
-			rEvent.mLimits = nil;
-			rChangedFields.mLimits = {op = "UPD", val = rEvent.mLimits};
-		end
-	end
-	
-	-- Done
-	
 	return vChanged;
 end
+
+local vUsesAttendance = true;
 
 function CalendarEventEditor_SetEventType(pEventType)
 	-- CalendarEventTypeEventType:Show();
 	-- CalendarEventTitle:Show();
 	-- CalendarEventDescription:Show();
-	
 	local	vTitleText = CalendarEventTitle:GetText();
 	local	vEventName = EventDatabase_GetEventNameByID(gCalendarEventEditor_PreviousEventType);
 	local	vTitleWasEventName = vTitleText == vEventName;
@@ -440,7 +420,9 @@ function CalendarEventEditor_SetEventType(pEventType)
 		CalendarEventEditorDuration:Hide();
 	end
 	
-	if EventDatabase_EventTypeUsesLevelLimits(pEventType) then
+	vUsesAttendance = EventDatabase_EventTypeUsesLevelLimits(pEventType);
+
+	if vUsesAttendance then
 		CalendarEventMinLevel:Show();
 		CalendarEventMaxLevel:Show();
 	else
@@ -450,14 +432,14 @@ function CalendarEventEditor_SetEventType(pEventType)
 	
 	if EventDatabase_EventTypeUsesAttendance(pEventType) then
 		CalendarEventEditorFrameTab2:Show();
-		CalendarEventEditorSelfAttend:Show();
-		CalendarEventEditorRole:Show();
+		CalendarEventEditorSelfAttend:Show();		
 	else
 		CalendarEventEditorFrameTab2:Hide();
-		CalendarEventEditorSelfAttend:Hide();
-		CalendarEventEditorRole:Hide();
+		CalendarEventEditorSelfAttend:Hide();		
 	end
 	
+	CalendarEventEditor_SetSelfAttend();
+
 	if vTitleWasEventName then
 		CalendarEventTitle:SetText(EventDatabase_GetEventNameByID(pEventType));
 		CalendarEventTitle:SetFocus();
@@ -490,15 +472,16 @@ function CalendarEventEditor_DeleteRSVP()
 		return;
 	end
 	
-	gGroupCalendar_RSVPToDelete.mStatus = "-";
-	
-	EventDatabase_AddEventRSVP(
-			gCalendarEventEditor_Database,
-			gCalendarEventEditor_Event,
-			gGroupCalendar_RSVPToDelete.mName,
-			gGroupCalendar_RSVPToDelete);
-	
-	gGroupCalendar_RSVPToDelete = nil;
+	local	vDate, vTime60 = EventDatabase_GetServerDateTime60Stamp();
+	gGroupCalendar_RSVPToDelete.mStatus = "-";	
+	gGroupCalendar_RSVPToDelete.mDate = vDate;
+	gGroupCalendar_RSVPToDelete.mTime = vTime60;
+
+	CalendarNetwork_SendRSVPUpdate(gCalendarEventEditor_Event, gGroupCalendar_RSVPToDelete);
+
+	CalendarAttendanceList_EventChanged(CalendarEventEditorAttendance, gCalendarEventEditor_Database, gGroupCalendar_RSVPToDelete);
+
+	gGroupCalendar_RSVPToDelete = nil;	
 end
 
 function CalendarEventEditor_CloseEditor(pShowScheduleEditor)
@@ -524,32 +507,29 @@ function CalendarEventEditor_SaveEvent()
 	-- Update the event
 	local	vChangedFields = {};
 	
-	CalendarEventEditor_UpdateEventFromControls(gCalendarEventEditor_Event, vChangedFields);
-	
-	if Calendar_ArrayIsEmpty(vChangedFields) then	
-		-- Delete then re-add the RSVP		
+	CalendarEventEditor_UpdateEventFromControls(gCalendarEventEditor_Event, vChangedFields);	
+
+	if not gCalendarEventEditor_IsNewEvent then
 		CalendarEventEditor_SaveRSVP(gCalendarEventEditor_Event);
-		if not gCalendarEventEditor_IsNewEvent then
-			return;
-		end
+	end
+
+	if Calendar_ArrayIsEmpty(vChangedFields) and not gCalendarEventEditor_IsNewEvent then		
+		return;
 	end
 	
+	local	vDate, vTime60 = EventDatabase_GetServerDateTime60Stamp();	
+	gCalendarEventEditor_Event.mChangedDate = vDate;
+	gCalendarEventEditor_Event.mChangedTime = vTime60;
+
 	-- Save the event if it's new
 	
 	if gCalendarEventEditor_IsNewEvent then
 		if (gCalendarEventEditor_Event.mTitle ~= nil and gCalendarEventEditor_Event.mTitle ~= "")
 		or gCalendarEventEditor_Event.mType ~= nil then
-			EventDatabase_AddEvent(gCalendarEventEditor_Database, gCalendarEventEditor_Event);
-			
-			-- If self-attend is selected add the RSVP
-			
-			if CalendarEventEditorSelfAttend:GetChecked() then
-				CalendarEventEditor_SetSelfAttend(true, true);
-			end
+			EventDatabase_AddEvent(gCalendarEventEditor_Database, gCalendarEventEditor_Event);			
 		end
 	else
-		EventDatabase_EventChanged(gCalendarEventEditor_Database, gCalendarEventEditor_Event, vChangedFields);		
-		CalendarEventEditor_SaveRSVP(gCalendarEventEditor_Event);		
+		EventDatabase_EventChanged(gCalendarEventEditor_Database, gCalendarEventEditor_Event, vChangedFields);
 	end
 	
 	-- Save a template for the event
@@ -567,33 +547,73 @@ function CalendarEventEditor_SaveEvent()
 		
 		gGroupCalendar_PlayerSettings.EventTemplates[gCalendarEventEditor_Event.mType] = vEventTemplate;
 	end
+
+	CalendarNetwork_SendEventUpdate(gCalendarEventEditor_Event);
+
+	if gCalendarEventEditor_IsNewEvent then
+		CalendarEventEditor_SaveRSVP(gCalendarEventEditor_Event);
+	end
 end
 
 function CalendarEventEditor_SaveRSVP(pEvent)
-	local recreateRSVP = false;
 
-	if CalendarEventEditorSelfAttend:GetChecked() then 
-		local pRoleCode = EventDatabase_GetRoleCodeByRole(UIDropDownMenu_GetSelectedValue(CalendarEventEditorRoleMenu));
+	local	vDate, vTime60 = EventDatabase_GetServerDateTime60Stamp();	
 
-		local RSVP_str = EventDatabase_FindEventRSVPString(pEvent, gGroupCalendar_PlayerName);
-		if RSVP_str then
-			local RSVP = EventDatabase_UnpackEventRSVP(nill, nill, nill, RSVP_str)
-			if RSVP.mRole ~= pRoleCode then
-				recreateRSVP = true;
-				gGroupCalendar_PlayerSettings.UI.DefaultRole = pRoleCode;
-			end			
-		else
-			recreateRSVP = true;
-		end
-		-- Delete then re-add the RSVP	
-		if recreateRSVP then
+	local pRoleCode = EventDatabase_GetRoleCodeByRole(UIDropDownMenu_GetSelectedValue(CalendarEventEditorRoleMenu));
+	local pCharacter = UIDropDownMenu_GetSelectedValue(CalendarEventEditorCharacterMenu);
 
-			CalendarEventEditor_SetSelfAttend(false);
-			if CalendarEventEditorSelfAttend:GetChecked() then			
-				CalendarEventEditor_SetSelfAttend(true);
+	for DBindex, vPlayerDB in pairs (EventDatabase_GetPlayerDatabases()) do		
+		if pCharacter == vPlayerDB.UserName then	
+			
+			local OldRSVP = pEvent.mAttendance[pCharacter];
+
+			local RSVP = {};
+			
+			RSVP.mName = pCharacter;
+			RSVP.mRole = pRoleCode;
+			RSVP.mDate = vDate;
+			RSVP.mTime = vTime60;
+			if CalendarEventEditorSelfAttend:GetChecked() then 
+				if OldRSVP and OldRSVP.mStatus == "S" then
+					RSVP.mStatus = "S";
+				else
+					RSVP.mStatus = "Y";
+				end
+
+				-- Save the default for this char
+				vPlayerDB.DefaultRole = pRoleCode;
+			else
+				RSVP.mStatus = "N";
 			end
-		end
-	end
+
+			if not OldRSVP or not OldRSVP.mOriginalDate then
+				RSVP.mOriginalDate = vDate;
+				RSVP.mOriginalTime = vTime60;
+			else
+				RSVP.mOriginalDate = OldRSVP.mOriginalDate;
+				RSVP.mOriginalTime = OldRSVP.mOriginalTime;
+			end
+			
+			RSVP.mClassCode = vPlayerDB.PlayerClassCode;
+			RSVP.mRaceCode = vPlayerDB.PlayerRaceCode;
+			RSVP.mLevel = vPlayerDB.PlayerLevel;
+			RSVP.mGuildRank = vPlayerDB.GuildRank			
+
+			pEvent.mAttendance[pCharacter] = RSVP;
+			CalendarNetwork_SendRSVPUpdate(pEvent, RSVP);
+
+
+
+		elseif CalendarEventEditorSelfAttend:GetChecked() then -- don't change other characters unless we said we were going
+			local RSVP = pEvent.mAttendance[vPlayerDB.UserName];
+			if RSVP and (RSVP.mStatus == "Y" or RSVP.mStatus == "S") then
+				RSVP.mStatus = "N";
+				RSVP.mDate = vDate;
+				RSVP.mTime = vTime60;
+				CalendarNetwork_SendRSVPUpdate(pEvent, RSVP);
+			end
+		end		
+	end	
 end
 
 function CalendarEventEditor_SetTimeControlValue(pFrame, pTime)
@@ -607,7 +627,7 @@ function CalendarEventEditor_SetTimeControlValue(pFrame, pTime)
 	local	vMinuteFrame = getglobal(vFrameName.."Minute");
 	local	vAMPMFrame = getglobal(vFrameName.."AMPM");
 	
-	if TwentyFourHourTime then
+	if gGroupCalendar_Settings.Use24HrTime then
 		local	vHour, vMinute = Calendar_ConvertTimeToHM(pTime);
 		
 		CalendarDropDown_SetSelectedValue(vHourFrame, vHour);
@@ -634,7 +654,7 @@ function CalendarEventEditor_GetTimeControlValue(pFrame)
 	local	vHour = UIDropDownMenu_GetSelectedValue(vHourFrame);
 	local	vMinute = UIDropDownMenu_GetSelectedValue(vMinuteFrame);
 	
-	if TwentyFourHourTime then
+	if gGroupCalendar_Settings.Use24HrTime then
 		return Calendar_ConvertHMToTime(vHour, vMinute);
 	else
 		local	vAMPM = UIDropDownMenu_GetSelectedValue(vAMPMFrame);
@@ -672,14 +692,21 @@ function CalendarEventEditor_EventTypeChanged(pMenuFrame, pValue)
 				
 				gCalendarEventEditor_EventTime = gCalendarEventEditor_Event.mTime;
 				gCalendarEventEditor_Event.mType = pValue;
-				CalendarEventEditor_UpdateControlsFromEvent(gCalendarEventEditor_Event, true);
+				CalendarEventEditor_UpdateControlsFromEvent(gCalendarEventEditor_Event, true);			
 				
-				if vEventTemplate.mSelfAttend then
-					CalendarEventEditor_SetSelfAttend(vEventTemplate.mSelfAttend);
-				end
 			end
 		end
 		
+	end
+end
+
+function CalendarEventEditor_SetSelfAttend()	
+	if CalendarEventEditorSelfAttend:GetChecked() and vUsesAttendance then
+		CalendarEventEditorCharacter:Show();
+		CalendarEventEditorRole:Show();
+	else
+		CalendarEventEditorCharacter:Hide();
+		CalendarEventEditorRole:Hide();
 	end
 end
 
@@ -702,7 +729,7 @@ function CalendarEventEditor_ShowPanel(pPanelIndex)
 	if pPanelIndex == 1 then
 		-- Event panel
 		
-		CalendarEventEditorSelfAttend:SetChecked(CalendarEventEditor_GetSelfAttend());
+		--CalendarEventEditorSelfAttend:SetChecked(CalendarEventEditor_GetSelfAttend());
 		CalendarEventEditorSelfAttendText:SetText(string.format(GroupCalendar_cSelfWillAttend, gGroupCalendar_PlayerName));
 		
 	elseif pPanelIndex == 2 then
@@ -767,46 +794,7 @@ function CalendarEventEditor_GetStatusString(pStatus)
 end
 
 function CalendarEventEditor_GetSelfAttend()
-	return EventDatabase_FindEventRSVPString(gCalendarEventEditor_Event, gGroupCalendar_PlayerName) ~= nil;
-end
-
-function CalendarEventEditor_SetSelfAttend(pWillAttend, pNewEventOverride)
-	-- Don't do anything if it's a new event (yet)
-	
-	if gCalendarEventEditor_IsNewEvent
-	and not pNewEventOverride then
-		return;
-	end
-	
-	-- Create or remove the RSVP request for the owner
-	
-	if pWillAttend then
-		local pRoleCode = EventDatabase_GetRoleCodeByRole(UIDropDownMenu_GetSelectedValue(CalendarEventEditorRoleMenu));
-		local vRSVP = EventDatabase_CreatePlayerRSVP(
-								gCalendarEventEditor_Database,
-								gCalendarEventEditor_Event,
-								gGroupCalendar_PlayerName,
-								EventDatabase_GetRaceCodeByRace(UnitRace("PLAYER")),
-								EventDatabase_GetClassCodeByClass(UnitClass("PLAYER")),
-								gGroupCalendar_PlayerLevel,
-								"Y",
-								nil,
-								gGroupCalendar_PlayerGuild,
-								gGroupCalendar_PlayerGuildRank,
-								gGroupCalendar_PlayerCharacters,
-								pRoleCode);
-		
-		EventDatabase_AddEventRSVP(
-				gCalendarEventEditor_Database,
-				gCalendarEventEditor_Event,
-				gGroupCalendar_PlayerName,
-				vRSVP)
-	else
-		EventDatabase_RemoveEventRSVP(
-				gCalendarEventEditor_Database,
-				gCalendarEventEditor_Event,
-				gGroupCalendar_PlayerName)
-	end
+	return true;
 end
 
 function CalendarEventEditor_AskDeleteEvent()
@@ -993,17 +981,6 @@ function CalendarWhisperLog_GetNextWhisper(pPlayerName)
 	return nil;
 end
 
-function CalendarAttendanceList_GetManualConfirmEnable(pAttendanceList)
-	local	vAutoConfirmEnable = getglobal(pAttendanceList:GetName().."MainViewAutoConfirmEnable");
-	local	vManualConfirm = not vAutoConfirmEnable:GetChecked();
-	
-	if not vManualConfirm then
-		vManualConfirm = nil;
-	end
-	
-	return vManualConfirm;
-end
-
 gCalendarAttendanceList_VerticalScrollList = nil;
 
 function CalendarAttendanceList_OnLoad(frame)
@@ -1059,11 +1036,11 @@ function CalendarAttendanceList_SetEvent(pAttendanceList, pDatabase, pEvent)
 	local	vAttendanceListName = pAttendanceList:GetName();
 	local	vMainViewName = vAttendanceListName.."MainView";
 	
-	local	vAutoConfirmEnable = getglobal(vMainViewName.."AutoConfirmEnable");
-	local	vAutoConfirmOptions = getglobal(vMainViewName.."AutoConfirmOptions");
+	--local	vAutoConfirmEnable = getglobal(vMainViewName.."AutoConfirmEnable");
+	--local	vAutoConfirmOptions = getglobal(vMainViewName.."AutoConfirmOptions");
 	
-	vAutoConfirmEnable:SetChecked(not pAttendanceList.Event.mManualConfirm);
-	Calendar_SetButtonEnable(vAutoConfirmOptions, not pAttendanceList.Event.mManualConfirm);
+	--vAutoConfirmEnable:SetChecked(not pAttendanceList.Event.mManualConfirm);
+	--Calendar_SetButtonEnable(vAutoConfirmOptions, not pAttendanceList.Event.mManualConfirm);
 	
 	--
 	
@@ -1185,40 +1162,34 @@ function CalendarAttendanceList_SetClassTotalsVisible(pAttendanceList, pVisible,
 end
 
 function CalendarAttendanceList_AdjustHeight(pAttendanceList)
+	
 	local	vListName = pAttendanceList:GetName();
 	local	vTotals = getglobal(vListName.."MainViewTotals");
-	local	vAutoConfirm = getglobal(vListName.."MainViewAutoConfirm");
+	local	vInvitePanel = getglobal(vListName.."GroupView");
+	--local	vAutoConfirm = getglobal(vListName.."MainViewAutoConfirm");
 	local	vScrollFrame = getglobal(vListName.."ScrollFrame");
 	local	vScrollTrench = getglobal(vListName.."ScrollbarTrench");
 	local	vScrollFrameBaseHeight = 254;
 	local	vScrollTrenchBaseHeight = 261;
 	
-	if pAttendanceList.CurrentPanel == "GroupView"
-	or pAttendanceList.ShowTotals then
-		local	vFooterHeight;
+	
+	local	vFooterHeight;
 		
-		vTotals:Show();
+	vTotals:Show();
 		
-		if pAttendanceList.CurrentPanel ~= "GroupView"
-		and pAttendanceList.ShowAutoConfirm then
-			vAutoConfirm:Show();
-			pAttendanceList.NumItems = gGroupCalendar_cNumAutoConfirmAttendanceItems;
-			vFooterHeight = vAutoConfirm:GetHeight() + vTotals:GetHeight();
-		else
-			vAutoConfirm:Hide();
-			pAttendanceList.NumItems = gGroupCalendar_cNumAttendanceItems;
-			vFooterHeight = vTotals:GetHeight();
-		end
-		
-		vScrollFrame:SetHeight(vScrollFrameBaseHeight - vFooterHeight);
-		vScrollTrench:SetHeight(vScrollTrenchBaseHeight - vFooterHeight);
+	if pAttendanceList.CurrentPanel ~= "GroupView" then
+		--vAutoConfirm:Show();
+		pAttendanceList.NumItems = gGroupCalendar_cNumAutoConfirmAttendanceItems;
+		vFooterHeight = vTotals:GetHeight();
 	else
-		vTotals:Hide();
-		vAutoConfirm:Hide();
-		pAttendanceList.NumItems = gGroupCalendar_cNumPlainAttendanceItems;
-		vScrollFrame:SetHeight(vScrollFrameBaseHeight);
-		vScrollTrench:SetHeight(vScrollTrenchBaseHeight);
+		--vAutoConfirm:Hide();
+		pAttendanceList.NumItems = gGroupCalendar_cNumAttendanceItems;
+		vFooterHeight = vInvitePanel:GetHeight();
 	end
+		
+	vScrollFrame:SetHeight(vScrollFrameBaseHeight - vFooterHeight);
+	vScrollTrench:SetHeight(vScrollTrenchBaseHeight - vFooterHeight);
+	
 end
 
 function CalendarAttendanceList_Update(pAttendanceList)
@@ -1250,7 +1221,7 @@ function CalendarAttendanceList_Update(pAttendanceList)
 				end
 			end
 		end
-		
+
 		FauxScrollFrame_Update(
 				getglobal(vAttendanceListName.."ScrollFrame"),
 				vTotalCount,
@@ -1258,7 +1229,7 @@ function CalendarAttendanceList_Update(pAttendanceList)
 				gGroupCalendar_cAttendanceItemHeight,
 				nil, nil, nil,
 				nil,
-				293, 316);
+				263, 286);
 		
 		CalendarAttendanceList_UpdateAttendanceList(pAttendanceList, pCategoryType);
 		
@@ -1574,7 +1545,7 @@ function CalendarAttendanceList_SetItemToRSVP(pAttendanceList, pIndex, pCategory
 	if vShowStatusString then
 		vItemInfo.status = CalendarEventEditor_GetStatusString(pRSVP.mStatus);
 	elseif pShowRank then
-		local	vRank = EventDatabase_MapGuildRank(pRSVP.mGuild, pRSVP.mGuildRank);
+		local	vRank = pRSVP.mGuildRank;
 		
 		if vRank then
 			vItemInfo.status = GuildControlGetRankName(vRank + 1);
@@ -1782,7 +1753,7 @@ function CalendarAttendanceList_SetGroupItem(pAttendanceList, pItemIndex, pCateg
 	local	vStatusColumnFormat = "";
 	
 	if pAttendanceList.ListViewMode == "Rank" then
-		local	vRank = EventDatabase_MapGuildRank(pItem.mGuild, pItem.mGuildRank);
+		local	vRank = pItem.mGuildRank;
 		
 		if vRank then
 			vItemInfo.rank = GuildControlGetRankName(vRank + 1);
@@ -1850,9 +1821,9 @@ end
 function CalendarAttendanceList_SetAttendanceItem(pAttendanceList, pItemIndex, pCategory, pItem, pCategoryType)
 	local	vNameFormat;
 	if pCategoryType == gCategoryType_Class then
-		vNameFormat = "($statuscode) $name ($role $level $race)";
+		vNameFormat = "$name ($role $level $race)";
 	else
-		vNameFormat = "($statuscode) $name ($class $level $race)";
+		vNameFormat = "$name ($class $level $race)";
 	end
 
 	if pItem.mType == "Whisper" then
@@ -2180,7 +2151,9 @@ function CalendarAddPlayer_EditRSVP(pRSVP)
 	
 	CalendarAddPlayerFrame.RSVP = pRSVP;
 	CalendarAddPlayerFrameName:SetText(pRSVP.mName);
-	CalendarAddPlayerFrameLevel:SetText(pRSVP.mLevel);
+	if pRSVP.mLevel then
+		CalendarAddPlayerFrameLevel:SetText(pRSVP.mLevel);
+	end
 	CalendarDropDown_SetSelectedValue(CalendarAddPlayerFrameStatusMenu, pRSVP.mStatus);
 	CalendarDropDown_SetSelectedValue(CalendarAddPlayerFrameClassMenu, pRSVP.mClassCode);
 	CalendarDropDown_SetSelectedValue(CalendarAddPlayerFrameRaceMenu, pRSVP.mRaceCode);
@@ -2191,9 +2164,7 @@ function CalendarAddPlayer_EditRSVP(pRSVP)
 		CalendarDropDown_SetSelectedValue(CalendarAddPlayerFrameRoleMenu, EventDatabase_GetRoleByRoleCode("U"));
 	end
 	
-	local	vGuildRank = EventDatabase_MapGuildRank(pRSVP.mGuild, pRSVP.mGuildRank);
-	
-	CalendarDropDown_SetSelectedValue(CalendarAddPlayerFrameGuildRankMenu, vGuildRank);
+	CalendarDropDown_SetSelectedValue(CalendarAddPlayerFrameGuildRankMenu, pRSVP.mGuildRank);
 	
 	if pRSVP.mComment then
 		CalendarAddPlayerFrameComment:SetText(Calendar_UnescapeString(pRSVP.mComment));
@@ -2214,7 +2185,6 @@ end
 
 function CalendarAddPlayer_Save()
 	local	vName = CalendarAddPlayerFrameName:GetText();
-	
 	if vName == "" then
 		return;
 	end
@@ -2248,35 +2218,13 @@ function CalendarAddPlayer_Save()
 							vComment,
 							vGuild,
 							vGuildRank,
-							nil,
 							vRoleCode);
 	
-	if CalendarAddPlayerFrame.RSVP then
-		-- if CalendarAddPlayerFrame.RSVP.mGuild then
-		-- 	vRSVP.mGuild = CalendarAddPlayerFrame.RSVP.mGuild;
-		-- 	vRSVP.mGuildRank = CalendarAddPlayerFrame.RSVP.mGuildRank;
-		-- end
-		
-		vRSVP.mDate = CalendarAddPlayerFrame.RSVP.mDate;
-		vRSVP.mTime = CalendarAddPlayerFrame.RSVP.mTime;
-		vRSVP.mAlts = CalendarAddPlayerFrame.RSVP.mAlts;
-		
-		-- Save the guild rank mapping
-		
-		EventDatabase_SetGuildRankMapping(
-				CalendarAddPlayerFrame.RSVP.mGuild,
-				CalendarAddPlayerFrame.RSVP.mGuildRank,
-				vGuildRank);
-	end
 	
-	--
+	gCalendarEventEditor_Event.mAttendance[vName] = vRSVP;
 	
-	EventDatabase_AddEventRSVP(
-			gCalendarEventEditor_Database,
-			gCalendarEventEditor_Event,
-			vName,
-			vRSVP)
-	
+	CalendarNetwork_SendRSVPUpdate(gCalendarEventEditor_Event, vRSVP);
+
 	if CalendarAddPlayerFrame.IsWhisper then
 		CalendarWhisperLog_RemovePlayer(CalendarAddPlayerFrame.Name);
 	end
@@ -2294,6 +2242,13 @@ function CalendarAddPlayer_Save()
 		-- Remember what status was used
 		
 		gGroupCalendar_PlayerSettings.LastWhisperStatus = UIDropDownMenu_GetSelectedValue(CalendarAddPlayerFrameStatusMenu);
+	end
+
+	
+	CalendarAttendanceList_EventChanged(CalendarEventEditorAttendance, gCalendarEventEditor_Database, gCalendarEventEditor_Event);
+
+	if EventDatabase_IsPlayer(vName) then
+		CalendarEventEditor_UpdateControlsFromEvent(gCalendarEventEditor_Event, true);	
 	end
 end
 
@@ -2401,13 +2356,24 @@ function CalendarEventEditor_AttendanceMenuItemSelected(pOwner, pValue)
 	elseif pValue == "INVITE" then
 		InviteByName(vItem.mName);
 	else
+		local	vDate, vTime60 = EventDatabase_GetServerDateTime60Stamp();
 		vItem.mStatus = pValue;
+		vItem.mDate = vDate;
+		vItem.mTime = vTime60;
+		if not vItem.mOriginalDate then
+			vItem.mOriginalDate = vDate;
+			vItem.mOriginalTime = vTime60;
+		end
+
+		CalendarNetwork_SendRSVPUpdate(gCalendarEventEditor_Event, vItem);
+
+		CalendarAttendanceList_EventChanged(CalendarEventEditorAttendance, gCalendarEventEditor_Database, gCalendarEventEditor_Event);
+
+		if EventDatabase_IsPlayer(vItem.mName) then
+			CalendarEventEditor_UpdateControlsFromEvent(gCalendarEventEditor_Event, true);	
+		end
+
 		
-		EventDatabase_AddEventRSVP(
-				gCalendarEventEditor_Database,
-				gCalendarEventEditor_Event,
-				vItem.mName,
-				vItem);
 	end
 end
 

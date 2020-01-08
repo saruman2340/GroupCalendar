@@ -9,15 +9,15 @@ gGroupCalendar_Settings =
 	SquareMinimap = "OFF",
 	MinimapTooltip = "ON",
 	iconPos = -172,
-	MondayFirstDOW = false,
+	MondayFirstDOW = true,
+	Use24HrTime = nil,
 };
 
-
-
 gGroupCalendar_PlayerSettings = nil;
-gGroupCalendar_RealmSettings = nil;
+--gGroupCalendar_RealmSettings = nil;
 
 gGroupCalendar_PlayerName = nil;
+gGroupCalendar_PlayerNameGUID = nil;
 gGroupCalendar_PlayerGuild = nil;
 gGroupCalendar_PlayerLevel = nil;
 gGroupCalendar_PlayerFactionGroup = nil;
@@ -82,13 +82,7 @@ function GroupCalendar_OnLoad(frame)
 	-- For monitoring the status of the chat channel	
 	GroupCalendar_RegisterEvent(frame, "CHAT_MSG_ADDON", GroupCalendar_ChatMsgAddon);
 	GroupCalendar_RegisterEvent(frame, "CHAT_MSG_WHISPER", GroupCalendar_ChatMsgWhisper);
-	
-	-- For suspending/resuming the chat channel during logout
-	
-	GroupCalendar_RegisterEvent(frame, "PLAYER_CAMPING", CalendarNetwork_SuspendChannel);
-	GroupCalendar_RegisterEvent(frame, "PLAYER_QUITING", CalendarNetwork_SuspendChannel);
-	GroupCalendar_RegisterEvent(frame, "LOGOUT_CANCEL", CalendarNetwork_ResumeChannel);
-	
+		
 	-- For monitoring tradeskill cooldowns
 	
 	GroupCalendar_RegisterEvent(frame, "TRADE_SKILL_UPDATE", EventDatabase_UpdateCurrentTradeskillCooldown);
@@ -158,7 +152,7 @@ function GroupCalendar_DispatchEvent(pFrame, pEvent, ...)
 end
 
 function GroupCalendar_VariablesLoaded()
-	gGroupCalendar_MinimumEventDate = Calendar_GetCurrentLocalDate() - gGroupCalendar_MaximumEventAge;
+	gGroupCalendar_MinimumEventDate = Calendar_AddDays(Calendar_GetCurrentLocalDate(), -1 * gGroupCalendar_MaximumEventAge);
 	
 	EventDatabase_SetUserName(gGroupCalendar_PlayerName);
 	EventDatabase_PlayerLevelChanged(gGroupCalendar_PlayerLevel);
@@ -166,6 +160,8 @@ function GroupCalendar_VariablesLoaded()
 	
 	EventDatabase_Initialize();
 	
+	
+
 	CalendarNetwork_CalendarLoaded();	
 end
 
@@ -230,6 +226,23 @@ function GroupCalendar_LoadSettingsFrame()
 	 MonFirstDOWCheckButton:SetScript("OnClick", 
 		  function()
 			gGroupCalendar_Settings.MondayFirstDOW = MonFirstDOWCheckButton:GetChecked();			
+			GroupCalendar_OnShow();
+		  end);	 
+
+	-- 24Hr time Option
+	 Use24HrTimeCheckButton = CreateFrame("CheckButton", "GroupCalendarUse24HrTimeChk", settingsPanel, "ChatConfigCheckButtonTemplate");
+	 Use24HrTimeCheckButton:SetPoint("TOPLEFT", 50, -105);
+	 getglobal(Use24HrTimeCheckButton:GetName() .. 'Text'):SetText(GroupCalendar_Settings_Use24HrTime);
+	 Use24HrTimeCheckButton.tooltip = GroupCalendar_Settings_Use24HrTimeTip;
+	 if gGroupCalendar_Settings.Use24HrTime then
+		Use24HrTimeCheckButton:SetChecked(true)
+	 else
+		Use24HrTimeCheckButton:SetChecked(false)
+	 end
+
+	 Use24HrTimeCheckButton:SetScript("OnClick", 
+		  function()
+			gGroupCalendar_Settings.Use24HrTime = Use24HrTimeCheckButton:GetChecked();	
 			GroupCalendar_OnShow();
 		  end);	 
 
@@ -352,12 +365,12 @@ function GroupCalendar_PlayerEnteringWorld(pEvent)
 	Calendar_InitDebugging();
 	
 	gGroupCalendar_PlayerSettings = GroupCalendar_GetPlayerSettings(gGroupCalendar_PlayerName, GetRealmName());
-	gGroupCalendar_RealmSettings = GroupCalendar_GetRealmSettings(GetRealmName());
+	--gGroupCalendar_RealmSettings = GroupCalendar_GetRealmSettings(GetRealmName());
 	
 	gGroupCalendar_PlayerLevel = UnitLevel("player");
 	gGroupCalendar_PlayerFactionGroup = UnitFactionGroup("player");
 	gGroupCalendar_PlayerSettings = GroupCalendar_GetPlayerSettings(gGroupCalendar_PlayerName, GetRealmName());
-	gGroupCalendar_RealmSettings = GroupCalendar_GetRealmSettings(GetRealmName());
+	--gGroupCalendar_RealmSettings = GroupCalendar_GetRealmSettings(GetRealmName());
 	CalendarNetwork_CheckPlayerGuild();
 
 	EventDatabase_PlayerLevelChanged(gGroupCalendar_PlayerLevel);
@@ -368,6 +381,16 @@ function GroupCalendar_PlayerEnteringWorld(pEvent)
 	gGroupCalendar_Settings.ShowMinimap = gGroupCalendar_Settings.ShowMinimap or "ON"
 	gGroupCalendar_Settings.SquareMinimap = gGroupCalendar_Settings.SquareMinimap or "OFF"
 	gGroupCalendar_Settings.IconPos = gGroupCalendar_Settings.IconPos or -172
+
+	if not gGroupCalendar_Settings.Use24HrTime then
+		local locale = GetLocale();
+		if locale == "enUS"  
+			or locale == "enGB" then
+			gGroupCalendar_Settings.Use24HrTime = false;
+		else
+			gGroupCalendar_Settings.Use24HrTime = true;
+		end
+	end
 
 	--GroupCalendar_MoveMinimap();
 	--GroupCalendarMiniMapButton.Init();
@@ -389,9 +412,11 @@ function GroupCalendar_RemoveRealmName(pName)
 end
 
 function GroupCalendar_ChatMsgAddon(pEvent, prefix, text, channel, sender, target, zoneChannelID, localID, name, instanceID)
-
+	
 	if prefix == gGroupCalendar_MessagePrefix0 and channel == "GUILD" then
+		
 		local author = GroupCalendar_RemoveRealmName(sender);	
+		--print (author..":".. text);
 		if author == gGroupCalendar_PlayerName then
 			-- Ignore messages from ourselves
 			if not gGroupCalendar_Settings.Debug then		
@@ -425,6 +450,7 @@ function GroupCalendar_GuildRosterUpdate(pEvent)
 	-- Ignore the update if we're not initialized yet
 
 	if not gGroupCalendar_Initialized then
+		--print ("ignore guild roster update - not initialised")
 		return;
 	end
 	CalendarGroupInvites_GuildRosterChanged();
@@ -949,18 +975,12 @@ function GroupCalendar_GetPlayerSettings(pPlayerName, pRealmName)
 			UI =
 			{
 				LockWindow = false,
-				DefaultRole = "U",
 			},
 		};
 		
 		gGroupCalendar_Settings[pRealmName.."_"..pPlayerName] = vSettings;
 	end
 	
-	-- This setting was added in a newer version
-	if not vSettings.UI.DefaultRole then
-		vSettings.UI.DefaultRole = "U";
-	end
-
 	-- Reset settings if not in a guild or the guild changes
 	if not vSettings.Security.Version then
 		vSettings.Security.TrustAnyone = false;
@@ -1155,7 +1175,6 @@ function GroupCalendar_ExecuteCommand(pCommandString)
 	{
 		["help"] = {func = GroupCalendar_ShowCommandHelp},
 		["versions"] = {func = GroupCalendar_DumpUserVersions},
-		["kill"] = {func = GroupCalendar_AskKillUserDatabase},
 	};
 	
 	local	vCommandInfo = vCommandTable[strlower(vCommand)];
@@ -1176,19 +1195,11 @@ end
 
 function GroupCalendar_GetUserVersionsList()
 	local	vVersions = {};
-	
-	for vRealmUser, vDatabase in pairs(gGroupCalendar_Database.Databases) do
-		if EventDatabase_DatabaseIsVisible(vDatabase)
-		and not vDatabase.IsPlayerOwned then
-			if vDatabase.AddonVersion then
-				table.insert(vVersions, {UserName = vDatabase.UserName, Version = vDatabase.AddonVersion, Updated = vDatabase.AddonVersionUpdated});
-			else
-				-- Just ignore unknown versions
-				-- table.insert(vVersions, {UserName = vDatabase.UserName, Version = "Unknown"});
-			end
-		end
+
+	for vUsername, vVersionData in pairs(gGroupCalendar_PlayerVersions) do
+		table.insert(vVersions, {UserName = vVersionData.UserName, Version = vVersionData.Version});
 	end
-	
+
 	table.sort(vVersions, GroupCalendar_CompareUserNameFields);
 	
 	return vVersions;
@@ -1202,93 +1213,6 @@ function GroupCalendar_DumpUserVersions()
 	end
 end
 
-StaticPopupDialogs["CALENDAR_CONFIRM_KILL"] =
-{
-	text = GroupCalendar_cConfirmKillMsg,
-	button1 = GroupCalendar_cKill,
-	button2 = "CANCEL",
-	OnAccept = function() GroupCalendar_KillUserDatabase(); end,
-	timeout = 0,
-	whileDead = 1,
-	hideOnEscape = 1,
-};
-
-local	gGroupCalendar_KillDatabaseUserName = nil;
-
-function GroupCalendar_AskKillUserDatabase(pUserName)
-	if not pUserName then
-		Calendar_ErrorMessage(GroupCalendar_cUserNameExpected);
-		return;
-	end
-	
-	if IsInGuild() and not CanEditOfficerNote() then
-		Calendar_ErrorMessage(GroupCalendar_cNotAnOfficerError);
-		return;
-	end
-	
-	local	vUserName = EventDatabase_FixUserName(pUserName);
-	
-	if CalendarNetwork_UserIsInSameGuild(vUserName) then
-		Calendar_ErrorMessage(format(GroupCalendar_cCantKillGuildieError, vUserName));
-		return;
-	end
-	
-	local	vDatabase = EventDatabase_GetDatabase(vUserName);
-	
-	if not vDatabase then
-		Calendar_ErrorMessage(format(GroupCalendar_cDatabaseNotFoundError, vUserName));
-		return;
-	end
-	
-	if IsInGuild() then
-		gGroupCalendar_KillDatabaseUserName = vUserName;
-		StaticPopup_Show("CALENDAR_CONFIRM_KILL", vUserName);
-	else
-		EventDatabase_DeleteDatabase(vUserName);
-	end
-end
-
-function GroupCalendar_KillUserDatabase()
-	-- Only allowed within a guild
-	
-	if not IsInGuild() then
-		return;
-	end
-	
-	if not CanEditOfficerNote() then
-		return;
-	end
-	
-	local	vDatabase = EventDatabase_GetDatabase(gGroupCalendar_KillDatabaseUserName);
-	
-	if not vDatabase then
-		return;
-	end
-	
-	-- Purge the events
-	
-	local	vDatabaseID = Calendar_GetCurrentDateTimeUT60();
-	
-	if vDatabaseID < vDatabase.Changes.ID  then
-		vDatabaseID = vDatabase.Changes.ID + 1;
-	end
-	
-	EventDatabase_PurgeDatabase(vDatabase, vDatabaseID);
-	CalendarNetwork_SendDatabaseNOU(vDatabase);
-	
-	-- Purge the RSVPs
-	
-	if vDatabase.RSVPs then
-		local	vDatabaseID = Calendar_GetCurrentDateTimeUT60();
-		
-		if vDatabaseID < vDatabase.RSVPs.ID  then
-			vDatabaseID = vDatabase.RSVPs.ID + 1;
-		end
-		
-		EventDatabase_PurgeRSVPs(vDatabase, vDatabaseID);
-		CalendarNetwork_SendRSVPNOU(vDatabase);
-	end
-end
 
 function GroupCalendar_CompareUserNameFields(pValue1, pValue2)
 	return pValue1.UserName < pValue2.UserName;
@@ -1317,7 +1241,7 @@ function GroupCalendarDatabasesList_Close()
 end
 
 function GroupCalendarDatabasesList_Refresh()
-	CalendarNetwork_RequestAllVersions(0);
+	CalendarNetwork_QueueVersionRequest();
 end
 
 function GroupCalendarDatabasesList_UpdateItems(pListItems)
@@ -1349,15 +1273,7 @@ function GroupCalendarDatabasesList_UpdateTooltip(pItem)
 	GameTooltip:AddLine(pItem.VersionInfo.UserName);
 	
 	GameTooltip:AddLine(string.format(GroupCalendar_cVersionFormat, pItem.VersionInfo.Version), 1, 1, 1, 1);
-	
-	if pItem.VersionInfo.Updated then
-		local	vLocalDate, vLocalTime = Calendar_GetDateTimeFromTimeStamp(pItem.VersionInfo.Updated);
 		
-		GameTooltip:AddLine(string.format(GroupCalendar_cVersionUpdatedFormat, Calendar_GetLongDateString(vLocalDate), Calendar_GetShortTimeString(vLocalTime)), 1, 1, 1, 1);
-	else
-		GameTooltip:AddLine(GroupCalendar_cVersionUpdatedUnknown, 1, 1, 1, 1);
-	end
-	
 	GameTooltip:Show();
 end
 

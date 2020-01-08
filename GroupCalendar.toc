@@ -3,7 +3,7 @@
 ## Notes: Manage/Create Event's for guild/friends who share the same addon & channel+password.
 ## OptionalDeps: LibDBIcon-1.0, LibDataBroker-1.1
 ## RequiredDeps: 
-## SavedVariables: gGroupCalendar_Settings, gGroupCalendar_Database, GroupCalendarDB, gGroupCalendar_MiniMapSettings
+## SavedVariables: gGroupCalendar_Settings, gGroupCalendar_Database, GroupCalendarDB, gGroupCalendar_MiniMapSettings, gGroupCalendar_Database2, gGroupCalendar_PlayerDatabases
 
 embeds.xml
 
