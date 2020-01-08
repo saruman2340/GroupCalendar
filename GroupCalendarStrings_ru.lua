@@ -66,15 +66,15 @@ if GetLocale() == "ruRU" then
 	GroupCalendar_cErrorAccessingNote = "Не удалось получить настройки";
 
 	GroupCalendar_cTrustConfigTitle = "Настройки доступа";
-	GroupCalendar_cTrustConfigDescription = "Доверие определяет, кто может создавать события. Только лидер гильдии может изменять эти настройки.";
+	GroupCalendar_cTrustConfigDescription = "Настройки доступа определяеют, кто может создавать события. Только глава гильдии может изменять эти настройки.";
 	GroupCalendar_cTrustGroupLabel = "Доступ:";
 	GroupCalendar_cEvent = "Событие";
 	GroupCalendar_cAttendance = "Посещаемость";
 
 	GroupCalendar_cAboutTitle = "О Group Calendar";
 	GroupCalendar_cTitleVersion = "Group Calendar v"..gGroupCalendar_VersionString;
-	GroupCalendar_cAuthor = "Классический Автор: Magne - Remulos".."\n".."Автор ванили: Baylord - Thunderlord";
-	GroupCalendar_cTestersTitle = "Тестеры";
+	GroupCalendar_cAuthor = "Автор классической версии: Magne - Remulos".."\n".."Автор ванильной версии: Baylord - Thunderlord";
+	GroupCalendar_cTestersTitle = "Тестеры:";
 	GroupCalendar_cSpecialThanksTitle = "Специальная благодарность:";
 
 	GroupCalendar_cRebuildDatabase = "Восстановить базу данных";
