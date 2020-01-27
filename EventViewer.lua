@@ -100,7 +100,7 @@ function CalendarEventViewer_Save()
 				RSVP.mGuildRank = vPlayerDB.GuildRank			
 
 				gCalendarEventViewer_Event.mAttendance[pCharacter] = RSVP;
-				CalendarNetwork_SendRSVPUpdate(gCalendarEventViewer_Event, RSVP);
+				CalendarNetwork_SendRSVPUpdate(gCalendarEventViewer_Event, RSVP, "ALERT");
 
 				gCalendarEventViewer_SelectedPlayerDatabase.DefaultRole = pRoleCode;
 			elseif CalendarEventViewerYes:GetChecked() then -- don't change other characters unless we said we were going
@@ -109,7 +109,7 @@ function CalendarEventViewer_Save()
 					RSVP.mStatus = "N";
 					RSVP.mDate = vDate;
 					RSVP.mTime = vTime;
-					CalendarNetwork_SendRSVPUpdate(gCalendarEventViewer_Event, RSVP);
+					CalendarNetwork_SendRSVPUpdate(gCalendarEventViewer_Event, RSVP, "ALERT");
 				end
 			end		
 		end

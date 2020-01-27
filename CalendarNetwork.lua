@@ -1,11 +1,17 @@
-gGroupCalendar_MessagePrefix0 = "GC3";
+gGroupCalendar_MessagePrefix0 = "GC4";
 gGroupCalendar_MessagePrefix = gGroupCalendar_MessagePrefix0.."/";
 
 gGroupCalendar_MessagePrefixLength = string.len(gGroupCalendar_MessagePrefix);
 
 gGroupCalendar_ShowChat = false;
 
+local gGroupCalendar_EventSyncAuthor = nil;
 local gGroupCalendar_EventSyncQueue = {};
+local gGroupCalendar_RSVPSyncQueue = {};
+local gGroupCalendar_EventSyncSelfInit = false;
+local gGroupCalendar_EventSyncLastDate = nil;
+local gGroupCalendar_EventSyncLastTime60 = nil;
+local gGroupCalendar_EventSyncLastAuthor = nil;
 
 gGroupCalendar_Channel =
 {	
@@ -57,7 +63,7 @@ gCalendarNetwork_RequestDelay =
 	RFURange = 5,
 
 	UPDMin = 0,
-	UPDRange = 2,
+	UPDRange = 1,
 	
 	OwnedNOURange = 0,
 	ProxyNOUMin = 6,
@@ -186,21 +192,33 @@ function CalendarNetwork_ProcessCommand(pSender, pTrustLevel, pCommand)
 	elseif vOpcode == "TRUSTREQ" then
 		CalendarNetwork_ProcessTrustRequestCommand(pSender, vOperands);
 	elseif vOpcode == "SYNCREQ" then
-		CalendarNetwork_LoadSyncQueue();
+		CalendarNetwork_SetLastUpdateTime();
+		--Remove any pending sync request as we are about to do a full sync requested by someone else
+		CalendarNetwork_DeleteRequestByOpcode("SYNCREQ");		
+		-- Load the sync buffer
+		CalendarNetwork_LoadSyncQueue(pSender);
 	elseif vOpcode == "EVT1" then
+		CalendarNetwork_SetLastUpdateTime();
+		gGroupCalendar_EventSyncLastAuthor = pSender;
 		CalendarNetwork_ProcessEventUpdateCommand(pSender, vOperands);
 	elseif vOpcode == "EVT2" then
+		CalendarNetwork_SetLastUpdateTime();	
+		gGroupCalendar_EventSyncLastAuthor = pSender;
 		CalendarNetwork_ProcessEventTitleUpdateCommand(pSender, vOperands);
 	elseif vOpcode == "RSVP1" then
+		CalendarNetwork_SetLastUpdateTime();	
+		gGroupCalendar_EventSyncLastAuthor = pSender;
 		CalendarNetwork_ProcessRSVPUpdateCommand(pSender, vOperands);
 	elseif vOpcode == "RSVP2" then
+		CalendarNetwork_SetLastUpdateTime();
+		gGroupCalendar_EventSyncLastAuthor = pSender;
 		CalendarNetwork_ProcessRSVPCommentUpdateCommand(pSender, vOperands);
 	elseif vOpcode == "VERREQ" then
 		local versionEntry = {};
 		versionEntry.UserName = pSender;
 		versionEntry.Version = vOperands[1];
 		gGroupCalendar_PlayerVersions[pSender] = versionEntry;
-		CalendarNetwork_QueueOutboundMessage("/VER:"..gGroupCalendar_VersionString);
+		CalendarNetwork_QueueOutboundMessage("/VER:"..gGroupCalendar_VersionString, "ALERT");
 	elseif vOpcode == "VER" then
 		local versionEntry = {};
 		versionEntry.UserName = pSender;
@@ -213,191 +231,242 @@ function CalendarNetwork_ProcessCommand(pSender, pTrustLevel, pCommand)
 	end
 end
 
+function CalendarNetwork_SetLastUpdateTime()
+	local vLocalDate, vLocalTime60 = Calendar_GetCurrentLocalDateTime60();
+	gGroupCalendar_EventSyncLastDate = vLocalDate;
+	gGroupCalendar_EventSyncLastTime60 = vLocalTime60;
+end
+
 function CalendarNetwork_ProcessEventUpdateCommand(pSender, pCommand)
-	local vDate = tonumber(pCommand[1]);
-	local vGUID = pCommand[2];
-	local vChangedDate = tonumber(pCommand[3]);
-	local vChangedTime = tonumber(pCommand[4]);
-	local vType = pCommand[5];
-	local vStatus = pCommand[6];
-	local vTime = tonumber(pCommand[7]);
-	local vDuration = tonumber(pCommand[8]);
-	local vMinLevel = tonumber(pCommand[9]);
-	local vMaxLevel = tonumber(pCommand[10]);
 
-	local foundEvent = nil;
-	local updateEvent = false;
-	local RemoveAllRSVPs = false;
+	if gGroupCalendar_GuildDatabase then
+		local vDate = tonumber(pCommand[1]);
+		local vGUID = pCommand[2];
+		local vChangedDate = tonumber(pCommand[3]);
+		local vChangedTime = tonumber(pCommand[4]);
+		local vType = pCommand[5];
+		local vStatus = pCommand[6];
+		local vTime = tonumber(pCommand[7]);
+		local vDuration = tonumber(pCommand[8]);
+		local vMinLevel = tonumber(pCommand[9]);
+		local vMaxLevel = tonumber(pCommand[10]);	
 
-	-- Check if the date is more recent
-	if gGroupCalendar_GuildDatabase.Events[vDate] then
-		for vEventIndex, vEvent in pairs (gGroupCalendar_GuildDatabase.Events[vDate]) do
-			if vEvent.mGUID == vGUID then
-				foundEvent = vEvent;
-				if EventDatabase_SecondDateTimeNewer(vEvent.mChangedDate, vEvent.mChangedTime, vChangedDate, vChangedTime) then
-					-- Update is newer than what we have. Update the event.
-					updateEvent = true;
-					-- if the event is deleted, remove all attendance as it's a waste of space
-					if vStatus == "D" and vEvent.mStatus ~= "D" then
-						vEvent.mAttendance = {};
-						-- Remove all pending RSVP updates also. 
-						RemoveAllRSVPs = true;									
+		local foundEvent = nil;
+		local updateEvent = false;
+		local datesEqual = false;
+		local RemoveAllRSVPs = false;
+
+		-- Check if the date is more recent
+		if gGroupCalendar_GuildDatabase.Events[vDate] then
+			for vEventIndex, vEvent in pairs (gGroupCalendar_GuildDatabase.Events[vDate]) do
+				if vEvent.mGUID == vGUID then
+					foundEvent = vEvent;
+					local vDateStatus = EventDatabase_SecondDateTimeNewer(vEvent.mChangedDate, vEvent.mChangedTime, vChangedDate, vChangedTime);
+					if vDateStatus == 2 then -- newer
+						-- Update is newer than what we have. Update the event.
+						updateEvent = true;
+						-- if the event is deleted, remove all attendance as it's a waste of space
+						if vStatus == "D" and vEvent.mStatus ~= "D" then
+							vEvent.mAttendance = {};
+							-- Remove all pending RSVP updates also. 
+							RemoveAllRSVPs = true;									
+						end
+					elseif vDateStatus == 1 then -- Same age
+						datesEqual = true;
 					end
+					break;
 				end
 			end
 		end
-	end
 
-	if not foundEvent then		
-		-- Event doesnt exist yet. Make it.
-		local	foundEvent = EventDatabase_NewEvent(gGroupCalendar_GuildDatabase, vDate);
-		foundEvent.mChangedDate = vChangedDate;
-		foundEvent.mChangedTime = vChangedTime;
-		foundEvent.mType = vType;
-		foundEvent.mStatus = vStatus;
-		foundEvent.mTime = vTime;
-		foundEvent.mDuration = vDuration;
-		foundEvent.mGUID = vGUID;
-		foundEvent.mMinLevel = vMinLevel;
-		foundEvent.mMaxLevel = vMaxLevel;
-		EventDatabase_AddEvent(gGroupCalendar_GuildDatabase, foundEvent);		
-	end
+		if not foundEvent then		
+			-- Event doesnt exist yet. Make it.
+			local	foundEvent = EventDatabase_NewEvent(gGroupCalendar_GuildDatabase, vDate, false);
+			foundEvent.mChangedDate = vChangedDate;
+			foundEvent.mChangedTime = vChangedTime;
+			foundEvent.mType = vType;
+			foundEvent.mStatus = vStatus;
+			foundEvent.mTime = vTime;
+			foundEvent.mDuration = vDuration;
+			foundEvent.mGUID = vGUID;
+			foundEvent.mMinLevel = vMinLevel;
+			foundEvent.mMaxLevel = vMaxLevel;
+			--foundEvent.mUnseen = true;
+			EventDatabase_AddEvent(gGroupCalendar_GuildDatabase, foundEvent);		
+		elseif updateEvent == true then
+			foundEvent.mChangedDate = vChangedDate;
+			foundEvent.mChangedTime = vChangedTime;
+			foundEvent.mType = vType;
+			foundEvent.mStatus = vStatus;
+			foundEvent.mTime = vTime;
+			foundEvent.mDuration = vDuration;
+			foundEvent.mMinLevel = vMinLevel;
+			foundEvent.mMaxLevel = vMaxLevel;
 
-	if updateEvent == true then
-		foundEvent.mChangedDate = vChangedDate;
-		foundEvent.mChangedTime = vChangedTime;
-		foundEvent.mType = vType;
-		foundEvent.mStatus = vStatus;
-		foundEvent.mTime = vTime;
-		foundEvent.mDuration = vDuration;
-		foundEvent.mMinLevel = vMinLevel;
-		foundEvent.mMaxLevel = vMaxLevel;
+			-- Remove event updates
+			CalendarNetwork_RemoveEventUpdate(foundEvent, RemoveAllRSVPs)
+		
+			GroupCalendar_EventChanged(gGroupCalendar_GuildDatabase, foundEvent);
+		elseif datesEqual then
+			CalendarNetwork_RemoveEventUpdate(foundEvent, RemoveAllRSVPs);
+		end
+	--else
+		--print ("gGroupCalendar_GuildDatabase is nil");
 
-		-- Remove event updates
-		gGroupCalendar_EventSyncQueue = CalendarNetwork_ArrayRemove(gGroupCalendar_EventSyncQueue, function(t, i, j)
-			local v = t[i];
-			return not ((v.mUpdateTpye == 1 and v.mEvent == foundEvent) or (RemoveAllRSVPs == true and v.mUpdateTpye == 2 and v.mEvent == foundEvent));
-		end);	
-
-		GroupCalendar_EventChanged(gGroupCalendar_GuildDatabase, foundEvent);
 	end
 end
 
+function CalendarNetwork_RemoveEventUpdate(pEvent, pRemoveRSVPs)
+
+	if not gGroupCalendar_InCombat then
+		gGroupCalendar_EventSyncQueue = CalendarNetwork_ArrayRemove(gGroupCalendar_EventSyncQueue, function(t, i, j)
+					local v = t[i];
+					return not (v.mEvent == pEvent);
+				end);
+
+		if pRemoveRSVPs then
+			gGroupCalendar_RSVPSyncQueue = CalendarNetwork_ArrayRemove(gGroupCalendar_RSVPSyncQueue, function(t, i, j)
+					local v = t[i];
+					return not (v.mEvent == pEvent);
+				end);
+		end
+	end
+
+end
+
+
+
 function CalendarNetwork_ProcessEventTitleUpdateCommand(pSender, pCommand)
-	local vDate = tonumber(pCommand[1]);
-	local vGUID = pCommand[2];
-	local vChangedDate = tonumber(pCommand[3]);
-	local vChangedTime = tonumber(pCommand[4]);
-	local vTitle = Calendar_UnescapeString(pCommand[5]);	
+	if gGroupCalendar_GuildDatabase then
+		local vDate = tonumber(pCommand[1]);
+		local vGUID = pCommand[2];
+		local vChangedDate = tonumber(pCommand[3]);
+		local vChangedTime = tonumber(pCommand[4]);
+		local vTitle = Calendar_UnescapeString(pCommand[5]);	
 
-	-- Check if the date is more recent
-	if gGroupCalendar_GuildDatabase.Events[vDate] then
-		for vEventIndex, vEvent in pairs (gGroupCalendar_GuildDatabase.Events[vDate]) do
-			if vEvent.mGUID == vGUID then
-				if EventDatabase_SecondDateTimeNewer(vEvent.mChangedDate, vEvent.mChangedTime, vChangedDate, vChangedTime) then
-					-- Update is newer than what we have. Update the event.
+		-- Check if the date is more recent
+		if gGroupCalendar_GuildDatabase.Events[vDate] then
+			for vEventIndex, vEvent in pairs (gGroupCalendar_GuildDatabase.Events[vDate]) do
+				if vEvent.mGUID == vGUID then
+					if EventDatabase_SecondDateTimeNewer(vEvent.mChangedDate, vEvent.mChangedTime, vChangedDate, vChangedTime) > 0 then
+						-- Update is newer than what we have. Update the event.
 
-					-- Update the event values
-					vEvent.mChangedDate = vChangedDate;
-					vEvent.mChangedTime = vChangedTime;
-					vEvent.mTitle = vTitle;							
+						-- Update the event values
+						vEvent.mChangedDate = vChangedDate;
+						vEvent.mChangedTime = vChangedTime;
+						vEvent.mTitle = vTitle;							
 				
-					-- Update the calendar
-					GroupCalendar_EventChanged(gGroupCalendar_GuildDatabase, vEvent);
-				end			
+						-- Update the calendar
+						GroupCalendar_EventChanged(gGroupCalendar_GuildDatabase, vEvent);
+					end	
+					break;
+				end
 			end
 		end
 	end
 end
 
 function CalendarNetwork_ProcessRSVPUpdateCommand(pSender, pCommand)
-	local vEventDate = tonumber(pCommand[1]);
-	local vGUID = pCommand[2];
-	local vAttendee = pCommand[3];
-	local vDate = tonumber(pCommand[4]);
-	local vTime = tonumber(pCommand[5]);
-	local vOrigDate = tonumber(pCommand[6]);
-	local vOrigTime = tonumber(pCommand[7]);
-	local vRole = pCommand[8];
-	local vLevel = tonumber(pCommand[9]);
-	local vRank = tonumber(pCommand[10]);
-	local vClass = pCommand[11];
-	local vStatus = pCommand[12];
-	local vRace = pCommand[13];
+	if gGroupCalendar_GuildDatabase then
+		local vEventDate = tonumber(pCommand[1]);
+		local vGUID = pCommand[2];
+		local vAttendee = pCommand[3];
+		local vDate = tonumber(pCommand[4]);
+		local vTime = tonumber(pCommand[5]);
+		local vOrigDate = tonumber(pCommand[6]);
+		local vOrigTime = tonumber(pCommand[7]);
+		local vRole = pCommand[8];
+		local vLevel = tonumber(pCommand[9]);
+		local vRank = tonumber(pCommand[10]);
+		local vClass = pCommand[11];
+		local vStatus = pCommand[12];
+		local vRace = pCommand[13];
 
-	-- Check if the date is more recent
-	if gGroupCalendar_GuildDatabase.Events[vEventDate] then
-		for vEventIndex, vEvent in pairs (gGroupCalendar_GuildDatabase.Events[vEventDate]) do
-			if vEvent.mGUID == vGUID then
+		-- Check if the date is more recent
+		if gGroupCalendar_GuildDatabase.Events[vEventDate] then
+			for vEventIndex, vEvent in pairs (gGroupCalendar_GuildDatabase.Events[vEventDate]) do
+				if vEvent.mGUID == vGUID then
 
-				local vUpd = false;
-				local vRSVP = vEvent.mAttendance[vAttendee];
-				if not vRSVP then
-					vUpd = true;
-					vRSVP = {};				
-					vRSVP.mName = vAttendee;
-					vEvent.mAttendance[vAttendee] = vRSVP;
-				elseif EventDatabase_SecondDateTimeNewer(vRSVP.mDate, vRSVP.mTime, vDate, vTime) then
-					vUpd = true;
-				end
-
-				if vUpd == true then
-					vRSVP.mRole = vRole;
-					vRSVP.mDate = vDate;
-					vRSVP.mTime = vTime;
-					vRSVP.mStatus = vStatus;
-					vRSVP.mOriginalDate = vOrigDate;
-					vRSVP.mOriginalTime = vOrigTime;								
-					vRSVP.mClassCode = vClass;
-					vRSVP.mRaceCode = vRace;
-					vRSVP.mLevel = vLevel;
-					vRSVP.mGuildRank = vRank;
-
-					-- Remove RSVP update
-					gGroupCalendar_EventSyncQueue = CalendarNetwork_ArrayRemove(gGroupCalendar_EventSyncQueue, function(t, i, j)
-						local v = t[i];
-						return not (v.mUpdateTpye == 2 and v.mEvent == vEvent and v.mRSVP.mName == vAttendee);
-					end);
-				--else
-				--	print ("Not Updating RSVP");
-				end
+					local vRSVP = vEvent.mAttendance[vAttendee];
+					if not vRSVP then
+						vUpd = true;
+						vRSVP = {};				
+						vRSVP.mName = vAttendee;
+						vEvent.mAttendance[vAttendee] = vRSVP;
+					end
+					
+					local vDateStatus = EventDatabase_SecondDateTimeNewer(vRSVP.mDate, vRSVP.mTime, vDate, vTime);
+						
+					if vDateStatus == 2 then 
+						vRSVP.mRole = vRole;
+						vRSVP.mDate = vDate;
+						vRSVP.mTime = vTime;
+						vRSVP.mStatus = vStatus;
+						vRSVP.mOriginalDate = vOrigDate;
+						vRSVP.mOriginalTime = vOrigTime;								
+						vRSVP.mClassCode = vClass;
+						vRSVP.mRaceCode = vRace;
+						vRSVP.mLevel = vLevel;
+						vRSVP.mGuildRank = vRank;
+							
+						-- Remove RSVP update
+						CalendarNetwork_RemoveRSVPUpdate(vEvent, vAttendee);
+					elseif vDateStatus == 1 then 
+						-- Remove RSVP update
+						CalendarNetwork_RemoveRSVPUpdate(vEvent, vAttendee);
+					end
+					
+									
+					-- Update the attendance list
+					if gCalendarEventViewer_Event == vEvent then
+						CalendarAttendanceList_EventChanged(CalendarEventViewerAttendance, gCalendarEventViewer_Database, gCalendarEventViewer_Event);
+					end
 				
-				-- Update the attendance list
-				if gCalendarEventViewer_Event == vEvent then
-					CalendarAttendanceList_EventChanged(CalendarEventViewerAttendance, gCalendarEventViewer_Database, gCalendarEventViewer_Event);
-				end
-				
-				CalendarEventEditor_EventChanged(vEvent);
+					CalendarEventEditor_EventChanged(vEvent);
 
+					break;
+				end
 			end
 		end
 	end
 end
 
+function CalendarNetwork_RemoveRSVPUpdate(pEvent, pAttendee)
+	if not gGroupCalendar_InCombat then
+		gGroupCalendar_RSVPSyncQueue = CalendarNetwork_ArrayRemove(gGroupCalendar_RSVPSyncQueue, function(t, i, j)
+					local v = t[i];
+					return not (v.mEvent == pEvent and v.mRSVP.mName == pAttendee);
+				end);
+	end
+end
+
 function CalendarNetwork_ProcessRSVPCommentUpdateCommand(pSender, pCommand)
-	local vEventDate = tonumber(pCommand[1]);
-	local vGUID = pCommand[2];
-	local vAttendee = pCommand[3];
-	local vDate = tonumber(pCommand[4]);
-	local vTime = tonumber(pCommand[5]);
-	local vComment = Calendar_UnescapeString(pCommand[6]);	
+	if gGroupCalendar_GuildDatabase then
+		local vEventDate = tonumber(pCommand[1]);
+		local vGUID = pCommand[2];
+		local vAttendee = pCommand[3];
+		local vDate = tonumber(pCommand[4]);
+		local vTime = tonumber(pCommand[5]);
+		local vComment = Calendar_UnescapeString(pCommand[6]);	
 
-	-- Check if the date is more recent
-	if gGroupCalendar_GuildDatabase.Events[vEventDate] then
-		for vEventIndex, vEvent in pairs (gGroupCalendar_GuildDatabase.Events[vEventDate]) do
-			if vEvent.mGUID == vGUID then
+		-- Check if the date is more recent
+		if gGroupCalendar_GuildDatabase.Events[vEventDate] then
+			for vEventIndex, vEvent in pairs (gGroupCalendar_GuildDatabase.Events[vEventDate]) do
+				if vEvent.mGUID == vGUID then
 
-				local vRSVP = vEvent.mAttendance[vAttendee];
-				if vRSVP and EventDatabase_SecondDateTimeNewer(vRSVP.mDate, vRSVP.mTime, vDate, vTime) then
-					vRSVP.mComment = vComment;					
-				end
+					local vRSVP = vEvent.mAttendance[vAttendee];
+					if vRSVP and EventDatabase_SecondDateTimeNewer(vRSVP.mDate, vRSVP.mTime, vDate, vTime) > 0 then
+						vRSVP.mComment = vComment;					
+					end
 							
-				-- Update the attendance list
-				if gCalendarEventViewer_Event == vEvent then
-					CalendarAttendanceList_EventChanged(CalendarEventViewerAttendance, gCalendarEventViewer_Database, gCalendarEventViewer_Event);
-				end
+					-- Update the attendance list
+					if gCalendarEventViewer_Event == vEvent then
+						CalendarAttendanceList_EventChanged(CalendarEventViewerAttendance, gCalendarEventViewer_Database, gCalendarEventViewer_Event);
+					end
 				
-				CalendarEventEditor_EventChanged(vEvent);
+					CalendarEventEditor_EventChanged(vEvent);
+					break;
+				end
 			end
 		end
 	end
@@ -432,26 +501,54 @@ function CalendarNetwork_ProcessTrustCommand(pSender, pCommand)
 	local pMinRank = pCommand[5];
 
 	local pPlayers = {};
+	--if pCommand[6] then
+	--	for vPlayerName, vPlayerSecurity in string.gmatch(pCommand[6], "(%a+)~(%d)~") do
+	--		pPlayers[vPlayerName] = tonumber(vPlayerSecurity);
+	--	end
+	--end
 	if pCommand[6] then
-		for vPlayerName, vPlayerSecurity in string.gmatch(pCommand[6], "(%a+)~(%d)~") do
-			pPlayers[vPlayerName] = tonumber(vPlayerSecurity);
+		vSplit = CalendarNetwork_split(pCommand[6], "~");
+		for i=1, table.getn(vSplit), 2 do
+			pPlayers[vSplit[i]] = tonumber(vSplit[i+1]);
 		end
 	end
+
 	CalendarNetwork_ReceiveTrustUpdate(pSender, pGuild, pVersion, pTrustAnyone, pTrustGuildies, pMinRank, pPlayers);
 
 end
 
-function CalendarNetwork_ProcessTrustRequestCommand(pSender, pCommand)
-	--local params = CalendarNetwork_ParseParameterString(pCommand);
-	local pVersion = tonumber(pCommand[1]);
-	local pGuild = pCommand[2];
+function CalendarNetwork_split(text, delim)
+    -- returns an array of fields based on text and delimiter (one character only)
+    local result = {}
+    local magic = "().%+-*?[]^$"
 
-	if gGroupCalendar_PlayerSettings.Security.Version > pVersion and gGroupCalendar_PlayerSettings.Security.Guild == pGuild then
-		-- We have newer trust settings. Send our version to others
-		CalendarNetwork_QueueTrustUpdate();
-	elseif gGroupCalendar_PlayerSettings.Security.Version < pVersion and gGroupCalendar_PlayerSettings.Security.Guild == pGuild then
-		-- We have a lower version than the user requesting an update. Ask for an update ourselves as it must be out of date.
-		CalendarNetwork_QueueTrustRequest();
+    if delim == nil then
+        delim = "%s"
+    elseif string.find(delim, magic, 1, true) then
+        -- escape magic
+        delim = "%"..delim
+    end
+
+    local pattern = "[^"..delim.."]+"
+    for w in string.gmatch(text, pattern) do		
+        table.insert(result, w)
+    end
+    return result
+end
+
+function CalendarNetwork_ProcessTrustRequestCommand(pSender, pCommand)
+	if gGroupCalendar_PlayerSettings then
+		--local params = CalendarNetwork_ParseParameterString(pCommand);
+		local pVersion = tonumber(pCommand[1]);
+		local pGuild = pCommand[2];
+
+		if gGroupCalendar_PlayerSettings.Security.Version > pVersion and gGroupCalendar_PlayerSettings.Security.Guild == pGuild then
+			-- We have newer trust settings. Send our version to others
+			CalendarNetwork_QueueTrustUpdate();
+		elseif gGroupCalendar_PlayerSettings.Security.Version < pVersion and gGroupCalendar_PlayerSettings.Security.Guild == pGuild then
+			-- We have a lower version than the user requesting an update. Ask for an update ourselves as it must be out of date.
+			CalendarNetwork_QueueTrustRequest();
+		end
 	end
 end
 
@@ -524,20 +621,27 @@ function CalendarNetwork_ParseParameterString(pParameterString)
 	return vParameters;
 end
 
-function CalendarNetwork_QueueOutboundMessage(pMessage)
-	table.insert(gGroupCalendar_Queue.OutboundMessages, pMessage);
+function CalendarNetwork_QueueOutboundMessage(pMessage, pPriority)
+	local vPriority = pPriority;
+	if not vPriority then
+		vPriority = "NORMAL";
+	end
+	CalendarNetwork_SendMessage(pMessage, vPriority);
+	--table.insert(gGroupCalendar_Queue.OutboundMessages, pMessage);
 	
-	GroupCalendar_StartUpdateTimer();
+	--GroupCalendar_StartUpdateTimer();
 end
 
 function CalendarNetwork_QueueInboundMessage(pSender, pTrustLevel, pMessage)
-	table.insert(gGroupCalendar_Queue.InboundMessages, {mSender = pSender, mTrustLevel = pTrustLevel, mMessage = pMessage});
+
+	CalendarNetwork_ProcessCommandString(pSender, pTrustLevel, pMessage);
+	--table.insert(gGroupCalendar_Queue.InboundMessages, {mSender = pSender, mTrustLevel = pTrustLevel, mMessage = pMessage});
 	
-	if table.getn(gGroupCalendar_Queue.InboundMessages) == 1 then
-		gGroupCalendar_Queue.InboundDelay = 0;
-	end
+	--if table.getn(gGroupCalendar_Queue.InboundMessages) == 1 then
+	--	gGroupCalendar_Queue.InboundDelay = 0;
+	--end
 	
-	GroupCalendar_StartUpdateTimer();
+	--GroupCalendar_StartUpdateTimer();
 end
 
 function CalendarNetwork_QueueTask(pTaskFunc, pTaskParam, pDelay, pTaskID)
@@ -1021,12 +1125,12 @@ function CalendarNetwork_ProcessQueues(pElapsed)
 	
 	local	vSuppressRequests = false;
 	
-	if CalendarNetwork_ProcessInboundQueue(pElapsed) then
-		vSuppressRequests = true;
+	--if CalendarNetwork_ProcessInboundQueue(pElapsed) then
+	--	vSuppressRequests = true;
 	
-	elseif CalendarNetwork_ProcessOutboundQueue(pElapsed) then
-		vSuppressRequests = true;
-	end
+	--elseif CalendarNetwork_ProcessOutboundQueue(pElapsed) then
+	--	vSuppressRequests = true;
+	--end
 	
 	-- Process pending requests if there are no outbound messages pending
 	
@@ -1041,10 +1145,16 @@ function CalendarNetwork_ProcessRequest(pRequest)
 	elseif pRequest.mOpcode == "TRUSTREQ" then
 		CalendarNetwork_SendTrustRequest();	
 	elseif pRequest.mOpcode == "VERREQ" then	
-		CalendarNetwork_QueueOutboundMessage("/VERREQ:"..gGroupCalendar_VersionString);
-	elseif pRequest.mOpcode == "SYNCREQ" then	
-		CalendarNetwork_QueueOutboundMessage("/SYNCREQ:"..gGroupCalendar_PlayerName);
-		CalendarNetwork_LoadSyncQueue();
+		CalendarNetwork_QueueOutboundMessage("/VERREQ:"..gGroupCalendar_VersionString, "NORMAL");
+	elseif pRequest.mOpcode == "SYNCREQ" then
+		-- Check if there hasn't been a chatter for 10 seconds
+		local timediff = CalendarNetwork_SecondsSinceLastSync();
+		if timediff and timediff >= 10 then
+			CalendarNetwork_QueueOutboundMessage("/SYNCREQ:"..gGroupCalendar_PlayerName, "ALERT");
+			CalendarNetwork_LoadSyncQueue(gGroupCalendar_PlayerName);
+		else
+			CalendarNetwork_QueueSyncRequest();
+		end
 	elseif pRequest.mOpcode == "SYNCUPD" then
 		CalendarNetwork_SendNextSyncUpdate();
 	end
@@ -1067,14 +1177,14 @@ end
 gCalendarNetwork_GuildMemberRankCache = nil;
 
 function CalendarNetwork_FlushCaches()
-	--print ("FlushCaches");
+
 	gCalendarNetwork_GuildMemberRankCache = nil;
 	gCalendarNetwork_UserTrustCache = {};
 end
 
 function CalendarNetwork_GetGuildRosterCache()
 	if gCalendarNetwork_GuildMemberRankCache then
-		--print ("Return Roster Cache")
+
 		return gCalendarNetwork_GuildMemberRankCache;
 	end
 	
@@ -1083,7 +1193,7 @@ function CalendarNetwork_GetGuildRosterCache()
 	gCalendarNetwork_GuildMemberRankCache = {};
 	
 	-- Scan the roster and collect the info
-	--print ("Building Guild Roster Cache")
+
 	local		vNumGuildMembers = GetNumGuildMembers(true);
 	for vIndex = 1, vNumGuildMembers do
 		local	vName, vRank, vRankIndex, vLevel, vClass, vZone, vNote, vOfficerNote, vOnline = GetGuildRosterInfo(vIndex);
@@ -1117,7 +1227,7 @@ local	gGroupCalendar_SentLoadGuildRoster = false;
 
 function CalendarNetwork_LoadGuildRosterTask()
 	if IsInGuild() then
-		--print ("Loading Guild Roster");
+
 		GuildRoster();
 	end
 	
@@ -1170,11 +1280,13 @@ function CalendarNetwork_UserIsInSameGuild(pUserName)
 	return true, vMemberInfo.RankIndex;
 end
 
-function CalendarNetwork_SendMessage(pMessage)	
-	C_ChatInfo.SendAddonMessage(gGroupCalendar_MessagePrefix0, pMessage, "GUILD");
+function CalendarNetwork_SendMessage(pMessage, priority)
+	ChatThrottleLib:SendAddonMessage(priority, gGroupCalendar_MessagePrefix0, pMessage, "GUILD");
+	--C_ChatInfo.SendAddonMessage(gGroupCalendar_MessagePrefix0, pMessage, "GUILD");
 end
 
 function CalendarNetwork_ChannelMessageReceived(pSender, pMessage)
+	
 	CalendarNetwork_QueueInboundMessage(pSender, vTrustLevel, pMessage);	
 end
 
@@ -1246,14 +1358,14 @@ function CalendarNetwork_SendTrustUpdate()
 	for vPlayerName, vPlayerSecurity in pairs(trust.Player) do
 		vRequest = vRequest..vPlayerName.."~"..vPlayerSecurity.."~";
 	end
-	CalendarNetwork_QueueOutboundMessage(vRequest);
+	CalendarNetwork_QueueOutboundMessage(vRequest, "ALERT");
 end
 
 function CalendarNetwork_SendTrustRequest()
 	if gGroupCalendar_PlayerGuild then
 		local trust = gGroupCalendar_PlayerSettings.Security;
 		local	vRequest = "/TRUSTREQ:"..trust.Version..","..gGroupCalendar_PlayerGuild;	
-		CalendarNetwork_QueueOutboundMessage(vRequest);
+		CalendarNetwork_QueueOutboundMessage(vRequest, "ALERT");
 	end
 end
 
@@ -1261,10 +1373,10 @@ function CalendarNetwork_ReceiveTrustUpdate(pSender, pGuild, pVersion, pTrustAny
 	-- Ignore settings not from your guild
 	if pGuild == gGroupCalendar_PlayerGuild then
 		-- If you're the guild leader, compare what version you have to the received message. If it's newer, incremement the version and resend
-		if gGroupCalendar_PlayerGuildRank == 0 and pVersion > gGroupCalendar_PlayerSettings.Security.Version then
-			gGroupCalendar_PlayerSettings.Security.Version = pVersion + 1;
-			CalendarNetwork_SendTrustUpdate();
-		elseif pVersion > gGroupCalendar_PlayerSettings.Security.Version then
+		--if gGroupCalendar_PlayerGuildRank == 0 and pVersion > gGroupCalendar_PlayerSettings.Security.Version then
+		--	gGroupCalendar_PlayerSettings.Security.Version = pVersion + 1;
+		--	CalendarNetwork_SendTrustUpdate();
+		if pVersion > gGroupCalendar_PlayerSettings.Security.Version then
 			-- Update the trust settings as the received version is higher
 			if pTrustAnyone == "true" then
 				gGroupCalendar_PlayerSettings.Security.TrustAnyone = true;
@@ -1326,7 +1438,7 @@ function CalendarTrust_GetUserTrustLevel(pUserName)
 		gCalendarNetwork_UserTrustCache[pUserName] = vUserTrustInfo;
 	end
 	
-	--print ("GetUserTrustLevel for "..pUserName.. ":" .. vUserTrustInfo.mTrustLevel)
+
 	return vUserTrustInfo.mTrustLevel;
 end
 
@@ -1348,7 +1460,7 @@ function CalendarTrust_CalcUserTrust(pUserName)
 		if gGroupCalendar_Settings.DebugTrust then
 			Calendar_DebugMessage("CalendarTrust_CalcUserTrust: Implicit trust for "..pUserName);
 		end
-		--print ("CalcUserTrust for " .. pUserName ..":2.0")
+
 		return 2;
 	end
 
@@ -1369,7 +1481,7 @@ function CalendarTrust_CalcUserTrustExplicit(pUserName)
 			if gGroupCalendar_Settings.DebugTrust then
 				Calendar_DebugMessage("CalendarTrust_CalcUserTrust: Explicit trust for "..pUserName);
 			end
-			--print ("CalcUserTrustExplicit for " .. pUserName ..":2.1")
+
 			return 2;
 		elseif vPlayerSecurity == 2 then
 			-- Excluded
@@ -1377,7 +1489,7 @@ function CalendarTrust_CalcUserTrustExplicit(pUserName)
 			if gGroupCalendar_Settings.DebugTrust then
 				Calendar_DebugMessage("CalendarTrust_CalcUserTrust: "..pUserName.." explicity excluded");
 			end
-			--print ("CalcUserTrustExplicit for " .. pUserName ..":0.1")
+
 			return 0;
 		else
 			Calendar_DebugMessage("GroupCalendar: Unknown player security setting of "..vPlayerSecurity.." for "..pUserName);
@@ -1390,7 +1502,7 @@ function CalendarTrust_CalcUserTrustExplicit(pUserName)
 		if gGroupCalendar_Settings.DebugTrust then
 			Calendar_DebugMessage("CalendarTrust_CalcUserTrust: "..pUserName.." trusted (all trusted)");
 		end
-		--print ("CalcUserTrustExplicit for " .. pUserName ..":2.2")
+
 		return 2;
 	end
 	
@@ -1404,13 +1516,13 @@ function CalendarTrust_CalcUserTrustExplicit(pUserName)
 				if gGroupCalendar_Settings.DebugTrust then
 					Calendar_DebugMessage("CalendarTrust_CalcUserTrust: "..pUserName.." trusted (guild member)");
 				end
-				--print ("CalcUserTrustExplicit for " .. pUserName ..":2.3")
+
 				return 2;
 			else
 				if gGroupCalendar_Settings.DebugTrust then
 					Calendar_DebugMessage("CalendarTrust_CalcUserTrust: "..pUserName.." partially trusted (guild member)");
 				end
-				--print ("CalcUserTrustExplicit for " .. pUserName ..":1.1")
+
 				return 1;
 			end
 		end
@@ -1421,7 +1533,7 @@ function CalendarTrust_CalcUserTrustExplicit(pUserName)
 	if gGroupCalendar_Settings.DebugTrust then
 		Calendar_DebugMessage("CalendarTrust_CalcUserTrust: "..pUserName.." not trusted (all tests failed)");
 	end
-	--print ("CalcUserTrustExplicit for " .. pUserName ..":0.2")
+
 	return 0;
 end
 
@@ -1551,6 +1663,8 @@ function CalendarNetwork_CheckPlayerGuild()
 		gGroupCalendar_PlayerSettings.Security.Guild = gGroupCalendar_PlayerGuild
 	end
 
+	CalendarNetwork_SetLastUpdateTime();
+
 	CalendarNetwork_QueueTrustRequest();
 
 	CalendarNetwork_QueueSyncRequest();
@@ -1564,12 +1678,22 @@ function CalendarNetwork_CheckPlayerGuild()
 	end
 end
 
-function CalendarNetwork_SendEventUpdate(pEvent, pIncRSVPs)
+function CalendarNetwork_SendEventUpdate(pEvent, pIncRSVPs, pPriority)
+
 	local cmd1 = "/EVT1:" .. pEvent.mDate .. "," .. pEvent.mGUID .. "," .. pEvent.mChangedDate .. "," .. pEvent.mChangedTime;
 	cmd1 = cmd1 .. ",".. pEvent.mType;
 	cmd1 = cmd1 .. ",".. pEvent.mStatus;
-	cmd1 = cmd1 .. ",".. pEvent.mTime;
-	cmd1 = cmd1 .. ",".. pEvent.mDuration;
+	if pEvent.mTime then
+		cmd1 = cmd1 .. ",".. pEvent.mTime;
+	else
+		cmd1 = cmd1 .. ",";
+	end
+
+	if pEvent.mDuration then
+		cmd1 = cmd1 .. ",".. pEvent.mDuration;
+	else
+		cmd1 = cmd1 .. ",";
+	end
 
 	if pEvent.mMinLevel then
 		cmd1 = cmd1 .. ",".. pEvent.mMinLevel;
@@ -1583,8 +1707,14 @@ function CalendarNetwork_SendEventUpdate(pEvent, pIncRSVPs)
 		cmd1 = cmd1 .. ",";
 	end
 
-	--print ("len:" .. strlen(cmd1));
-	CalendarNetwork_QueueOutboundMessage(cmd1);
+	--if pEvent.mUserName then
+	--	cmd1 = cmd1 .. ",".. pEvent.mUserName;
+	--else
+	--	cmd1 = cmd1 .. ",";
+	--end
+
+
+	CalendarNetwork_QueueOutboundMessage(cmd1, pPriority);
 
 	local cmd2 = "/EVT2:" .. pEvent.mDate .. "," .. pEvent.mGUID .. "," .. pEvent.mChangedDate .. "," .. pEvent.mChangedTime;
 	if pEvent.mTitle then
@@ -1593,18 +1723,18 @@ function CalendarNetwork_SendEventUpdate(pEvent, pIncRSVPs)
 		cmd2 = cmd2 .. ",";
 	end
 
-	--print ("len:" .. strlen(cmd2));
-	CalendarNetwork_QueueOutboundMessage(cmd2);
+
+	CalendarNetwork_QueueOutboundMessage(cmd2, pPriority);
 	
 
 	if pEvent.mAttendance and pIncRSVPs and pEvent.mStatus ~= "D" then
 		for vAttendee, vRSVP in pairs(pEvent.mAttendance) do
-			CalendarNetwork_SendRSVPUpdate(pEvent, vRSVP);
+			CalendarNetwork_SendRSVPUpdate(pEvent, vRSVP, pPriority);
 		end
 	end
 end
 
-function CalendarNetwork_SendRSVPUpdate(pEvent, pRSVP)
+function CalendarNetwork_SendRSVPUpdate(pEvent, pRSVP, pPriority)
 	
 	local cmd1 = "/RSVP1:" .. pEvent.mDate .. "," .. pEvent.mGUID .. "," .. pRSVP.mName;
 	if pRSVP.mDate then
@@ -1663,8 +1793,8 @@ function CalendarNetwork_SendRSVPUpdate(pEvent, pRSVP)
 		cmd1 = cmd1 .. ",";
 	end
 
-	--print ("len:" .. strlen(cmd1));
-	CalendarNetwork_QueueOutboundMessage(cmd1);
+
+	CalendarNetwork_QueueOutboundMessage(cmd1, pPriority);
 
 	local cmd2 = "/RSVP2:" .. pEvent.mDate .. "," .. pEvent.mGUID .. "," .. pRSVP.mName;
 	if pRSVP.mDate then
@@ -1685,8 +1815,8 @@ function CalendarNetwork_SendRSVPUpdate(pEvent, pRSVP)
 		cmd2 = cmd2 .. ",";
 	end
 
-	--print ("len:" .. strlen(cmd2));
-	CalendarNetwork_QueueOutboundMessage(cmd2);
+
+	CalendarNetwork_QueueOutboundMessage(cmd2, pPriority);
 
 end
 
@@ -1702,70 +1832,243 @@ function CalendarNetwork_QueueSyncRequest()
 	--if IsInGuild() then
 		vRequest = {};		
 		vRequest.mOpcode = "SYNCREQ";
-		CalendarNetwork_QueueUniqueOpcodeRequest(vRequest, 5);
+		CalendarNetwork_QueueUniqueOpcodeRequest(vRequest, 10 + math.random() * 10);
 	--end
 end
 
 function CalendarNetwork_QueueSyncUpdate()
 	vRequest = {};		
 	vRequest.mOpcode = "SYNCUPD";
-	CalendarNetwork_QueueUniqueOpcodeRequest(vRequest, gCalendarNetwork_RequestDelay.UPDMin + math.random() * gCalendarNetwork_RequestDelay.UPDRange);
+	local vExtraWait = 0;
+	if not gGroupCalendar_EventSyncSelfInit then
+		vExtraWait = 2;
+	end
+	CalendarNetwork_QueueUniqueOpcodeRequest(vRequest, gCalendarNetwork_RequestDelay.UPDMin + (math.random() * gCalendarNetwork_RequestDelay.UPDRange) + vExtraWait);
 end
 
-function CalendarNetwork_LoadSyncQueue()
-	-- Clear the queue
+function CalendarNetwork_LoadSyncQueue(pSender)
+
+	gGroupCalendar_EventSyncAuthor = pSender;
+
+	if pSender == gGroupCalendar_PlayerName then
+		gGroupCalendar_EventSyncSelfInit = true;
+	else
+		gGroupCalendar_EventSyncSelfInit = false;
+	end
+
+	-- Clear the queue	
 	gGroupCalendar_EventSyncQueue = {};
+	gGroupCalendar_RSVPSyncQueue = {};
 
 	if gGroupCalendar_GuildDatabase then
-		gGroupCalendar_EventSyncQueue = {};
 
-		for vEventDate, vEventList in pairs(gGroupCalendar_GuildDatabase.Events) do
+		for vEventDate, vEventList in CalendarNetwork_spairs(gGroupCalendar_GuildDatabase.Events) do
+
+		--for vEventDate, vEventList in pairs(gGroupCalendar_GuildDatabase.Events) do
 			if vEventDate >= gGroupCalendar_MinimumEventDate then -- Don't send old events
 				for vEventNum, vEvent in pairs(vEventList) do
 					local vEventUpd = {
-						mUpdateTpye = 1,
+						mUpdateType = 1,
 						mEvent = vEvent,
+						mRSVP = nil,
 					}
 					table.insert(gGroupCalendar_EventSyncQueue, vEventUpd);
-
-					if vEvent.mAttendance and vEvent.mStatus ~= "D" then
+					-- only recent and future RSVPs - don't care about old event rsvps
+					if vEvent.mAttendance and vEvent.mStatus ~= "D" and vEventDate >= gGroupCalendar_MinimumSyncEventDate then
 						for vAttendee, vRSVP in pairs(vEvent.mAttendance) do
 							local vRSVPUpd = {
-								mUpdateTpye = 2,
+								mUpdateType = 2,
 								mEvent = vEvent,
 								mRSVP = vRSVP,
 							}
-							table.insert(gGroupCalendar_EventSyncQueue, vRSVPUpd);
+							table.insert(gGroupCalendar_RSVPSyncQueue, vRSVPUpd);
 						end
 					end
 				end
+			--else
+			--	print ("Ignored Event Date:".. vEventDate)
 			end
 		end
 
+		-- Sort the table, 
+
+		--if gGroupCalendar_EventSyncSelfInit then
+			-- Sort the RSVPs in Desc order of when they happened
+			-- Only do this if it was self init as other users will send data randomly so it's not worth sorting
+		--	table.sort(gGroupCalendar_EventSyncQueue, CalendarNetwork_SortEvent);
+		--	table.sort(gGroupCalendar_RSVPSyncQueue, CalendarNetwork_SortRSVP);
+		--end
+
 		-- Queue sending the next update if items remain in the queue
-		if table.getn(gGroupCalendar_EventSyncQueue) > 0 then
+		if table.getn(gGroupCalendar_EventSyncQueue) > 0 or table.getn(gGroupCalendar_RSVPSyncQueue) > 0 then
 			CalendarNetwork_QueueSyncUpdate();
 		end
+
 	end
 end
 
-function CalendarNetwork_SendNextSyncUpdate()
-	
-	if table.getn(gGroupCalendar_EventSyncQueue) > 0 then
-		local vUpd = gGroupCalendar_EventSyncQueue[1];
-		table.remove(gGroupCalendar_EventSyncQueue, 1);
+function CalendarNetwork_SortEvent(a, b)
+	if a.mEvent.mChangedDate > b.mEvent.mChangedDate
+		or (a.mEvent.mChangedDate == b.mEvent.mChangedDate and a.mEvent.mChangedTime > b.mEvent.mChangedTime) then
+		return true;
+	else
+		return false;
+	end
+end
 
-		if vUpd.mUpdateTpye == 1 then
-			CalendarNetwork_SendEventUpdate(vUpd.mEvent, false);
-		elseif vUpd.mUpdateTpye == 2 then
-			CalendarNetwork_SendRSVPUpdate(vUpd.mEvent, vUpd.mRSVP);
+function CalendarNetwork_SortRSVP(a, b)
+	if a.mRSVP.mDate > b.mRSVP.mDate
+		or (a.mRSVP.mDate == b.mRSVP.mDate and a.mRSVP.mTime > b.mRSVP.mTime) then
+		return true;
+	else
+		return false;
+	end
+end
+
+function CalendarNetwork_spairs(t, order)
+    -- collect the keys
+    local keys = {}
+    for k in pairs(t) do keys[#keys+1] = k end
+
+    -- if order function given, sort by it by passing the table and keys a, b,
+    -- otherwise just sort the keys 
+    if order then
+        table.sort(keys, function(a,b) return order(t, a, b) end)
+    else
+        table.sort(keys, function(a,b) return a>b end) -- Desc
+    end
+
+    -- return the iterator function
+    local i = 0
+    return function()
+        i = i + 1
+        if keys[i] then
+            return keys[i], t[keys[i]]
+        end
+    end
+end
+
+function CalendarNetwork_SecondsSinceLastSync()
+	if gGroupCalendar_EventSyncLastDate then
+		local vLocalDate, vLocalTime60 = Calendar_GetCurrentLocalDateTime60();
+		local TimeDiff = 0;
+		if gGroupCalendar_EventSyncLastDate == vLocalDate then
+			TimeDiff = vLocalTime60 - gGroupCalendar_EventSyncLastTime60;
+		elseif vLocalDate - gGroupCalendar_EventSyncLastDate == 1 then
+			-- Gone over a day
+			TimeDiff = gCalendarSecondsPerDay - gGroupCalendar_EventSyncLastTime60;
+			TimeDiff = TimeDiff + vLocalTime60;
+		else
+			-- This should not happen.
+			return nil;
+		end		
+		
+		return TimeDiff;
+	else
+		return nil;
+	end
+end
+
+local gGroupCalendar_RSVP_LastEvent = nil;
+
+function CalendarNetwork_SendNextSyncUpdate()		
+	local vEventTotal = table.getn(gGroupCalendar_EventSyncQueue);
+	local vRSVPTotal = table.getn(gGroupCalendar_RSVPSyncQueue);
+
+	if vEventTotal > 0 or vRSVPTotal > 0 then
+		-- If in combat, delay the processing of the queue
+		if gGroupCalendar_InCombat then
+			CalendarNetwork_QueueSyncUpdate();
+			return;
+		end
+
+		-- If the sync wasnt init by this user, wait for the main user to stop communicating for at least 6 sec
+		if not gGroupCalendar_EventSyncSelfInit and gGroupCalendar_EventSyncAuthor and gGroupCalendar_EventSyncLastAuthor and gGroupCalendar_EventSyncLastAuthor == gGroupCalendar_EventSyncAuthor then
+			
+			local TimeDiff = CalendarNetwork_SecondsSinceLastSync();
+			
+			if not TimeDiff or TimeDiff <= 6 then
+				CalendarNetwork_QueueSyncUpdate();
+				return;
+			end
+		end
+
+		local vUpd = nil;
+		
+		-- Try to send events first
+		if vEventTotal > 0 then
+			
+			local vEvtIndex = 1;
+
+			-- If not the main user, send a random event to help avoid collisions
+			if not gGroupCalendar_EventSyncSelfInit then
+				vEvtIndex = math.random(vEventTotal);
+			end
+
+			vUpd = gGroupCalendar_EventSyncQueue[vEvtIndex];
+
+			-- Remove the entry
+			gGroupCalendar_EventSyncQueue = CalendarNetwork_ArrayRemove(gGroupCalendar_EventSyncQueue, function(t, i, j)
+				local v = t[i];
+				return not (v == vUpd);
+			end);
+
+		-- Send RSVPs once all events are sent
+		elseif vRSVPTotal > 0 then
+			
+			local vRSVPIndex = 1;
+
+			-- If not the main user, send a random RSVP to help avoid collisions
+			if not gGroupCalendar_EventSyncSelfInit then
+				vRSVPIndex = math.random(vRSVPTotal);			
+			end
+
+			vUpd = gGroupCalendar_RSVPSyncQueue[vRSVPIndex];
+
+			if gGroupCalendar_EventSyncSelfInit and (not gGroupCalendar_RSVP_LastEvent or gGroupCalendar_RSVP_LastEvent ~= vUpd.mEvent) then
+				-- Send event again if we haven't already
+				gGroupCalendar_RSVP_LastEvent = vUpd.mEvent;
+				CalendarNetwork_SendEventUpdate(vUpd.mEvent, false, "BULK");
+			end
+
+			-- Remove the entry
+			gGroupCalendar_RSVPSyncQueue = CalendarNetwork_ArrayRemove(gGroupCalendar_RSVPSyncQueue, function(t, i, j)
+				local v = t[i];
+				return not (v == vUpd);
+			end);
+			
+		end
+
+
+		if vUpd then
+			if vUpd.mUpdateType == 1 then
+				CalendarNetwork_SendEventUpdate(vUpd.mEvent, false, "BULK");
+			elseif vUpd.mUpdateType == 2 then
+				CalendarNetwork_SendRSVPUpdate(vUpd.mEvent, vUpd.mRSVP, "BULK");
+			end			
 		end
 	end
+	
 
-	-- Queue sending the next update if items remain in the queue
-	if table.getn(gGroupCalendar_EventSyncQueue) > 0 then
+	if table.getn(gGroupCalendar_EventSyncQueue) > 0 or table.getn(gGroupCalendar_RSVPSyncQueue) > 0 then
 		CalendarNetwork_QueueSyncUpdate();
 	end
+
+	--if table.getn(gGroupCalendar_EventSyncQueue) > 0 then
+	--	local vUpd = gGroupCalendar_EventSyncQueue[1];
+	--	table.remove(gGroupCalendar_EventSyncQueue, 1);
+
+	--	if vUpd.mUpdateType == 1 then
+	--		CalendarNetwork_SendEventUpdate(vUpd.mEvent, false);
+	--	elseif vUpd.mUpdateType == 2 then
+	--		CalendarNetwork_SendRSVPUpdate(vUpd.mEvent, vUpd.mRSVP);
+	--	end
+	--end
+
+	-- Queue sending the next update if items remain in the queue
+	--if table.getn(gGroupCalendar_EventSyncQueue) > 0 then
+	--	CalendarNetwork_QueueSyncUpdate();
+	--end
 end
 
 

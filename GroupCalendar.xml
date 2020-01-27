@@ -176,6 +176,7 @@
 		</NormalTexture>
 		<HighlightTexture alphaMode="ADD" file="Interface\Buttons\ButtonHilight-Square"/>
 		<CheckedTexture alphaMode="ADD" file="Interface\Buttons\CheckButtonHilight"/>
+    <!--<CheckedTexture alphaMode="ADD" file="Interface\Buttons\ButtonHilight-SquareQuickslot"/>-->
 		<Scripts>
 			<OnLoad>
 				getglobal(self:GetName().."CircledDate"):SetVertexColor(0.41, 0.61, 0.75, 0.4);
@@ -799,11 +800,11 @@
 								GroupCalendar_SetUseServerDateTime(self:GetChecked());
 							</OnClick>
 							<OnEnter>
-								GameTooltip_AddNewbieTip(self, GroupCalendar_cUseServerDateTime, 1.0, 1.0, 1.0, GroupCalendar_cUseServerDateTimeDescription, 1);
+                GameTooltip_AddNewbieTip(self, GroupCalendar_cUseServerDateTime, 1.0, 1.0, 1.0, GroupCalendar_cUseServerDateTimeDescription, 1);
 							</OnEnter>
 							<OnLeave>
-								GameTooltip:Hide();
-							</OnLeave>
+                GameTooltip:Hide();
+              </OnLeave>
 						</Scripts>
 					</CheckButton>
           
@@ -873,6 +874,24 @@
 					</Layer>
 				</Layers>
 				<Frames>
+          <Button name="GroupCalendarSaveTrusted" inherits="UIPanelButtonTemplate" text="GroupCalendar_cSave">
+            <Size>
+              <AbsDimension x="95" y="21"/>
+            </Size>
+            <Anchors>
+              <Anchor point="TOPRIGHT" relativePoint="TOPRIGHT">
+                <Offset>
+                  <AbsDimension x="-7" y="-45"/>
+                </Offset>
+              </Anchor>
+            </Anchors>
+            <Scripts>
+              <OnClick>
+                PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON );
+                GroupCalendar_SaveTrustGroup();
+              </OnClick>
+            </Scripts>
+          </Button>
 					<Frame name="GroupCalendarTrustGroup" inherits="CalendarDropDownTemplate">
 						<Anchors>
 							<Anchor point="TOPLEFT">
@@ -1138,8 +1157,8 @@
                 GameTooltip_AddNewbieTip(self, GroupCalendar_cToggleVersionsTitle, 1.0, 1.0, 1.0, GroupCalendar_cToggleVersionsDescription, 1);
               </OnEnter>
 							<OnLeave>
-								GameTooltip:Hide();
-							</OnLeave>
+                GameTooltip:Hide();
+              </OnLeave>
 						</Scripts>
 					</Button>					
 				</Frames>
@@ -1290,8 +1309,8 @@
             GameTooltip_AddNewbieTip(self, self:GetText(), 1.0, 1.0, 1.0, GroupCalendarSidePanel.Desc.ButtonDescription, 1);
           </OnEnter>
 					<OnLeave>
-						GameTooltip:Hide();
-					</OnLeave>
+            GameTooltip:Hide();
+          </OnLeave>
 				</Scripts>
 			</Button>
 		</Frames>
@@ -1365,11 +1384,11 @@
 		</Layers>
 		<Scripts>
 			<OnEnter>
-				self:UpdateTooltip();
+        self:UpdateTooltip();
 			</OnEnter>
 			<OnLeave>
-				GameTooltip:Hide();
-			</OnLeave>
+        GroupCalendarTooltip:Hide();
+      </OnLeave>
 		</Scripts>
 	</CheckButton>
 
@@ -1543,12 +1562,12 @@
 						self:SetFrameLevel(self:GetFrameLevel() + 3);
 					</OnLoad>
 					<OnEnter>
-						GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT");
-						GroupCalendar_UpdateTimeTooltip();
-					</OnEnter>
+            GroupCalendarTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT");
+            GroupCalendar_UpdateTimeTooltip();
+          </OnEnter>
 					<OnLeave>
-						GameTooltip:Hide();
-					</OnLeave>
+            GroupCalendarTooltip:Hide();
+          </OnLeave>
 					<OnClick>
 						GroupCalendar_ToggleCalendarDisplay();
 					</OnClick>

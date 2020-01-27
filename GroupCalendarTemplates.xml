@@ -396,6 +396,19 @@
 						</Offset>
 					</Anchor>
 				</Anchors>
+        <Layers>
+          <Layer level="OVERLAY">
+            <FontString name="$parentText" text="GroupCalendar_cClear" inherits="GameFontNormalSmall">
+              <Anchors>
+                <Anchor point="CENTER" relativePoint="CENTER">
+                  <Offset>
+                    <AbsDimension x="0" y="0"/>
+                  </Offset>
+                </Anchor>
+              </Anchors>
+            </FontString>
+          </Layer>
+        </Layers>
 				<Scripts>
 					<OnClick>
 						PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON );
@@ -403,6 +416,9 @@
 							self.ActionFunc(self.ActionParam);
 						end
 					</OnClick>
+          <!--<OnShow>
+            self:SetText(GroupCalendar_cClear);
+          </OnShow> -->
 				</Scripts>
 			</Button>
 			<Button name="$parentMenu" inherits="CalendarAttendanceMenuTemplate" hidden="true">

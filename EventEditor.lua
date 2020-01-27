@@ -477,7 +477,7 @@ function CalendarEventEditor_DeleteRSVP()
 	gGroupCalendar_RSVPToDelete.mDate = vDate;
 	gGroupCalendar_RSVPToDelete.mTime = vTime60;
 
-	CalendarNetwork_SendRSVPUpdate(gCalendarEventEditor_Event, gGroupCalendar_RSVPToDelete);
+	CalendarNetwork_SendRSVPUpdate(gCalendarEventEditor_Event, gGroupCalendar_RSVPToDelete, "ALERT");
 
 	CalendarAttendanceList_EventChanged(CalendarEventEditorAttendance, gCalendarEventEditor_Database, gGroupCalendar_RSVPToDelete);
 
@@ -548,7 +548,7 @@ function CalendarEventEditor_SaveEvent()
 		gGroupCalendar_PlayerSettings.EventTemplates[gCalendarEventEditor_Event.mType] = vEventTemplate;
 	end
 
-	CalendarNetwork_SendEventUpdate(gCalendarEventEditor_Event);
+	CalendarNetwork_SendEventUpdate(gCalendarEventEditor_Event, "ALERT");
 
 	if gCalendarEventEditor_IsNewEvent then
 		CalendarEventEditor_SaveRSVP(gCalendarEventEditor_Event);
@@ -600,7 +600,7 @@ function CalendarEventEditor_SaveRSVP(pEvent)
 			RSVP.mGuildRank = vPlayerDB.GuildRank			
 
 			pEvent.mAttendance[pCharacter] = RSVP;
-			CalendarNetwork_SendRSVPUpdate(pEvent, RSVP);
+			CalendarNetwork_SendRSVPUpdate(pEvent, RSVP, "ALERT");
 
 
 
@@ -610,7 +610,7 @@ function CalendarEventEditor_SaveRSVP(pEvent)
 				RSVP.mStatus = "N";
 				RSVP.mDate = vDate;
 				RSVP.mTime = vTime60;
-				CalendarNetwork_SendRSVPUpdate(pEvent, RSVP);
+				CalendarNetwork_SendRSVPUpdate(pEvent, RSVP, "ALERT");
 			end
 		end		
 	end	
@@ -1650,7 +1650,7 @@ function CalendarAttendanceList_SetItemToCategory(pAttendanceList, pIndex, pCate
 	
 	if pActionFunc then
 		vItemActionButton.ActionFunc = pActionFunc;
-		vItemActionButton.ActionParam = pActionParam;
+		vItemActionButton.ActionParam = pActionParam;		
 		vItemActionButton:Show();
 	else
 		vItemActionButton:Hide();
@@ -1957,8 +1957,8 @@ function CalendarAttendanceList_ShowMessageTooltip(pOwner, pName, pMessages, pCo
 		return;
 	end
 	
-	GameTooltip:SetOwner(pOwner, "ANCHOR_LEFT");
-	GameTooltip:AddLine(pName);
+	GroupCalendarTooltip:SetOwner(pOwner, "ANCHOR_LEFT");
+	GroupCalendarTooltip:AddLine(pName);
 	
 	local	vColor = {r = 1, g = 1, b = 1};
 	
@@ -1968,13 +1968,13 @@ function CalendarAttendanceList_ShowMessageTooltip(pOwner, pName, pMessages, pCo
 	
 	if type(pMessages) == "table" then
 		for vIndex, vText in pairs(pMessages) do
-			GameTooltip:AddLine(vText, vColor.r, vColor.g, vColor.b, 1);
+			GroupCalendarTooltip:AddLine(vText, vColor.r, vColor.g, vColor.b, 1);
 		end
 	else
-		GameTooltip:AddLine(pMessages, vColor.r, vColor.g, vColor.b, 1);
+		GroupCalendarTooltip:AddLine(pMessages, vColor.r, vColor.g, vColor.b, 1);
 	end
 	
-	GameTooltip:Show();
+	GroupCalendarTooltip:Show();
 end
 
 function CalendarAttendanceList_OnEnter(frame)
@@ -1984,7 +1984,7 @@ function CalendarAttendanceList_OnEnter(frame)
 end
 
 function CalendarAttendanceList_OnLeave()
-	GameTooltip:Hide();
+	GroupCalendarTooltip:Hide();
 end
 
 function CalendarAttendanceList_ListViewItemSelected(pMenu, pItem)
@@ -2223,7 +2223,7 @@ function CalendarAddPlayer_Save()
 	
 	gCalendarEventEditor_Event.mAttendance[vName] = vRSVP;
 	
-	CalendarNetwork_SendRSVPUpdate(gCalendarEventEditor_Event, vRSVP);
+	CalendarNetwork_SendRSVPUpdate(gCalendarEventEditor_Event, vRSVP, "ALERT");
 
 	if CalendarAddPlayerFrame.IsWhisper then
 		CalendarWhisperLog_RemovePlayer(CalendarAddPlayerFrame.Name);
@@ -2307,7 +2307,7 @@ function CalendarAddPlayerWhisper_OnEnter()
 end
 
 function CalendarAddPlayerWhisper_OnLeave()
-	GameTooltip:Hide();
+	GroupCalendarTooltip:Hide();
 end
 
 function CalendarAddPlayerWhisper_Reply()
@@ -2365,7 +2365,7 @@ function CalendarEventEditor_AttendanceMenuItemSelected(pOwner, pValue)
 			vItem.mOriginalTime = vTime60;
 		end
 
-		CalendarNetwork_SendRSVPUpdate(gCalendarEventEditor_Event, vItem);
+		CalendarNetwork_SendRSVPUpdate(gCalendarEventEditor_Event, vItem, "ALERT");
 
 		CalendarAttendanceList_EventChanged(CalendarEventEditorAttendance, gCalendarEventEditor_Database, gCalendarEventEditor_Event);
 

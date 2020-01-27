@@ -24,6 +24,9 @@ gGroupCalendar_UserDatabase = nil;
 gGroupCalendar_GuildDatabase = nil;
 
 gGroupCalendar_MaximumEventAge = 30;
+gGroupCalendar_MaximumSyncEventAge = 3;
+gGroupCalendar_MinimumEventDate = nil;
+gGroupCalendar_MinimumSyncEventDate = nil;
 
 gCategoryType_Class = 1;
 gCategoryType_Role = 2;
@@ -404,7 +407,7 @@ function EventDatabase_GenerateGUID(vDatabase)
 	return guid .. vIncrement;
 end
 
-function EventDatabase_NewEvent(pDatabase, pDate)
+function EventDatabase_NewEvent(pDatabase, pDate, pUserGenerated)
 	local	vEvent = {};
 	
 	vEvent.mStatus = "A";
@@ -429,6 +432,12 @@ function EventDatabase_NewEvent(pDatabase, pDate)
 	vEvent.mManualConfirm = false;
 	vEvent.mLimits = nil;
 	
+	if pUserGenerated then
+		vEvent.mUserName = gGroupCalendar_PlayerName;
+	else
+		vEvent.mUserName = nil;
+	end
+
 	vEvent.mGUID = EventDatabase_GenerateGUID(pDatabase);
 	vEvent.mAttendance = {};
 	
@@ -456,85 +465,122 @@ function EventDatabase_GetDateSchedule(pDate)
 end
 
 function EventDatabase_GetCompiledSchedule(pDate)
+
 	local		vCompiledSchedule = {};
 	
-	if gGroupCalendar_Settings.ShowEventsInLocalTime then
-		local		vDate2 = nil;
+	local vMonth, vDay, vYear = Calendar_ConvertDateToMDY(pDate);
+	-- Check that the date makes sense
+	if vMonth and vDay and vYear then
+		if gGroupCalendar_Settings.ShowEventsInLocalTime then
+			local		vDate2 = nil;
 		
-		if gGroupCalendar_ServerTimeZoneOffset < 0 then
-			vDate2 = pDate + 1;
-		elseif gGroupCalendar_ServerTimeZoneOffset > 0 then
-			vDate2 = pDate - 1;
-		end		
+			if gGroupCalendar_ServerTimeZoneOffset < 0 then
+				vDate2 = Calendar_AddDays(pDate, 1);
+			elseif gGroupCalendar_ServerTimeZoneOffset > 0 then
+				vDate2 = Calendar_AddDays(pDate, -1);
+			end		
 		
-		for vDateIndex = 1, 2 do
-			local	vDate;
+			for vDateIndex = 1, 2 do
+				local	vDate;
 					
-			if vDateIndex == 1 then
-				vDate = pDate;
-			else
-				if not vDate2 then
-					break;
-				end
+				if vDateIndex == 1 then
+					vDate = pDate;
+				else
+					if not vDate2 then
+						break;
+					end
 						
-				vDate = vDate2;
-			end
-					
-			if gGroupCalendar_UserDatabase then
-				local	vSchedule = gGroupCalendar_UserDatabase.Events[vDate];
-					
-				if vSchedule then
-					for vIndex, vEvent in pairs(vSchedule) do						
-						-- Calculate the local date/time and see if it's still the right date							
-						local	vLocalDate, vLocalTime = Calendar_GetLocalDateTimeFromServerDateTime(vDate, vEvent.mTime);
+					vDate = vDate2;
+				end
+			
+				if gGroupCalendar_PlayerDatabases and gGroupCalendar_PlayerDatabases.Databases then
+					for vDBname, vPlayerDB in pairs(gGroupCalendar_PlayerDatabases.Databases) do
+						if vPlayerDB.Realm == gGroupCalendar_RealmName then
+							local	vSchedule = vPlayerDB.Events[vDate];					
+							if vSchedule then
+								for vIndex, vEvent in pairs(vSchedule) do						
+									-- Calculate the local date/time and see if it's still the right date							
+									local	vLocalDate, vLocalTime = Calendar_GetLocalDateTimeFromServerDateTime(vDate, vEvent.mTime);
 							
-						if vLocalDate == pDate then								
-							table.insert(vCompiledSchedule, vEvent);
-						end						
+									if vLocalDate == pDate then								
+										table.insert(vCompiledSchedule, vEvent);
+									end						
+								end
+							end
+						end
+
 					end
 				end
-			end
 
-			if gGroupCalendar_GuildDatabase then
-				local	vSchedule = gGroupCalendar_GuildDatabase.Events[vDate];
+				--if gGroupCalendar_UserDatabase then
+				--	local	vSchedule = gGroupCalendar_UserDatabase.Events[vDate];
 					
-				if vSchedule then
-					for vIndex, vEvent in pairs(vSchedule) do
-						if vEvent.mStatus ~= "D" then
-							-- Calculate the local date/time and see if it's still the right date							
-							local	vLocalDate, vLocalTime = Calendar_GetLocalDateTimeFromServerDateTime(vDate, vEvent.mTime);
+				--	if vSchedule then
+				--		for vIndex, vEvent in pairs(vSchedule) do						
+				--			-- Calculate the local date/time and see if it's still the right date							
+				--			local	vLocalDate, vLocalTime = Calendar_GetLocalDateTimeFromServerDateTime(vDate, vEvent.mTime);
 							
-							if vLocalDate == pDate then								
-								table.insert(vCompiledSchedule, vEvent);
+				--			if vLocalDate == pDate then								
+				--				table.insert(vCompiledSchedule, vEvent);
+				--			end						
+				--		end
+				--	end
+				--end
+
+				if gGroupCalendar_GuildDatabase then
+					local	vSchedule = gGroupCalendar_GuildDatabase.Events[vDate];
+					
+					if vSchedule then
+						for vIndex, vEvent in pairs(vSchedule) do
+							if vEvent.mStatus ~= "D" then
+								-- Calculate the local date/time and see if it's still the right date							
+								local	vLocalDate, vLocalTime = Calendar_GetLocalDateTimeFromServerDateTime(vDate, vEvent.mTime);
+							
+								if vLocalDate == pDate then								
+									table.insert(vCompiledSchedule, vEvent);
+								end
 							end
 						end
 					end
 				end
 			end
-		end
-	else		
-		if gGroupCalendar_UserDatabase then
-			local	vSchedule = gGroupCalendar_UserDatabase.Events[pDate];
-				
-			if vSchedule then
-				for vIndex, vEvent in pairs(vSchedule) do
-					table.insert(vCompiledSchedule, vEvent);
+		else	
+			if gGroupCalendar_PlayerDatabases and gGroupCalendar_PlayerDatabases.Databases then
+				for vDBname, vPlayerDB in pairs(gGroupCalendar_PlayerDatabases.Databases) do
+					if vPlayerDB.Realm == gGroupCalendar_RealmName then
+						local	vSchedule = vPlayerDB.Events[pDate];					
+						if vSchedule then
+							for vIndex, vEvent in pairs(vSchedule) do						
+								table.insert(vCompiledSchedule, vEvent);
+							end
+						end
+					end
+
 				end
 			end
-		end
-
-		if gGroupCalendar_GuildDatabase then
-			local	vSchedule = gGroupCalendar_GuildDatabase.Events[pDate];
+			--if gGroupCalendar_UserDatabase then
+			--	local	vSchedule = gGroupCalendar_UserDatabase.Events[pDate];
 				
-			if vSchedule then
-				for vIndex, vEvent in pairs(vSchedule) do
-					if vEvent.mStatus ~= "D" then
-						table.insert(vCompiledSchedule, vEvent);
+			--	if vSchedule then
+			--		for vIndex, vEvent in pairs(vSchedule) do
+			--			table.insert(vCompiledSchedule, vEvent);
+			--		end
+			--	end
+			--end
+
+			if gGroupCalendar_GuildDatabase then
+				local	vSchedule = gGroupCalendar_GuildDatabase.Events[pDate];
+				
+				if vSchedule then
+					for vIndex, vEvent in pairs(vSchedule) do
+						if vEvent.mStatus ~= "D" then
+							table.insert(vCompiledSchedule, vEvent);
+						end
 					end
 				end
 			end
-		end
 		
+		end
 	end
 	
 	table.sort(vCompiledSchedule, EventDatabase_CompareCompiledEvents);
@@ -562,16 +608,21 @@ function EventDatabase_GetEventDisplayName(pEvent)
 end
 
 function EventDatabase_SecondDateTimeNewer(pDate1, pTime1, pDate2, pTime2)
+	-- 0 = date 2 older
+	-- 1 = date 2 same
+	-- 2 = date 2 newer
 	if not pDate2 then
-		return false;
+		return 0;
 	elseif not pDate1 and pDate2 then
-		return true;
+		return 2;
 	elseif pDate2 > pDate1 then
-		return true;
-	elseif pDate2 == pDate1 and pTime2 >= pTime1 then
-		return true;
+		return 2;
+	elseif pDate2 == pDate1 and pTime2 > pTime1 then
+		return 2;
+	elseif pDate1 == pDate1 and pTime1 == pTime2 then
+		return 1;
 	else 
-		return false;
+		return 0;
 	end
 end
 
@@ -643,7 +694,7 @@ function EventDatabase_DeleteEvent(pDatabase, pEvent, vForce)
 		pEvent.mChangedDate = vDate;
 		pEvent.mAttendance = {};
 	
-		CalendarNetwork_SendEventUpdate(pEvent);
+		CalendarNetwork_SendEventUpdate(pEvent, "ALERT");
 		--CalendarNetwork_RemovingEvent(pDatabase, pEvent);	
 		-- Notify that the schedule changed
 	
@@ -802,9 +853,11 @@ function EventDatabase_CheckDatabases()
 
 	-- Eventually remove this once the new DB structure is in place long for 2 months.
 	--EventDatabase_ConvertOldEvents();
-	CalendarNetwork_QueueTask(
-			EventDatabase_ConvertOldEvents, nil,
-			5, "ConvertOldEvents");
+	
+	-- Causing too many issues
+	--CalendarNetwork_QueueTask(
+	--		EventDatabase_ConvertOldEvents, nil,
+	--		5, "ConvertOldEvents");
 
 
 
@@ -817,12 +870,12 @@ end
 function EventDatabase_ConvertOldEvents()
 	if gGroupCalendar_Database then
 		for vRealmUser, vDatabase in pairs(gGroupCalendar_Database.Databases) do	
-			if vDatabase.IsPlayerOwned and vDatabase.Realm == gGroupCalendar_RealmName then	
+			if vDatabase.IsPlayerOwned then	
 				for vEventDate, vEventList in pairs(vDatabase.Events) do
 					for vEventID, vEvent in pairs(vEventList) do
 						if not vEvent.mPrivate then
 							local vGuildDatabase = EventDatabase_GetDatabase(vDatabase.Guild, true, vDatabase.Realm);
-							local vNewEvent = EventDatabase_NewEvent(vGuildDatabase, Calendar_ConvertOldDateToNewDate(vEvent.mDate));
+							local vNewEvent = EventDatabase_NewEvent(vGuildDatabase, Calendar_ConvertOldDateToNewDate(vEvent.mDate), false);
 							vNewEvent.mTime = vEvent.mTime;
 							vNewEvent.mManualConfirm = vEvent.mManualConfirm;
 							vNewEvent.mDuration = vEvent.mDuration;
@@ -831,6 +884,7 @@ function EventDatabase_ConvertOldEvents()
 							vNewEvent.mMinLevel = vEvent.mMinLevel;
 							vNewEvent.mMaxLevel = vEvent.mMaxLevel;
 							vNewEvent.mLimits = vEvent.mLimits;
+							vNewEvent.mUserName = vDatabase.UserName;
 
 							if vEvent.mAttendance then
 								for vAttendeeName, vRSVPstring in pairs(vEvent.mAttendance) do
@@ -1903,7 +1957,7 @@ function EventDatabase_PlayerIsQualifiedForEvent(pEvent, pPlayerLevel)
 end
 
 function EventDatabase_RescheduleEvent(pDatabase, pEvent, pNewDate)
-	local	vNewEvent = EventDatabase_NewEvent(pDatabase, pNewDate);
+	local	vNewEvent = EventDatabase_NewEvent(pDatabase, pNewDate, false);
 	
 	vNewEvent.mType = pEvent.mType;
 	vNewEvent.mTitle = pEvent.mTitle;
@@ -1937,18 +1991,19 @@ function EventDatabase_DeleteOldEvents(pDatabase)
 			for vIndex = 1, vNumEvents do
 				local	vEvent = vEvents[vEventIndex];
 				
-				if vEvent.mType == "Birth" then
-					Calendar_DebugMessage("GroupCalendar: Rescheduling birthday event");
+				--if vEvent.mType == "Birth" then
+				--	Calendar_DebugMessage("GroupCalendar: Rescheduling birthday event");
 					
-					local	vMonth, vDay, vYear = Calendar_ConvertDateToMDY(vDate);
-					vYear = vYear + 1;
-					local	vNewDate = Calendar_ConvertMDYToDate(vMonth, vDay, vYear);
+				--	local	vMonth, vDay, vYear = Calendar_ConvertDateToMDY(vDate);
+				--	vYear = vYear + 1;
+				--	local	vNewDate = Calendar_ConvertMDYToDate(vMonth, vDay, vYear);
 					
-					if not EventDatabase_RescheduleEvent(pDatabase, vEvent, vNewDate) then
-						Calendar_DebugMessage("GroupCalendar: Can't reschedule event: Unknown error");
-						vEventIndex = vEventIndex + 1;
-					end
-				elseif not EventDatabase_DeleteEvent(pDatabase, vEvent, true) then
+				--	if not EventDatabase_RescheduleEvent(pDatabase, vEvent, vNewDate) then
+				--		Calendar_DebugMessage("GroupCalendar: Can't reschedule event: Unknown error");
+				--		vEventIndex = vEventIndex + 1;
+				--	end
+				--else
+				if not EventDatabase_DeleteEvent(pDatabase, vEvent, true) then
 
 					Calendar_DebugMessage("GroupCalendar: Can't delete old event: Unknown error");
 					vEventIndex = vEventIndex + 1;
@@ -2023,7 +2078,7 @@ function EventDatabase_ScheduleResetEvent(pDatabase, pType, pResetDate, pResetTi
 	
 	-- Schedule a new reset event
 	
-	local	vEvent = EventDatabase_NewEvent(pDatabase, pResetDate);
+	local	vEvent = EventDatabase_NewEvent(pDatabase, pResetDate, true);
 	
 	vEvent.mType = pType;
 	vEvent.mPrivate = true;

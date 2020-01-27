@@ -18,7 +18,7 @@ function CalendarEditor_ShowCompiledSchedule(pDate, pCompiledSchedule)
 	
 	CalendarEditor_BuildCompiledScheduleList(pCompiledSchedule);
 	
-	Calendar_SetButtonEnable(CalendarEditorNewEventButton, gCalendarEditor_SelectedDate >= gGroupCalendar_MinimumEventDate);
+	Calendar_SetButtonEnable(CalendarEditorNewEventButton, tonumber(gCalendarEditor_SelectedDate) >= tonumber(gGroupCalendar_MinimumEventDate));
 	
 	ShowUIPanel(CalendarEditorFrame);
 end
@@ -55,7 +55,10 @@ function CalendarEditor_BuildCompiledScheduleList(pCompiledSchedule)
 			end
 			
 			vEventItemTitle:SetText(EventDatabase_GetEventDisplayName(vCompiledEvent));
-			vEventItemOwner:SetText(gGroupCalendar_PlayerName);
+
+			local startPos, endPos, vCreator, restOfString = string.find( vCompiledEvent.mGUID, "(%a+)[%s%p]*(.*)");
+
+			vEventItemOwner:SetText(vCreator);
 			
 			if EventDatabase_PlayerIsAttendingEvent(gGroupCalendar_PlayerName, vCompiledEvent) then
 				vEventItemCircled:Show();
@@ -100,10 +103,11 @@ function CalendarEditor_ScheduleChanged(pDate, pSchedule)
 end
 
 function CalendarEditor_MajorDatabaseChange()
-	if not gCalendarEditor_SelectedDate == -1 then
+
+	if gCalendarEditor_SelectedDate == -1 then
 		return;
 	end
-	
+
 	local	vCompiledSchedule = EventDatabase_GetCompiledSchedule(gCalendarEditor_SelectedDate);
 
 	gCalendarEditor_CompiledSchedule = vCompiledSchedule;
@@ -134,7 +138,7 @@ end
 function CalendarEditor_NewEvent()
 	local trustlvl = CalendarTrust_CalcUserTrustExplicit(gGroupCalendar_PlayerName);
 	if trustlvl >= 2 then		
-		local	vEvent = EventDatabase_NewEvent(gGroupCalendar_GuildDatabase, gCalendarEditor_SelectedDate);
+		local	vEvent = EventDatabase_NewEvent(gGroupCalendar_GuildDatabase, gCalendarEditor_SelectedDate, true);
 		vEvent.mType = "Act"; -- Default to general event type
 		CalendarEventEditor_EditEvent(gGroupCalendar_GuildDatabase, vEvent, true);
 	else

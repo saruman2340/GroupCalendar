@@ -197,53 +197,56 @@ function Calendar_AddDays(vDate, vDays)
 	if vDate then
 		local vMonth, vDay, vYear = Calendar_ConvertDateToMDY(vDate);
 		
-		if vDays > 0 then
-			-- Adding days;
-			local vRemaining = vDays;
+		if vMonth and vDay and vYear then
+			if vDays > 0 then
+				-- Adding days;
+				local vRemaining = vDays;
 
-			while vRemaining > 0 do
+				while vRemaining > 0 do
 
-				local vDaysInMonth = gDaysInMonth[vMonth] - vDay;
+					local vDaysInMonth = Calendar_GetDaysInMonth(vMonth, vYear) - vDay;
 				
-				if vRemaining <= vDaysInMonth then
-					vDay = vDay + vRemaining;
-					vRemaining = 0;
-				else
-					vDay = 1;
-					vRemaining = vRemaining - vDaysInMonth - 1;
-					vMonth = vMonth + 1;
-					if vMonth > 12 then
-						vMonth = 1;
-						vYear = vYear + 1;
-					end
-				end				
-			end
-		elseif vDays < 0 then
-			-- Subtracting days;
-			local vRemaining = vDays * -1;
+					if vRemaining <= vDaysInMonth then
+						vDay = vDay + vRemaining;
+						vRemaining = 0;
+					else
+						vDay = 1;
+						vRemaining = vRemaining - vDaysInMonth - 1;
+						vMonth = vMonth + 1;
+						if vMonth > 12 then
+							vMonth = 1;
+							vYear = vYear + 1;
+						end
+					end				
+				end
+			elseif vDays < 0 then
+				-- Subtracting days;
+				local vRemaining = vDays * -1;
 
-			while vRemaining > 0 do
+				while vRemaining > 0 do
 
-				local vDaysInMonth = vDay;
+					local vDaysInMonth = vDay;
 				
-				if vRemaining <= vDaysInMonth then
-					vDay = vDay - vRemaining;
-					vRemaining = 0;
-				else
-					vMonth = vMonth - 1;
-					if vMonth < 1 then
-						vMonth = 12;
-						vYear = vYear - 1;
-					end
+					if vRemaining <= vDaysInMonth then
+						vDay = vDay - vRemaining;
+						vRemaining = 0;
+					else
+						vMonth = vMonth - 1;
+						if vMonth < 1 then
+							vMonth = 12;
+							vYear = vYear - 1;
+						end
 
-					vDay = gDaysInMonth[vMonth];
-					vRemaining = vRemaining - vDaysInMonth;				
+						vDay = Calendar_GetDaysInMonth(vMonth, vYear);
+						vRemaining = vRemaining - vDaysInMonth;				
 					
-				end				
-			end
+					end				
+				end
 			
-		end
-	 
+			end
+		else
+			return nil;
+		end	 
 
 		return Calendar_ConvertMDYToDate(vMonth, vDay, vYear);
 	else
@@ -583,10 +586,15 @@ end
 
 function Calendar_HiliteActualDate()
 	local	vDayButton;
-	
+
 	if gCalendarActualDateIndex >= 0 then
+		
 		vDayButton = getglobal("GroupCalendarDay"..gCalendarActualDateIndex.."SlotIcon");
 		vDayButton:SetTexture("Interface\\Buttons\\UI-EmptySlot-Disabled");
+
+		vDayButtonText = getglobal("GroupCalendarDay"..gCalendarActualDateIndex.."Name");
+		vDayButtonText:SetFontObject(GameFontHighlightSmallOutline);
+
 		gCalendarActualDateIndex = -1;
 		
 		GroupCalendarTodayHighlight:Hide();
@@ -602,11 +610,15 @@ function Calendar_HiliteActualDate()
 	if gCalendarActualDateIndex >= 0 then
 		local	vDayButtonName = "GroupCalendarDay"..gCalendarActualDateIndex;
 		local	vDayButtonIconName = vDayButtonName.."SlotIcon";
+		local	vDayButtonDate = vDayButtonName.."Name";
 		
 		vDayButton = getglobal(vDayButtonIconName);
 		vDayButton:SetTexture("Interface\\Buttons\\UI-EmptySlot");
 		GroupCalendarTodayHighlight:SetPoint("CENTER", vDayButtonName, "CENTER", 0, -1);
 		GroupCalendarTodayHighlight:Show();
+
+		vDayButtonText = getglobal(vDayButtonDate);
+		vDayButtonText:SetFontObject(GameFontGreenSmall);
 	end
 end
 
@@ -877,7 +889,7 @@ end
 function Calendar_UpdateEventIcons()
 	local		vIndex = gCalendarDisplayStartDayOfWeek;
 	local		vCurrentDate, vCurrentTime = Calendar_GetCurrentCutoffDateTime();
-	
+
 	for vDate = gCalendarDisplayStartDate, gCalendarDisplayEndDate - 1 do
 		local	vCompiledSchedule = EventDatabase_GetCompiledSchedule(vDate);
 		local	vCutoffDate, vCutoffTime;

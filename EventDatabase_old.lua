@@ -9,7 +9,9 @@ gGroupCalendar_Database =
 gGroupCalendar_UserDatabase = nil;
 
 gGroupCalendar_MaximumEventAge = 30;
+gGroupCalendar_MaximumSyncEventAge = 3;
 gGroupCalendar_MinimumEventDate = nil;
+gGroupCalendar_MinimumSyncEventDate = nil;
 
 gCategoryType_Class = 1;
 gCategoryType_Role = 2;
@@ -263,13 +265,7 @@ function EventDatabase_DatabaseIsVisible(pDatabase)
 	--end
 
 
-	--if pDatabase then
-	--	print ("Checking Database Visible for " .. pDatabase.UserName .. ": DB_Realm=" .. pDatabase.Realm.." PlayerRealm="..gGroupCalendar_RealmName .. " PlayerOwned="..tostring(pDatabase.IsPlayerOwned));
-	--else
-	--	print ("Checking Database Visible: pDatabase=nil");
-	--end
-	--print ("Database Visible: " .. tostring(isVisible))
-	--return isVisible;
+	
 
 end
 
@@ -1722,7 +1718,7 @@ function EventDatabase_CheckDatabases()
 end
 
 function EventDatabase_CheckDatabaseTrust()
-	--print("Checking Trust")
+
 	-- Return if they're in a guild but the roster isn't loaded
 	-- so that we don't go and delete a bunch of guildie calendars
 	-- by mistake

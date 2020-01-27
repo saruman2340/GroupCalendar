@@ -1,4 +1,4 @@
-﻿gGroupCalendar_VersionString = "1.13.3.3.8";
+﻿gGroupCalendar_VersionString = "1.13.3.3.20";
 
 GroupCalendar_cTitle = "Group Calendar v%s";
 
@@ -75,7 +75,7 @@ GroupCalendar_cAboutTitle = "About Group Calendar";
 GroupCalendar_cTitleVersion = "Group Calendar v"..gGroupCalendar_VersionString;
 GroupCalendar_cAuthor = "Classic Author: Magne - Remulos".."\n".."Vanilla Author: Baylord - Thunderlord";
 GroupCalendar_cTestersTitle = "Testers";
-GroupCalendar_cTestersNames = "Kaezy (FEAR) - Shazzrah";
+GroupCalendar_cTestersNames = "Kaezy (FEAR) - Shazzrah\nEssential - Mirage Raceway\nFinal Boss - Grobbulus";
 GroupCalendar_cSpecialThanksTitle = "Special Thanks";
 GroupCalendar_cSpecialThanksNames = "Dracaratos - Thunderfury";
 

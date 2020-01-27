@@ -25,6 +25,8 @@ gGroupCalendar_PlayerGuildRank = nil;
 gGroupCalendar_RealmName = GetRealmName();
 gGroupCalendar_Initialized = false;
 
+gGroupCalendar_InCombat = false;
+
 gGroupCalendar_ServerTimeZoneOffset = 0; -- Offset that, when added to the server time yields the local time
 
 gGroupCalendar_ActiveDialog = nil;
@@ -97,6 +99,8 @@ function GroupCalendar_OnLoad(frame)
 	GroupCalendar_RegisterEvent(frame, "RAID_ROSTER_UPDATE", CalendarGroupInvites_PartyMembersChanged);
 	GroupCalendar_RegisterEvent(frame, "PARTY_LOOT_METHOD_CHANGED", CalendarGroupInvites_PartyLootMethodChanged);
 	
+	GroupCalendar_RegisterEvent(frame, "PLAYER_REGEN_DISABLED", GroupCalendar_EnterCombat);
+	GroupCalendar_RegisterEvent(frame, "PLAYER_REGEN_ENABLED", GroupCalendar_ExitCombat);
 	-- For dragging the window
 	
 	GroupCalendarFrame:RegisterForDrag("LeftButton");
@@ -111,6 +115,14 @@ function GroupCalendar_OnLoad(frame)
 	if DEFAULT_CHAT_FRAME then
 		DEFAULT_CHAT_FRAME:AddMessage(GroupCalendar_cLoadMessage, 0.8, 0.8, 0.2);
 	end	
+end
+
+function GroupCalendar_EnterCombat(...)	
+	gGroupCalendar_InCombat = true;
+end
+
+function GroupCalendar_ExitCombat(...)	
+	gGroupCalendar_InCombat = false;
 end
 
 function GroupCalendar_RegisterEvent(frame, pEvent, pHandler)
@@ -153,6 +165,7 @@ end
 
 function GroupCalendar_VariablesLoaded()
 	gGroupCalendar_MinimumEventDate = Calendar_AddDays(Calendar_GetCurrentLocalDate(), -1 * gGroupCalendar_MaximumEventAge);
+	gGroupCalendar_MinimumSyncEventDate = Calendar_AddDays(Calendar_GetCurrentLocalDate(), -1 * gGroupCalendar_MaximumEventAge);
 	
 	EventDatabase_SetUserName(gGroupCalendar_PlayerName);
 	EventDatabase_PlayerLevelChanged(gGroupCalendar_PlayerLevel);
@@ -347,7 +360,7 @@ function GroupCalendar_OnEvent(frame, pEvent, ...)
 	elseif pEvent == "PLAYER_LEVEL_UP" then
 		gGroupCalendar_PlayerLevel = tonumber(arg1);
 		EventDatabase_PlayerLevelChanged(gGroupCalendar_PlayerLevel);
-		GroupCalendar_MajorDatabaseChange(nil);
+		GroupCalendar_MajorDatabaseChange();
 	end
 	
 	--
@@ -375,7 +388,7 @@ function GroupCalendar_PlayerEnteringWorld(pEvent)
 
 	EventDatabase_PlayerLevelChanged(gGroupCalendar_PlayerLevel);
 	GroupCalendar_CalculateTimeZoneOffset();
-	GroupCalendar_MajorDatabaseChange(nil);
+	GroupCalendar_MajorDatabaseChange();
 
 
 	gGroupCalendar_Settings.ShowMinimap = gGroupCalendar_Settings.ShowMinimap or "ON"
@@ -450,7 +463,6 @@ function GroupCalendar_GuildRosterUpdate(pEvent)
 	-- Ignore the update if we're not initialized yet
 
 	if not gGroupCalendar_Initialized then
-		--print ("ignore guild roster update - not initialised")
 		return;
 	end
 	CalendarGroupInvites_GuildRosterChanged();
@@ -471,7 +483,7 @@ end
 function GroupCalendar_PlayerLevelUp(pEvent, arg1)
 	gGroupCalendar_PlayerLevel = tonumber(arg1);
 	EventDatabase_PlayerLevelChanged(gGroupCalendar_PlayerLevel);
-	GroupCalendar_MajorDatabaseChange(nil);
+	GroupCalendar_MajorDatabaseChange();
 end
 
 GroupCalendar_cCooldownItemInfo =
@@ -857,7 +869,7 @@ function GroupCalendar_AddedNewEvent(pDatabase, pEvent)
 	-- CalendarDisplay_StartFlashingReminder();
 end
 
-function GroupCalendar_MajorDatabaseChange(pDatabase)
+function GroupCalendar_MajorDatabaseChange()
 	CalendarEditor_MajorDatabaseChange();
 	CalendarEventViewer_MajorDatabaseChange();
 	CalendarEventEditor_MajorDatabaseChange();
@@ -1066,17 +1078,17 @@ function GroupCalendar_UpdateTimeTooltip()
 	local	vServerTimeString = Calendar_GetShortTimeString(vServerTime);
 	local	vLocalDateString = Calendar_GetLongDateString(vLocalDate, true);
 
-	GameTooltip:AddLine(vLocalDateString);
-	GameTooltip:AddLine(vServerTimeString);
+	GroupCalendarTooltip:AddLine(vLocalDateString);
+	GroupCalendarTooltip:AddLine(vServerTimeString);
 	
 	if gGroupCalendar_ServerTimeZoneOffset ~= 0 then
 		local	vLocalTime = Calendar_GetLocalTimeFromServerTime(vServerTime);
 		local	vLocalTimeString = Calendar_GetShortTimeString(vLocalTime);
 		
-		GameTooltip:AddLine(string.format(GroupCalendar_cLocalTimeNote, vLocalTimeString));
+		GroupCalendarTooltip:AddLine(string.format(GroupCalendar_cLocalTimeNote, vLocalTimeString));
 	end
 	
-	GameTooltip:Show();
+	GroupCalendarTooltip:Show();
 end
 
 function GroupCalendar_GetLocalizedStrings(pLocale)
@@ -1142,7 +1154,7 @@ function GroupCalendar_SetUseServerDateTime(pUseServerDateTime)
 	
 	GroupCalendarUseServerTime:SetChecked(pUseServerDateTime);
 	
-	GroupCalendar_MajorDatabaseChange(nil); -- Force the display to update
+	GroupCalendar_MajorDatabaseChange(); -- Force the display to update
 end
 
 function GroupCalendar_BeginModalDialog(pDialogFrame)
@@ -1260,21 +1272,22 @@ function GroupCalendarDatabasesList_UpdateItem(pListItems, pIndex, pItem, pItemN
 	pItem.UpdateTooltip = GroupCalendarDatabasesList_UpdateTooltip;
 end
 
-function GameTooltip_AddNewbieTip(frame, normalText, r, g, b, newbieText, noNormalText)
-	if not noNormalText then
-		GameTooltip:SetOwner(frame, "ANCHOR_RIGHT");
-		GameTooltip_SetTitle(GameTooltip, normalText);
-	end
-end
+--function GameTooltip_AddNewbieTip(frame, normalText, r, g, b, newbieText, noNormalText)
+	--if not noNormalText then
+	--	GroupCalendarTooltip:SetOwner(frame, "ANCHOR_RIGHT");
+	--	GameTooltip_SetTitle(GroupCalendarTooltip, normalText);
+	--end
+--end
 
 --function GroupCalendarDatabasesList_UpdateTooltip(frame, pItem)
 function GroupCalendarDatabasesList_UpdateTooltip(pItem)
-	GameTooltip:SetOwner(pItem, "ANCHOR_RIGHT");
-	GameTooltip:AddLine(pItem.VersionInfo.UserName);
 	
-	GameTooltip:AddLine(string.format(GroupCalendar_cVersionFormat, pItem.VersionInfo.Version), 1, 1, 1, 1);
+	GroupCalendarTooltip:SetOwner(pItem, "ANCHOR_RIGHT");
+	GroupCalendarTooltip:AddLine(pItem.VersionInfo.UserName);
+	
+	GroupCalendarTooltip:AddLine(string.format(GroupCalendar_cVersionFormat, pItem.VersionInfo.Version), 1, 1, 1, 1);
 		
-	GameTooltip:Show();
+	GroupCalendarTooltip:Show();
 end
 
 function GroupCalendar_VersionDataChanged()

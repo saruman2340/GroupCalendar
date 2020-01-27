@@ -2705,14 +2705,12 @@ end
 gCalendarNetwork_GuildMemberRankCache = nil;
 
 function CalendarNetwork_FlushCaches()
-	--print ("FlushCaches");
 	gCalendarNetwork_GuildMemberRankCache = nil;
 	gCalendarNetwork_UserTrustCache = {};
 end
 
 function CalendarNetwork_GetGuildRosterCache()
 	if gCalendarNetwork_GuildMemberRankCache then
-		--print ("Return Roster Cache")
 		return gCalendarNetwork_GuildMemberRankCache;
 	end
 	
@@ -2721,7 +2719,6 @@ function CalendarNetwork_GetGuildRosterCache()
 	gCalendarNetwork_GuildMemberRankCache = {};
 	
 	-- Scan the roster and collect the info
-	--print ("Building Guild Roster Cache")
 	local		vNumGuildMembers = GetNumGuildMembers(true);
 	for vIndex = 1, vNumGuildMembers do
 		local	vName, vRank, vRankIndex, vLevel, vClass, vZone, vNote, vOfficerNote, vOnline = GetGuildRosterInfo(vIndex);
@@ -2755,7 +2752,6 @@ local	gGroupCalendar_SentLoadGuildRoster = false;
 
 function CalendarNetwork_LoadGuildRosterTask()
 	if IsInGuild() then
-		--print ("Loading Guild Roster");
 		GuildRoster();
 	end
 	
@@ -3097,8 +3093,7 @@ function CalendarTrust_GetUserTrustLevel(pUserName)
 		vUserTrustInfo.mTrustLevel = CalendarTrust_CalcUserTrust(pUserName);
 		gCalendarNetwork_UserTrustCache[pUserName] = vUserTrustInfo;
 	end
-	
-	--print ("GetUserTrustLevel for "..pUserName.. ":" .. vUserTrustInfo.mTrustLevel)
+
 	return vUserTrustInfo.mTrustLevel;
 end
 
@@ -3120,7 +3115,7 @@ function CalendarTrust_CalcUserTrust(pUserName)
 		if gGroupCalendar_Settings.DebugTrust then
 			Calendar_DebugMessage("CalendarTrust_CalcUserTrust: Implicit trust for "..pUserName);
 		end
-		--print ("CalcUserTrust for " .. pUserName ..":2.0")
+
 		return 2;
 	end
 
@@ -3141,7 +3136,7 @@ function CalendarTrust_CalcUserTrustExplicit(pUserName)
 			if gGroupCalendar_Settings.DebugTrust then
 				Calendar_DebugMessage("CalendarTrust_CalcUserTrust: Explicit trust for "..pUserName);
 			end
-			--print ("CalcUserTrustExplicit for " .. pUserName ..":2.1")
+
 			return 2;
 		elseif vPlayerSecurity == 2 then
 			-- Excluded
@@ -3149,7 +3144,7 @@ function CalendarTrust_CalcUserTrustExplicit(pUserName)
 			if gGroupCalendar_Settings.DebugTrust then
 				Calendar_DebugMessage("CalendarTrust_CalcUserTrust: "..pUserName.." explicity excluded");
 			end
-			--print ("CalcUserTrustExplicit for " .. pUserName ..":0.1")
+
 			return 0;
 		else
 			Calendar_DebugMessage("GroupCalendar: Unknown player security setting of "..vPlayerSecurity.." for "..pUserName);
@@ -3162,7 +3157,7 @@ function CalendarTrust_CalcUserTrustExplicit(pUserName)
 		if gGroupCalendar_Settings.DebugTrust then
 			Calendar_DebugMessage("CalendarTrust_CalcUserTrust: "..pUserName.." trusted (all trusted)");
 		end
-		--print ("CalcUserTrustExplicit for " .. pUserName ..":2.2")
+
 		return 2;
 	end
 	
@@ -3176,13 +3171,13 @@ function CalendarTrust_CalcUserTrustExplicit(pUserName)
 				if gGroupCalendar_Settings.DebugTrust then
 					Calendar_DebugMessage("CalendarTrust_CalcUserTrust: "..pUserName.." trusted (guild member)");
 				end
-				--print ("CalcUserTrustExplicit for " .. pUserName ..":2.3")
+
 				return 2;
 			else
 				if gGroupCalendar_Settings.DebugTrust then
 					Calendar_DebugMessage("CalendarTrust_CalcUserTrust: "..pUserName.." partially trusted (guild member)");
 				end
-				--print ("CalcUserTrustExplicit for " .. pUserName ..":1.1")
+
 				return 1;
 			end
 		end
@@ -3193,7 +3188,7 @@ function CalendarTrust_CalcUserTrustExplicit(pUserName)
 	if gGroupCalendar_Settings.DebugTrust then
 		Calendar_DebugMessage("CalendarTrust_CalcUserTrust: "..pUserName.." not trusted (all tests failed)");
 	end
-	--print ("CalcUserTrustExplicit for " .. pUserName ..":0.2")
+
 	return 0;
 end
 
