@@ -56,7 +56,8 @@ function CalendarEditor_BuildCompiledScheduleList(pCompiledSchedule)
 			
 			vEventItemTitle:SetText(EventDatabase_GetEventDisplayName(vCompiledEvent));
 
-			local startPos, endPos, vCreator, restOfString = string.find( vCompiledEvent.mGUID, "(%a+)[%s%p]*(.*)");
+			local vStartOfNumbers = string.find( vCompiledEvent.mGUID, "%d");
+			local vCreator = string.sub(vCompiledEvent.mGUID, 1, vStartOfNumbers - 1);
 
 			vEventItemOwner:SetText(vCreator);
 			
