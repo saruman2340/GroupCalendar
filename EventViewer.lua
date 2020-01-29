@@ -27,12 +27,15 @@ function CalendarEventViewer_ViewEvent(pDatabase, pEvent)
 	
 	gCalendarEventViewer_ShowScheduleEditor = false;
 	gCalendarEventViewer_Active = true;
+
 end
 
 function CalendarEventViewer_DoneViewing()
 	if not gCalendarEventViewer_Active then
 		return;
 	end
+
+	CalendarEventViewer_Save();
 
 	CalendarEventViewer_Close(true);
 end
@@ -145,7 +148,7 @@ end
 function CalendarEventViewer_OnHide()
 	PlaySound(SOUNDKIT.IG_CHARACTER_INFO_CLOSE);
 	
-	CalendarEventViewer_Save();
+	--CalendarEventViewer_Save();
 	
 	if not gCalendarEventViewer_ShowScheduleEditor then
 		HideUIPanel(CalendarEditorFrame);
@@ -159,9 +162,38 @@ end
 
 function CalendarEventViewer_SelectedCharacterChanged(pMenuFrame, pValue)
 	gCalendarEventViewer_SelectedPlayerDatabase = EventDatabase_GetPlayerDatabase(pValue);
-	--CalendarEventViewer_UpdateControlsFromEvent(gCalendarEventViewer_Event, false);
+
+	-- Check if they are eligible
+
+	if EventDatabase_PlayerIsQualifiedForEvent(gCalendarEventViewer_Event, gCalendarEventViewer_SelectedPlayerDatabase.PlayerLevel) then
+		CalendarEventViewerEventFrameLevels:SetTextColor(1.0, 0.82, 0);
+	else
+		CalendarEventViewerEventFrameLevels:SetTextColor(1.0, 0.2, 0.2);
+	end
+
+	CalendarEventViewer_UpdateEnabled();
+
 end
 
+function CalendarEventViewer_UpdateEnabled()
+	local vIsFuture = CalendarEventViewer_IsFutureEvent(gCalendarEventViewer_Event);
+	if EventDatabase_PlayerIsQualifiedForEvent(gCalendarEventViewer_Event, gCalendarEventViewer_SelectedPlayerDatabase.PlayerLevel) and vIsFuture then
+		CalendarEventViewer_SetAttendanceEnabled(true);	
+		CalendarEventViewerDoneButton:Enable();
+		Calendar_SetDropDownEnable(CalendarEventViewerRole, true);
+	else
+		CalendarEventViewer_SetAttendanceEnabled(false);
+		CalendarEventViewerDoneButton:Disable();
+		Calendar_SetDropDownEnable(CalendarEventViewerRole, false);
+	end
+
+	if vIsFuture then
+		Calendar_SetDropDownEnable(CalendarEventViewerCharacter, true);
+	else
+		Calendar_SetDropDownEnable(CalendarEventViewerCharacter, false);
+	end
+
+end
 
 function CalendarEventViewer_UpdateControlsFromEvent(pEvent, pSkipAttendanceFields)
 	-- Update the title
@@ -284,13 +316,13 @@ function CalendarEventViewer_UpdateControlsFromEvent(pEvent, pSkipAttendanceFiel
 		end
 				
 		CalendarEventViewer_SetAttendanceVisible(true);
-		
+				
 		if not pSkipAttendanceFields then
 			CalendarDropDown_SetSelectedValue(CalendarEventViewerCharacterMenu, gCalendarEventViewer_SelectedPlayerDatabase.UserName);
 		end
 		
 		if EventDatabase_PlayerIsQualifiedForEvent(gCalendarEventViewer_Event, gCalendarEventViewer_SelectedPlayerDatabase.PlayerLevel) then
-			CalendarEventViewer_SetAttendanceEnabled(true);
+			--CalendarEventViewer_SetAttendanceEnabled(true);
 			
 			if vRSVP then
 				vIsAttending = vRSVP.mStatus == "Y" or vRSVP.mStatus == "S";
@@ -304,8 +336,8 @@ function CalendarEventViewer_UpdateControlsFromEvent(pEvent, pSkipAttendanceFiel
 			
 			CalendarEventViewerEventFrameStatus:SetText(CalendarEventViewer_cResponseMessage[vStatus]);			
 			
-		else
-			CalendarEventViewer_SetAttendanceEnabled(false);
+		--else
+			--CalendarEventViewer_SetAttendanceEnabled(false);
 		end
 		
 		if not pSkipAttendanceFields then
@@ -316,6 +348,8 @@ function CalendarEventViewer_UpdateControlsFromEvent(pEvent, pSkipAttendanceFiel
 		end
 
 		CalendarDropDown_SetSelectedValue(CalendarEventViewerRoleMenu, EventDatabase_GetRoleByRoleCode(vRoleCode))
+		
+		CalendarEventViewer_UpdateEnabled();
 	else
 		CalendarEventViewer_SetAttendanceVisible(false);
 	end
@@ -329,6 +363,21 @@ function CalendarEventViewer_UpdateControlsFromEvent(pEvent, pSkipAttendanceFiel
 		end
 	else
 		CalendarEventViewerEventBackground:SetTexture("");
+	end
+end
+
+function CalendarEventViewer_IsFutureEvent(pEvent)
+	if pEvent.mDate and pEvent.mTime and pEvent.mDuration then
+		local vEndDate, vEndTime = Calendar_AddTime(pEvent.mDate, pEvent.mTime, pEvent.mDuration);
+		local vDate, vTime = Calendar_GetCurrentServerDateTime();
+
+		if vDate > vEndDate or (vDate == vEndDate and vTime > vEndTime) then				
+			return false;
+		else
+			return true;
+		end
+	else
+		return true;
 	end
 end
 
@@ -431,7 +480,7 @@ function CalendarEventViewer_HidePanel(pFrameIndex)
 		return;
 	end
 	
-	CalendarEventViewer_Save();
+	--CalendarEventViewer_Save();
 	
 	getglobal(gCalendarEventViewer_PanelFrames[pFrameIndex]):Hide();
 	gCalendarEventViewer_CurrentPanel = 0;
