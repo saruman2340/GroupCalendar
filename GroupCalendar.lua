@@ -490,34 +490,45 @@ GroupCalendar_cCooldownItemInfo =
 {
 	[15846] = {EventID = "Leatherworking"}, -- Salt Shaker
 	[17716] = {EventID = "Snowmaster"}, -- Snowmaster 9000
+	[18986] = {EventID = "Engineering"}, -- Ultrasafe Transporter: Gadgetzan
 };
 
-function GroupCalendar_CheckItemCooldowns()
+function GroupCalendar_CheckItemCooldowns()	
+	-- Remove the existing saved info	
+	EventDatabase_RemoveSavedInstanceEvents(gGroupCalendar_UserDatabase, vCurrentServerDate, vCurrentServerTime);
+
 	for vBagIndex = 0, NUM_BAG_SLOTS do
 		local	vNumBagSlots = GetContainerNumSlots(vBagIndex);
 		
 		for vBagSlotIndex = 1, vNumBagSlots do
 			local	vItemLink = GetContainerItemLink(vBagIndex, vBagSlotIndex);
-			
+
 			if vItemLink then
-				local	vStartIndex, vEndIndex, vLinkColor, vItemCode, vItemEnchantCode, vItemSubCode, vUnknownCode, vItemName = strfind(vItemLink, "|(%x+)|Hitem:(%d+):(%d+):(%d+):(%d+)|h%[([^%]]+)%]|h|r");
 				
-				if vStartIndex then
-					vItemCode = tonumber(vItemCode);
+				--local	vStartIndex, vEndIndex, vLinkColor, vItemCode, vItemEnchantCode, vItemSubCode, vUnknownCode, vItemName = strfind(vItemLink, "|(%x+)|Hitem:(%d+):(%d+):(%d+):(%d+)|h%[([^%]]+)%]|h|r");
+				local	_, _, vItemCode = strfind(vItemLink, "(item:%d+)");			
+
+				if vItemCode then
+					local _, _, vItemID = strfind(vItemCode, "(%d+)");
+
+					if vItemID then						
+						vItemID = tonumber(vItemID);
+
+						local	vCooldownItemInfo = GroupCalendar_cCooldownItemInfo[vItemID];
 					
-					local	vCooldownItemInfo = GroupCalendar_cCooldownItemInfo[vItemCode];
-					
-					if vCooldownItemInfo then
-						local vStart, vDuration, vEnable = GetContainerItemCooldown(vBagIndex, vBagSlotIndex);
-						
-						-- local	texture, itemCount, locked, quality, readable = GetContainerItemInfo(vBagIndex, vBagSlotIndex);
-						-- Calendar_TestMessage(vItemName..": "..texture);
-						
-						if vEnable > 0 then
-							vRemainingTime = vDuration - (GetTime() - vStart);
+						if vCooldownItemInfo then
+
+							local vStart, vDuration, vEnable = GetContainerItemCooldown(vBagIndex, vBagSlotIndex);
+
+							-- local	texture, itemCount, locked, quality, readable = GetContainerItemInfo(vBagIndex, vBagSlotIndex);
+							-- Calendar_TestMessage(vItemName..": "..texture);
+
+							if vEnable > 0 and vDuration > 60 then -- ignore cooldowns shorter than 60sec (just as equiping cooldown)
+								vRemainingTime = vDuration - (GetTime() - vStart);
 							
-							if vRemainingTime > 0 then
-								EventDatabase_ScheduleTradeskillCooldownEvent(gGroupCalendar_UserDatabase, vCooldownItemInfo.EventID, vRemainingTime);
+								if vRemainingTime > 0 then
+									EventDatabase_ScheduleTradeskillCooldownEvent(gGroupCalendar_UserDatabase, vCooldownItemInfo.EventID, vRemainingTime);
+								end
 							end
 						end
 					end
@@ -877,9 +888,20 @@ function GroupCalendar_MajorDatabaseChange()
 end
 
 gGroupCalendar_QueueElapsedTime = 0;
+gGroupCalendar_ExpiredEventsTime = 0;
 
 function GroupCalendar_Update(self, pElapsed)
 	
+	gGroupCalendar_ExpiredEventsTime = gGroupCalendar_ExpiredEventsTime + pElapsed;
+
+	if gGroupCalendar_ExpiredEventsTime >= 10 then
+		gGroupCalendar_ExpiredEventsTime = 0;
+		
+		-- Remove the existing saved info	
+		EventDatabase_RemoveSavedInstanceEvents(gGroupCalendar_UserDatabase);
+
+	end
+
 	--GroupCalendar_OnUpdate(self, pElapsed)
 	local	vLatencyStartTime;
 	

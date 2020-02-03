@@ -227,7 +227,7 @@ function Calendar_AddDays(vDate, vDays)
 
 					local vDaysInMonth = vDay;
 				
-					if vRemaining <= vDaysInMonth then
+					if vRemaining < vDaysInMonth then
 						vDay = vDay - vRemaining;
 						vRemaining = 0;
 					else
@@ -545,10 +545,10 @@ end
 
 function Calendar_GetFormattedDateString(pDate, pFormat)
 	local	vMonth, vDay, vYear = Calendar_ConvertDateToMDY(pDate);
-	
+
 	local	vDate =
 			{
-				dow = GroupCalendar_cDayOfWeekNames[Calendar_GetDayOfWeekFromDate(pDate) + 1],
+				dow = GroupCalendar_cDayOfWeekNames[Calednar_get_day_of_week(vDay, vMonth, vYear)],
 				month = GroupCalendar_cMonthNames[vMonth],
 				monthNum = vMonth,
 				day = vDay,
@@ -556,6 +556,24 @@ function Calendar_GetFormattedDateString(pDate, pFormat)
 			};
 	
 	return Calendar_FormatNamed(pFormat, vDate);
+end
+
+function Calednar_get_day_of_week(dd, mm, yy) 
+
+  local mmx = mm
+
+  if (mm == 1) then  mmx = 13; yy = yy-1  end
+  if (mm == 2) then  mmx = 14; yy = yy-1  end
+
+  local val8 = dd + (mmx*2) +  math.floor(((mmx+1)*3)/5)   + yy + math.floor(yy/4)  - math.floor(yy/100)  + math.floor(yy/400) + 2
+  local val9 = math.floor(val8/7)
+  local dw = val8-(val9*7) 
+
+  if (dw == 0) then
+    dw = 7
+  end
+
+  return dw
 end
 
 function Calendar_SetDisplayDate(pStartDate)
@@ -1127,19 +1145,6 @@ function Calendar_GetDayOfWeek(pMonth, pDay, pYear)
 	return DOW;
 	
 end
-
-function Calendar_GetDayOfWeekFromDate(pDate)
-	local DOW = math.fmod(pDate + 6, 7);  -- + 6 because January 1, 2000 is a Saturday
-
-	if gGroupCalendar_Settings.MondayFirstDOW then
-		DOW = DOW - 1;
-		if DOW < 0 then DOW = 6 end;
-	end
-		
-	return DOW;
-
-end
-	
 
 function CalendarHourDropDown_OnLoad(frame)
 	UIDropDownMenu_Initialize(frame, CalendarHourDropDown_Initialize);
@@ -2079,7 +2084,7 @@ function Calendar_AddOffsetToDateTime60(pDate, pTime60, pOffset60)
 end
 
 function Calendar_GetServerDateTimeFromSecondsOffset(pSeconds)
-	-- Calculate the local date and time of the reset (self is done in
+	-- Calculate the local date and time of the reset (this is done in
 	-- local date/time since it has a higher resolution)
 
 	local	vLocalDate, vLocalTime60 = Calendar_GetCurrentLocalDateTime60();

@@ -13,6 +13,16 @@ gCalendarEventViewer_PanelFrames =
 
 gCalendarEventViewer_CurrentPanel = 1;
 
+StaticPopupDialogs["CONFIRM_CALENDAR_VIEWER_EVENT_DELETE"] = {
+	text = CalendarEventEditor_cConfirmDeleteMsg,
+	button1 = CalendarEventEditor_cDelete,
+	button2 = "CANCEL",
+	OnAccept = function() CalendarEventViewer_DeleteEvent(); end,
+	timeout = 0,
+	whileDead = 1,
+	hideOnEscape = 1
+};
+
 function CalendarEventViewer_ViewEvent(pDatabase, pEvent)
 	gCalendarEventViewer_Database = pDatabase;
 	gCalendarEventViewer_Event = pEvent;
@@ -28,6 +38,11 @@ function CalendarEventViewer_ViewEvent(pDatabase, pEvent)
 	gCalendarEventViewer_ShowScheduleEditor = false;
 	gCalendarEventViewer_Active = true;
 
+	if gCalendarEventViewer_Event.mPrivate then
+		CalendarEventViewerDeleteButton:Show();
+	else
+		CalendarEventViewerDeleteButton:Hide();
+	end
 end
 
 function CalendarEventViewer_DoneViewing()
@@ -486,3 +501,17 @@ function CalendarEventViewer_HidePanel(pFrameIndex)
 	gCalendarEventViewer_CurrentPanel = 0;
 end
 
+function CalendarEventViewer_AskDeleteEvent()
+	-- If it's new just kill it without asking
+	
+	if gCalendarEventViewer_Event.mPrivate then		
+		StaticPopup_Show("CONFIRM_CALENDAR_VIEWER_EVENT_DELETE", EventDatabase_GetEventDisplayName(gCalendarEventViewer_Event));
+	end
+end
+
+
+function CalendarEventViewer_DeleteEvent()
+	
+	EventDatabase_DeleteEvent(gCalendarEventViewer_Database, gCalendarEventViewer_Event);	
+	CalendarEventViewer_Close(true);
+end
