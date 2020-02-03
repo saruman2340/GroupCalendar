@@ -213,6 +213,7 @@ gGroupCalendar_EventTypes =
 			{id="RSSalt", name=GroupCalendar_cSaltShakerCooldownEventName}, -- Salt shaker
 			{id="RSMoon", name=GroupCalendar_cMoonclothCooldownEventName}, -- Mooncloth
 			{id="RSSnow", name=GroupCalendar_cSnowmasterCooldownEventName}, -- Snowmaster 9000
+			{id="RSGadget", name=GroupCalendar_cGadgetzanCooldownEventName}, -- Gadgetzan Transporter
 		},
 		
 		ResetEventInfo =
@@ -228,6 +229,7 @@ gGroupCalendar_EventTypes =
 			RSSalt = {left = 0.25, top = 0, right = 0.5, bottom = 0.25, isTradeskill = true, id="Leatherworking", largeSysIcon="Interface\\Icons\\Trade_Leatherworking"},
 			RSMoon = {left = 0, top = 0, right = 0.25, bottom = 0.25, isTradeskill = true, id="Tailoring", largeSysIcon="Interface\\Icons\\Trade_Tailoring"},
 			RSSnow = {left = 0.75, top = 0, right = 1.0, bottom = 0.25, isTradeskill = true, id="Snowmaster", largeSysIcon="Interface\\Icons\\Spell_Frost_WindWalkOn"},
+			RSGadget = {left = 0.25, top = 0.5, right = 0.5, bottom = 0.25, isTradeskill = true, name="Gadgetzan Transporter", id="Engineering", largeSysIcon="Interface\\Icons\\Trade_Engineering"},
 		},
 	},
 };
@@ -475,11 +477,13 @@ function EventDatabase_GetCompiledSchedule(pDate)
 			local		vDate2 = nil;
 		
 			if gGroupCalendar_ServerTimeZoneOffset < 0 then
+			
 				vDate2 = Calendar_AddDays(pDate, 1);
+				
 			elseif gGroupCalendar_ServerTimeZoneOffset > 0 then
 				vDate2 = Calendar_AddDays(pDate, -1);
+				
 			end		
-		
 			for vDateIndex = 1, 2 do
 				local	vDate;
 					
@@ -502,7 +506,12 @@ function EventDatabase_GetCompiledSchedule(pDate)
 									-- Calculate the local date/time and see if it's still the right date							
 									local	vLocalDate, vLocalTime = Calendar_GetLocalDateTimeFromServerDateTime(vDate, vEvent.mTime);
 							
-									if vLocalDate == pDate then								
+									local title = vEvent.mTitle;
+									if not title then
+										title = vEvent.mGUID
+									end
+
+									if vLocalDate == pDate then					
 										table.insert(vCompiledSchedule, vEvent);
 									end						
 								end
@@ -536,7 +545,12 @@ function EventDatabase_GetCompiledSchedule(pDate)
 								-- Calculate the local date/time and see if it's still the right date							
 								local	vLocalDate, vLocalTime = Calendar_GetLocalDateTimeFromServerDateTime(vDate, vEvent.mTime);
 							
-								if vLocalDate == pDate then								
+								local title = vEvent.mTitle;
+								if not title then
+									title = vEvent.mGUID
+								end
+
+								if vLocalDate == pDate then		
 									table.insert(vCompiledSchedule, vEvent);
 								end
 							end
@@ -2013,24 +2027,49 @@ function EventDatabase_DeleteOldEvents(pDatabase)
 	end
 end
 
-function EventDatabase_RemoveSavedInstanceEvents(pDatabase, pCutoffDate)
-	for vDate, vSchedule in pairs(pDatabase.Events) do
-		if not pCutoffDate or vDate <= pCutoffDate then
+function EventDatabase_RemoveSavedInstanceEvents(pDatabase)
+	if pDatabase then
+		local pCutoffDate, pCutoffTime = Calendar_GetCurrentServerDateTime();
+
+		for vDate, vSchedule in pairs(pDatabase.Events) do
+			if not pCutoffDate or vDate <= pCutoffDate then
 			
+				local	vEventIndex = 1;
+				local	vNumEvents = table.getn(vSchedule);
+			
+				while vEventIndex <= vNumEvents do
+					local	vEvent = vSchedule[vEventIndex];
+
+					if not pCutoffDate or vDate < pCutoffDate or (vDate == pCutoffDate and vEvent.mTime < pCutoffTime) then -- EventDatabase_IsDungeonResetEventType(vEvent.mType)
+					
+						EventDatabase_DeleteEvent(pDatabase, vEvent, true);
+						vNumEvents = vNumEvents - 1;
+					else
+						vEventIndex = vEventIndex + 1;
+					end
+				end
+			end
+		end
+	end
+end
+
+function EventDatabase_RemoveSavedInstanceEventsByType(pDatabase, pType)	
+	if pDatabase and pType then
+		for vDate, vSchedule in pairs(pDatabase.Events) do		
 			local	vEventIndex = 1;
 			local	vNumEvents = table.getn(vSchedule);
 			
 			while vEventIndex <= vNumEvents do
 				local	vEvent = vSchedule[vEventIndex];
-				
-				if EventDatabase_IsDungeonResetEventType(vEvent.mType) then
+
+				if vEvent.mType == pType then
 					
 					EventDatabase_DeleteEvent(pDatabase, vEvent, true);
 					vNumEvents = vNumEvents - 1;
 				else
 					vEventIndex = vEventIndex + 1;
 				end
-			end
+			end		
 		end
 	end
 end
@@ -2055,7 +2094,6 @@ end
 
 function EventDatabase_ScheduleResetEvent(pDatabase, pType, pResetDate, pResetTime)
 	-- See if the event already exists
-	
 	local	vSchedule = pDatabase.Events[pResetDate];
 	
 	if vSchedule then
@@ -2089,15 +2127,13 @@ function EventDatabase_ScheduleResetEvent(pDatabase, pType, pResetDate, pResetTi
 end
 
 function EventDatabase_ScheduleSavedInstanceEvents()
-	local vCurrentServerDate, vCurrentServerTime = Calendar_GetCurrentServerDateTime();
-	-- Remove the existing saved info
 	
-	EventDatabase_RemoveSavedInstanceEvents(gGroupCalendar_UserDatabase, vCurrentServerDate);
+	EventDatabase_RemoveSavedInstanceEvents(gGroupCalendar_UserDatabase);
 	
 	--
 	
 	local	vNumSavedInstances = GetNumSavedInstances();
-	
+
 	for vIndex = 1, vNumSavedInstances do
 		vInstanceName, vInstanceID, vInstanceResetSeconds = GetSavedInstanceInfo(vIndex);
 		
@@ -2115,6 +2151,9 @@ function EventDatabase_ScheduleSavedInstanceEvent(pDatabase, pName, pResetDate, 
 		return;
 	end
 	
+	-- Clear all existing entries
+	EventDatabase_RemoveSavedInstanceEventsByType(gGroupCalendar_UserDatabase, vType);
+
 	local	vNumEvents;
 	local	vFrequency;
 	

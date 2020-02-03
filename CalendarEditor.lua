@@ -150,7 +150,9 @@ end
 function CalendarEditor_EditIndexedEvent(pIndex)
 	local		vCompiledEvent = gCalendarEditor_CompiledSchedule[pIndex];
 	
-	if gGroupCalendar_GuildDatabase then
+	if EventDatabase_IsResetEventType(vCompiledEvent.mType) then
+		CalendarEventViewer_ViewEvent(gGroupCalendar_UserDatabase, vCompiledEvent);
+	else
 		local trustlvl = CalendarTrust_CalcUserTrustExplicit(gGroupCalendar_PlayerName);
 
 		if not EventDatabase_IsResetEventType(vCompiledEvent.mType) and trustlvl >= 2 then
@@ -159,4 +161,5 @@ function CalendarEditor_EditIndexedEvent(pIndex)
 			CalendarEventViewer_ViewEvent(gGroupCalendar_GuildDatabase, vCompiledEvent);
 		end
 	end
+	
 end

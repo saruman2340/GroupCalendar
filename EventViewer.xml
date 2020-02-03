@@ -85,6 +85,8 @@
 			</Layer>
 		</Layers>
 		<Frames>
+      
+        
 			<Button name="EventViewerCloseButton" inherits="UIPanelCloseButton">
 				<Anchors>
 					<Anchor point="TOPRIGHT" relativeTo="CalendarEventViewerFrame" relativePoint="TOPRIGHT">
@@ -112,6 +114,27 @@
 					</OnClick>
 				</Scripts>
 			</Button>
+
+      <Button name="CalendarEventViewerDeleteButton" inherits="UIPanelButtonTemplate" text="CalendarEventEditor_cDelete">
+        <Size>
+          <AbsDimension x="102" y="21"/>
+        </Size>
+        <Anchors>
+          <Anchor point="TOPRIGHT" relativePoint="TOPLEFT" relativeTo="CalendarEventViewerDoneButton">
+            <Offset>
+              <AbsDimension x="-15" y="0"/>
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <Scripts>
+          <OnClick>
+            PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON );
+            CalendarEventViewer_AskDeleteEvent();
+            <!--CalendarEventEditor_AskDeleteEvent();-->
+          </OnClick>
+        </Scripts>
+      </Button>
+      
 			<Frame name="CalendarEventViewerEventFrame" hidden="true" setAllPoints="true">
 				<Layers>
 					<Layer level="BACKGROUND">
