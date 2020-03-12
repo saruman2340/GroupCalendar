@@ -1425,18 +1425,20 @@ end
 
 function CalendarGuildRankDropDown_Initialize(vFrame, level, menuList)
 	--local	vFrame = getglobal(UIDROPDOWNMENU_INIT_MENU);
-	local	vNumRanks = GuildControlGetNumRanks();
+	if IsInGuild() then
+		local	vNumRanks = GuildControlGetNumRanks();
 	
-	for vIndex = 1, vNumRanks do
-		local	vRankName = GuildControlGetRankName(vIndex);
-		local	vItem = UIDropDownMenu_CreateInfo();
+		for vIndex = 1, vNumRanks do
+			local	vRankName = GuildControlGetRankName(vIndex);
+			local	vItem = UIDropDownMenu_CreateInfo();
 
-		vItem.text = vRankName;
-		vItem.value = vIndex - 1;
-		vItem.owner = vFrame;
-		vItem.func = CalendarDropDown_OnClick;
+			vItem.text = vRankName;
+			vItem.value = vIndex - 1;
+			vItem.owner = vFrame;
+			vItem.func = CalendarDropDown_OnClick;
 
-		UIDropDownMenu_AddButton(vItem);
+			UIDropDownMenu_AddButton(vItem);
+		end
 	end
 end
 
@@ -1679,21 +1681,23 @@ function Calendar_AutoCompleteFriend(pEditBox)
 end
 
 function Calendar_AutoCompleteGuildMember(pEditBox)
-	local	vNumMembers = GetNumGuildMembers(true);
+	if IsInGuild() then
+		local	vNumMembers = GetNumGuildMembers(true);
 	
-	if vNumMembers == 0 then
-		return false;
-	end
+		if vNumMembers == 0 then
+			return false;
+		end
 	
-	local	vEditBoxText = strupper(pEditBox:GetText());
-	local	vEditBoxTextLength = strlen(vEditBoxText);
+		local	vEditBoxText = strupper(pEditBox:GetText());
+		local	vEditBoxTextLength = strlen(vEditBoxText);
 	
-	for vIndex = 1, vNumMembers do
-		local	vName = GetGuildRosterInfo(vIndex);
-		vName = GroupCalendar_RemoveRealmName(vName);
-		if strfind(strupper(vName), "^"..vEditBoxText) then
-			Calendar_SetEditBoxAutoCompleteText(pEditBox, vName);
-			return true;
+		for vIndex = 1, vNumMembers do
+			local	vName = GetGuildRosterInfo(vIndex);
+			vName = GroupCalendar_RemoveRealmName(vName);
+			if strfind(strupper(vName), "^"..vEditBoxText) then
+				Calendar_SetEditBoxAutoCompleteText(pEditBox, vName);
+				return true;
+			end
 		end
 	end
 	

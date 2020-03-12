@@ -205,6 +205,10 @@ function CalendarNetwork_ProcessCommand(pSender, pTrustLevel, pCommand)
 		CalendarNetwork_SetLastUpdateTime();	
 		gGroupCalendar_EventSyncLastAuthor = pSender;
 		CalendarNetwork_ProcessEventTitleUpdateCommand(pSender, vOperands);
+	elseif vOpcode == "EVT3" then
+		CalendarNetwork_SetLastUpdateTime();	
+		gGroupCalendar_EventSyncLastAuthor = pSender;
+		CalendarNetwork_ProcessEventDescUpdateCommand(pSender, vOperands);
 	elseif vOpcode == "RSVP1" then
 		CalendarNetwork_SetLastUpdateTime();	
 		gGroupCalendar_EventSyncLastAuthor = pSender;
@@ -355,6 +359,36 @@ function CalendarNetwork_ProcessEventTitleUpdateCommand(pSender, pCommand)
 						vEvent.mChangedDate = vChangedDate;
 						vEvent.mChangedTime = vChangedTime;
 						vEvent.mTitle = vTitle;							
+				
+						-- Update the calendar
+						GroupCalendar_EventChanged(gGroupCalendar_GuildDatabase, vEvent);
+					end	
+					break;
+				end
+			end
+		end
+	end
+end
+
+function CalendarNetwork_ProcessEventDescUpdateCommand(pSender, pCommand)
+	if gGroupCalendar_GuildDatabase then
+		local vDate = tonumber(pCommand[1]);
+		local vGUID = pCommand[2];
+		local vChangedDate = tonumber(pCommand[3]);
+		local vChangedTime = tonumber(pCommand[4]);
+		local vDesc = Calendar_UnescapeString(pCommand[5]);	
+
+		-- Check if the date is more recent
+		if gGroupCalendar_GuildDatabase.Events[vDate] then
+			for vEventIndex, vEvent in pairs (gGroupCalendar_GuildDatabase.Events[vDate]) do
+				if vEvent.mGUID == vGUID then
+					if EventDatabase_SecondDateTimeNewer(vEvent.mChangedDate, vEvent.mChangedTime, vChangedDate, vChangedTime) > 0 then
+						-- Update is newer than what we have. Update the event.
+
+						-- Update the event values
+						vEvent.mChangedDate = vChangedDate;
+						vEvent.mChangedTime = vChangedTime;
+						vEvent.mDescription = vDesc;							
 				
 						-- Update the calendar
 						GroupCalendar_EventChanged(gGroupCalendar_GuildDatabase, vEvent);
@@ -1183,42 +1217,46 @@ function CalendarNetwork_FlushCaches()
 end
 
 function CalendarNetwork_GetGuildRosterCache()
-	if gCalendarNetwork_GuildMemberRankCache then
+	if IsInGuild() then
+		if gCalendarNetwork_GuildMemberRankCache then
 
-		return gCalendarNetwork_GuildMemberRankCache;
-	end
-	
-	-- Clear the cache
-	
-	gCalendarNetwork_GuildMemberRankCache = {};
-	
-	-- Scan the roster and collect the info
-
-	local		vNumGuildMembers = GetNumGuildMembers(true);
-	for vIndex = 1, vNumGuildMembers do
-		local	vName, vRank, vRankIndex, vLevel, vClass, vZone, vNote, vOfficerNote, vOnline = GetGuildRosterInfo(vIndex);
-		
-		if vName then -- Have to check for name in case a guild member gets booted while querying the roster
-			vName = GroupCalendar_RemoveRealmName(vName);
-			local	vMemberInfo =
-			{
-				Name = vName,
-				RankIndex = vRankIndex,
-				Level = vLevel,
-				Class = vClass,
-				Zone = vZone,
-				OfficerNote = vOfficerNote,
-				Online = vOnline
-			};
-			
-			gCalendarNetwork_GuildMemberRankCache[strupper(vName)] = vMemberInfo;
-
+			return gCalendarNetwork_GuildMemberRankCache;
 		end
+	
+		-- Clear the cache
+	
+		gCalendarNetwork_GuildMemberRankCache = {};
+	
+		-- Scan the roster and collect the info
+
+		local		vNumGuildMembers = GetNumGuildMembers(true);
+		for vIndex = 1, vNumGuildMembers do
+			local	vName, vRank, vRankIndex, vLevel, vClass, vZone, vNote, vOfficerNote, vOnline = GetGuildRosterInfo(vIndex);
+		
+			if vName then -- Have to check for name in case a guild member gets booted while querying the roster
+				vName = GroupCalendar_RemoveRealmName(vName);
+				local	vMemberInfo =
+				{
+					Name = vName,
+					RankIndex = vRankIndex,
+					Level = vLevel,
+					Class = vClass,
+					Zone = vZone,
+					OfficerNote = vOfficerNote,
+					Online = vOnline
+				};
+			
+				gCalendarNetwork_GuildMemberRankCache[strupper(vName)] = vMemberInfo;
+
+			end
+		end
+	
+		-- Dump any cached trust info
+	
+		gCalendarNetwork_UserTrustCache = {};
+	else
+		gCalendarNetwork_GuildMemberRankCache = {};
 	end
-	
-	-- Dump any cached trust info
-	
-	gCalendarNetwork_UserTrustCache = {};
 	
 	return gCalendarNetwork_GuildMemberRankCache;
 end
@@ -1291,17 +1329,19 @@ function CalendarNetwork_ChannelMessageReceived(pSender, pMessage)
 end
 
 function CalendarNetwork_GetGuildMemberIndex(pPlayerName)
-	local		vUpperUserName = strupper(pPlayerName);
-	local		vNumGuildMembers = GetNumGuildMembers(true);
+	if IsInGuild() then
+		local		vUpperUserName = strupper(pPlayerName);
+		local		vNumGuildMembers = GetNumGuildMembers(true);
 	
-	for vIndex = 1, vNumGuildMembers do
-		local	vName = GetGuildRosterInfo(vIndex);
+		for vIndex = 1, vNumGuildMembers do
+			local	vName = GetGuildRosterInfo(vIndex);
 		
-		if strupper(GroupCalendar_RemoveRealmName(vName)) == vUpperUserName then
-			return vIndex;
+			if strupper(GroupCalendar_RemoveRealmName(vName)) == vUpperUserName then
+				return vIndex;
+			end
 		end
 	end
-	
+
 	return nil;
 end
 
@@ -1725,6 +1765,16 @@ function CalendarNetwork_SendEventUpdate(pEvent, pIncRSVPs, pPriority)
 
 
 	CalendarNetwork_QueueOutboundMessage(cmd2, pPriority);
+
+	local cmd3 = "/EVT3:" .. pEvent.mDate .. "," .. pEvent.mGUID .. "," .. pEvent.mChangedDate .. "," .. pEvent.mChangedTime;
+	if pEvent.mDescription then
+		cmd3 = cmd3 .. ",".. Calendar_EscapeString(pEvent.mDescription);	
+	else
+		cmd3 = cmd3 .. ",";
+	end
+
+
+	CalendarNetwork_QueueOutboundMessage(cmd3, pPriority);
 	
 
 	if pEvent.mAttendance and pIncRSVPs and pEvent.mStatus ~= "D" then
