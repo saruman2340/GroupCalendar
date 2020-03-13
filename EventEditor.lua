@@ -339,9 +339,7 @@ function CalendarEventEditor_UpdateEventFromControls(rEvent, rChangedFields)
 	
 	vValue = CalendarEventDescription:GetText();
 	
-	if vValue == "" then
-		vValue = nil;
-	else
+	if vValue ~= "" then		
 		vValue = Calendar_EscapeString(vValue);
 	end
 	

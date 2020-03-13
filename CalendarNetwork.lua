@@ -1766,16 +1766,18 @@ function CalendarNetwork_SendEventUpdate(pEvent, pIncRSVPs, pPriority)
 
 	CalendarNetwork_QueueOutboundMessage(cmd2, pPriority);
 
-	local cmd3 = "/EVT3:" .. pEvent.mDate .. "," .. pEvent.mGUID .. "," .. pEvent.mChangedDate .. "," .. pEvent.mChangedTime;
-	if pEvent.mDescription then
-		cmd3 = cmd3 .. ",".. Calendar_EscapeString(pEvent.mDescription);	
-	else
-		cmd3 = cmd3 .. ",";
+	-- Because this was added in a later version, some users would try to transmit a nil event desc even though other users have data.
+	-- Going forward, desc will be a blank string instead of a nil so that the app can tell the difference between missing data and a blank desc
+	if pEvent.mDescription ~= nil then
+		local cmd3 = "/EVT3:" .. pEvent.mDate .. "," .. pEvent.mGUID .. "," .. pEvent.mChangedDate .. "," .. pEvent.mChangedTime;
+		if pEvent.mDescription then
+			cmd3 = cmd3 .. ",".. Calendar_EscapeString(pEvent.mDescription);	
+		else
+			cmd3 = cmd3 .. ",";
+		end
+
+		CalendarNetwork_QueueOutboundMessage(cmd3, pPriority);
 	end
-
-
-	CalendarNetwork_QueueOutboundMessage(cmd3, pPriority);
-	
 
 	if pEvent.mAttendance and pIncRSVPs and pEvent.mStatus ~= "D" then
 		for vAttendee, vRSVP in pairs(pEvent.mAttendance) do
