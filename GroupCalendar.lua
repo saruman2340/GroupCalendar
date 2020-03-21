@@ -25,7 +25,7 @@ gGroupCalendar_PlayerGuildRank = nil;
 gGroupCalendar_RealmName = GetRealmName();
 gGroupCalendar_Initialized = false;
 
-gGroupCalendar_FunctionEventCreationSupport = true;
+gGroupCalendar_ExternalApiSupport = true;
 
 gGroupCalendar_InCombat = false;
 
