@@ -14,8 +14,6 @@ gCalendarEventEditor_EventDate = nil;
 gCalendarEventEditor_EventTime = nil;
 gCalendarEventEditor_EventDateIsLocal = false;
 
-gCalendarEventEditor_FunctionEventCreationSupport = true;
-
 gGroupCalendar_cNumAttendanceItems = 12;
 gGroupCalendar_cNumAutoConfirmAttendanceItems = 11;
 gGroupCalendar_cNumPlainAttendanceItems = 16;
