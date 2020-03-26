@@ -341,6 +341,9 @@ if GetLocale() == "frFR" then
 	GroupCalendar_cInviteNow = "Inivte to group";
 	GroupCalendar_cStatus = "Status";
 	GroupCalendar_cAddPlayerEllipses = "Ajoute joueur...";
+	GroupCalendar_cAll = "Tout";
+	GroupCalendar_cClearSelected = "Effacer la sélection";
+
 
 	GroupCalendar_cAddPlayer = "Ajoute joueur";
 	GroupCalendar_cPlayerLevel = "Level:";

@@ -364,6 +364,8 @@ if GetLocale() == "ruRU" then
 	GroupCalendar_cInviteNow = "Пригласить в группу";
 	GroupCalendar_cStatus = "Статус";
 	GroupCalendar_cAddPlayerEllipses = "Добавить игрока...";
+	GroupCalendar_cAll = "Bce";
+	GroupCalendar_cClearSelected = "Очистить выбранное";
 
 	GroupCalendar_cAddPlayer = "Добавить игрока";
 	GroupCalendar_cPlayerLevel = "Уровень:";

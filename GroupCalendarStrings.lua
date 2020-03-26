@@ -1,4 +1,4 @@
-﻿gGroupCalendar_VersionString = "1.13.3.3.23";
+﻿gGroupCalendar_VersionString = "2.0.1";
 
 GroupCalendar_cTitle = "Group Calendar v%s";
 
@@ -368,6 +368,8 @@ GroupCalendar_cEditPlayer = "Edit Player...";
 GroupCalendar_cInviteNow = "Inivte to group";
 GroupCalendar_cStatus = "Status";
 GroupCalendar_cAddPlayerEllipses = "Add player...";
+GroupCalendar_cAll = "All";
+GroupCalendar_cClearSelected = "Clear Selected";
 
 GroupCalendar_cAddPlayer = "Add player";
 GroupCalendar_cPlayerLevel = "Level:";

@@ -1,4 +1,4 @@
-## Interface: 11303
+## Interface: 11304
 ## Title: Group Calendar
 ## Notes: Manage/Create Event's for guild/friends who share the same addon & channel+password.
 ## OptionalDeps: LibDBIcon-1.0, LibDataBroker-1.1

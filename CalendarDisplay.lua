@@ -1146,6 +1146,12 @@ function Calendar_GetDayOfWeek(pMonth, pDay, pYear)
 	
 end
 
+function CalendarAutoSelectionDropDown_OnLoad(frame)
+	UIDropDownMenu_Initialize(frame, CalendarAutoSelectionDropDown_Initialize);
+	--UIDropDownMenu_SetWidth(frame, 42);
+	--UIDropDownMenu_Refresh(frame);
+end
+
 function CalendarHourDropDown_OnLoad(frame)
 	UIDropDownMenu_Initialize(frame, CalendarHourDropDown_Initialize);
 	UIDropDownMenu_SetWidth(frame, 42);
@@ -1244,6 +1250,41 @@ function GroupCalendarViewMenu_OnLoad(frame)
 	UIDropDownMenu_Initialize(frame, GroupCalendarViewMenu_Initialize);
 	UIDropDownMenu_SetWidth(frame, 100);
 	UIDropDownMenu_Refresh(frame);
+end
+
+function CalendarAutoSelectionDropDown_Initialize(vFrame, level, menuList)
+	
+	vItem = UIDropDownMenu_CreateInfo();
+	vItem.text = GroupCalendar_cAttending;
+	vItem.arg1 = 1;
+	vItem.value = 1;
+	--vItem.owner = vFrame;
+	vItem.func = CalendarGroupInvites_AutoSelectApprovedPlayers;
+	UIDropDownMenu_AddButton(vItem);	
+
+	vItem = UIDropDownMenu_CreateInfo();
+	vItem.text = GroupCalendar_cStandby;
+	vItem.arg1 = 2;
+	vItem.value = 2;
+	--vItem.owner = vFrame;
+	vItem.func = CalendarGroupInvites_AutoSelectStandbyPlayers;
+	UIDropDownMenu_AddButton(vItem);
+
+	vItem = UIDropDownMenu_CreateInfo();
+	vItem.text = GroupCalendar_cAll;
+	vItem.arg1 = 3;
+	vItem.value = 3;
+	--vItem.owner = vFrame;
+	vItem.func = CalendarGroupInvites_AutoSelectAllPlayers;
+	UIDropDownMenu_AddButton(vItem);
+
+	vItem = UIDropDownMenu_CreateInfo();
+	vItem.text = GroupCalendar_cClearSelected;
+	vItem.arg1 = 4;
+	vItem.value = 4;
+	--vItem.owner = vFrame;
+	vItem.func = CalendarGroupInvites_AutoSelectDeselectAllPlayers;
+	UIDropDownMenu_AddButton(vItem);
 end
 
 function CalendarHourDropDown_Initialize(vFrame, level, menuList)

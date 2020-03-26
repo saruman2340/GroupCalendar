@@ -344,6 +344,8 @@
 	GroupCalendar_cInviteNow = "Inivte to group";
 	GroupCalendar_cStatus = "Status";
 	GroupCalendar_cAddPlayerEllipses = "Add player...";
+	GroupCalendar_cAll = "All";
+	GroupCalendar_cClearSelected = "Clear Selected";
 
 	GroupCalendar_cAddPlayer = "Add player";
 	GroupCalendar_cPlayerLevel = "Level:";

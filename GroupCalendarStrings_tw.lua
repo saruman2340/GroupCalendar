@@ -357,6 +357,8 @@ if GetLocale() == "zhTW" then
 	GroupCalendar_cInviteNow = "邀請到隊伍";
 	GroupCalendar_cStatus = "狀態";
 	GroupCalendar_cAddPlayerEllipses = "加入玩家...";
+	GroupCalendar_cAll = "所有";
+	GroupCalendar_cClearSelected = "清除選擇";
 
 	GroupCalendar_cAddPlayer = "加入玩家";
 	GroupCalendar_cPlayerLevel = "等級:";

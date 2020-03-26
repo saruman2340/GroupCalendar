@@ -358,6 +358,8 @@ if GetLocale() == "zhCN" then
 	GroupCalendar_cInviteNow = "邀请到队伍";
 	GroupCalendar_cStatus = "状态";
 	GroupCalendar_cAddPlayerEllipses = "加入玩家...";
+	GroupCalendar_cAll = "全部";
+	GroupCalendar_cClearSelected = "清除选择";
 
 	GroupCalendar_cAddPlayer = "加入玩家";
 	GroupCalendar_cPlayerLevel = "等级:";
