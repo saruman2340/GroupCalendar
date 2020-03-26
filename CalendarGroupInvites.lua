@@ -593,7 +593,7 @@ function CalendarGroupInvites_InviteNow()
 		-- See if there's room for more
 		
 		if gGroupCalendar_Invites.Group.NumJoinedOrInvited >= vMaxPartyMembers then
-			if GetNumRaidMembers() == 0 then
+			if GetNumGroupMembers() == 0 then
 				-- Convert to a raid
 				
 				if gGroupCalendar_Invites.Group.NumJoinedMembers > 1
