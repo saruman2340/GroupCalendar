@@ -501,11 +501,14 @@ function CalendarEventEditor_CopyTemplateFields(pFromEvent, rToEvent)
 	rToEvent.mLimits = pFromEvent.mLimits;
 end
 
-function CalendarEventEditor_SaveEvent()
-	-- Update the event
-	local	vChangedFields = {};
-	
-	CalendarEventEditor_UpdateEventFromControls(gCalendarEventEditor_Event, vChangedFields);	
+function CalendarEventEditor_SaveEvent(pChangedFieldsExternal)
+  -- Update the event
+  local vChangedFields = {};
+  if pChangedFieldsExternal then
+    vChangedFields = pChangedFieldsExternal
+  else
+    CalendarEventEditor_UpdateEventFromControls(gCalendarEventEditor_Event, vChangedFields);
+  end
 
 	if not gCalendarEventEditor_IsNewEvent then
 		CalendarEventEditor_SaveRSVP(gCalendarEventEditor_Event);
@@ -2181,21 +2184,40 @@ function CalendarAddPlayer_Cancel()
 	CalendarAddPlayerFrame:Hide();
 end
 
-function CalendarAddPlayer_Save()
-	local	vName = CalendarAddPlayerFrameName:GetText();
-	if vName == "" then
-		return;
-	end
-	
-	local	vStatusCode = UIDropDownMenu_GetSelectedValue(CalendarAddPlayerFrameStatusMenu);
-	local	vClassCode = UIDropDownMenu_GetSelectedValue(CalendarAddPlayerFrameClassMenu);
-	local	vRaceCode = UIDropDownMenu_GetSelectedValue(CalendarAddPlayerFrameRaceMenu);
-	local	vLevel = tonumber(CalendarAddPlayerFrameLevel:GetText());
-	local	vComment = Calendar_EscapeString(CalendarAddPlayerFrameComment:GetText());
-	local	vGuild = CalendarAddPlayerFrame.Guild;
-	local	vGuildRank = UIDropDownMenu_GetSelectedValue(CalendarAddPlayerFrameGuildRankMenu);
-	local	vRole = UIDropDownMenu_GetSelectedValue(CalendarAddPlayerFrameRoleMenu);
-	local	vRoleCode = EventDatabase_GetRoleCodeByRole(vRole)
+function CalendarAddPlayer_Save(pPlayerInfo)
+  local vName,  vStatusCode,  vClassCode, vRaceCode,  vLevel, vComment, vGuild, vGuildRank, vRole,  vRoleCode
+
+  if pPlayerInfo then
+    vName = pPlayerInfo.name
+  else
+    vName = CalendarAddPlayerFrameName:GetText();
+  end
+
+  if vName == "" then
+    return;
+  end
+
+  if pPlayerInfo then
+    vStatusCode = pPlayerInfo.statusCode
+    vClassCode = pPlayerInfo.classCode
+    vRaceCode = pPlayerInfo.raceCode
+    vLevel = pPlayerInfo.level
+    vComment = pPlayerInfo.comment
+    vGuild = pPlayerInfo.guild
+    vGuildRank = pPlayerInfo.guildRank
+    vRole = pPlayerInfo.role
+    vRoleCode = pPlayerInfo.roleCode
+  else
+    vStatusCode = UIDropDownMenu_GetSelectedValue(CalendarAddPlayerFrameStatusMenu);
+    vClassCode = UIDropDownMenu_GetSelectedValue(CalendarAddPlayerFrameClassMenu);
+    vRaceCode = UIDropDownMenu_GetSelectedValue(CalendarAddPlayerFrameRaceMenu);
+    vLevel = tonumber(CalendarAddPlayerFrameLevel:GetText());
+    vComment = Calendar_EscapeString(CalendarAddPlayerFrameComment:GetText());
+    vGuild = CalendarAddPlayerFrame.Guild;
+    vGuildRank = UIDropDownMenu_GetSelectedValue(CalendarAddPlayerFrameGuildRankMenu);
+    vRole = UIDropDownMenu_GetSelectedValue(CalendarAddPlayerFrameRoleMenu);
+    vRoleCode = EventDatabase_GetRoleCodeByRole(vRole)
+  end
 
 	if not vGuild then
 		vGuild = gGroupCalendar_PlayerGuild;
