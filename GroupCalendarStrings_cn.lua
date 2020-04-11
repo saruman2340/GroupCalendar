@@ -186,7 +186,7 @@ if GetLocale() == "zhCN" then
 	GroupCalendar_cNaxxResetEventName = "纳克萨玛斯 重置";
 
 	GroupCalendar_cTransmuteCooldownEventName = "转换 就绪";
-	GroupCalendar_cSaltShakerCooldownEventName = "筛盐器r 就绪";
+	GroupCalendar_cSaltShakerCooldownEventName = "筛盐器 就绪";
 	GroupCalendar_cMoonclothCooldownEventName = "月布 就绪";
 	GroupCalendar_cSnowmasterCooldownEventName = "雪王9000型 就绪";
 
