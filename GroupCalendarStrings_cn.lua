@@ -156,7 +156,7 @@ if GetLocale() == "zhCN" then
 	GroupCalendar_cGnomerEventName = "诺姆瑞根";
 	GroupCalendar_cMaraEventName = "玛拉顿";
 	GroupCalendar_cMCEventName = "熔火之心";
-	GroupCalendar_cOnyxiaEventName = "奥尼西亚洞穴";
+	GroupCalendar_cOnyxiaEventName = "奥妮克希亚的巢穴";
 	GroupCalendar_cRFCEventName = "怒焰裂谷";
 	GroupCalendar_cRFDEventName = "剃刀高地";
 	GroupCalendar_cRFKEventName = "剃刀沼泽";
@@ -174,7 +174,7 @@ if GetLocale() == "zhCN" then
 
 	GroupCalendar_cPvPEventName = "综合 PvP";
 	GroupCalendar_cABEventName = "阿拉希盆地";
-	GroupCalendar_cAVEventName = "奥特蔺克山谷";
+	GroupCalendar_cAVEventName = "奥特兰克山谷";
 	GroupCalendar_cWSGEventName = "战歌峡谷";
 
 	GroupCalendar_cZGResetEventName = "祖尔格拉布 重置";
@@ -186,9 +186,9 @@ if GetLocale() == "zhCN" then
 	GroupCalendar_cNaxxResetEventName = "纳克萨玛斯 重置";
 
 	GroupCalendar_cTransmuteCooldownEventName = "转换 就绪";
-	GroupCalendar_cSaltShakerCooldownEventName = "Salt Shaker 就绪";
+	GroupCalendar_cSaltShakerCooldownEventName = "筛盐器 就绪";
 	GroupCalendar_cMoonclothCooldownEventName = "月布 就绪";
-	GroupCalendar_cSnowmasterCooldownEventName = "SnowMaster 9000 就绪";
+	GroupCalendar_cSnowmasterCooldownEventName = "雪王9000型 就绪";
 
 	GroupCalendar_cPersonalEventOwner = "私人";
 
