@@ -1522,6 +1522,7 @@ function CalendarPriorityDropDown_Initialize(vFrame, level, menuList)
 	
 	Calendar_AddMenuItem(vFrame, GroupCalendar_cPriorityDate, "Date")
 	Calendar_AddMenuItem(vFrame, GroupCalendar_cPriorityRank, "Rank")
+	Calendar_AddMenuItem(vFrame, GroupCalendar_cPriorityClass, "Class")
 end
 
 function CalendarCharactersDropDown_Initialize(vFrame, level, menuList)
@@ -1667,6 +1668,7 @@ function GroupCalendarViewMenu_Initialize(vFrame, level, menuList)
 	UIDropDownMenu_AddButton({text = GroupCalendar_cViewByDate, value = "Date", owner = vFrame, func = CalendarDropDown_OnClick});
 	UIDropDownMenu_AddButton({text = GroupCalendar_cViewByRank, value = "Rank", owner = vFrame, func = CalendarDropDown_OnClick});
 	UIDropDownMenu_AddButton({text = GroupCalendar_cViewByName, value = "Name", owner = vFrame, func = CalendarDropDown_OnClick});
+	UIDropDownMenu_AddButton({text = GroupCalendar_cViewByClass, value = "Class", owner = vFrame, func = CalendarDropDown_OnClick});
 end
 
 function CalendarDropDown_OnClick(data)	

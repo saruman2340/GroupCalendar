@@ -481,6 +481,8 @@ function CalendarGroupInvites_GetGroupItemCompare(pSortBy)
 		return CalendarGroupInvites_CompareGroupItemsByDate;
 	elseif pSortBy == "Name" then
 		return CalendarGroupInvites_CompareGroupItemsByName;
+	elseif pSortBy == "Class" then
+		return CalendarGroupInvites_CompareGroupItemsByRank;
 	else
 		Calendar_ErrorMessage("GroupCalendar: Unknown sorting method in CalendarGroupInvites_GetGroupItemCompare:"..pSortyBy);
 	end
