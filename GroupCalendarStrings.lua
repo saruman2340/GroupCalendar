@@ -1,4 +1,4 @@
-﻿gGroupCalendar_VersionString = "2.0.1";
+﻿gGroupCalendar_VersionString = "1.13.4.0.0";
 
 GroupCalendar_cTitle = "Group Calendar v%s";
 
@@ -275,6 +275,8 @@ GroupCalendar_cCommentLabel = "Comment:";
 CalendarEditor_cNewEvent = "New Event...";
 CalendarEditor_cEventsTitle = "Events";
 
+GroupCalendar_cRankMinLabel = "Guild rank:";
+CalendarEventEditor_cNotRightRankMsg = "You don't meet the guild rank requirement to show the event";
 CalendarEventEditor_cNotTrustedMsg = "Cannot create events due to trust settings.";
 CalendarEventEditor_cOk = "OKAY";
 

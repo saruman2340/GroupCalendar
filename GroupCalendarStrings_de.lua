@@ -268,6 +268,8 @@
     CalendarEditor_cNewEvent = "Neues Event...";
     CalendarEditor_cEventsTitle = "Events";
 
+	GroupCalendar_cRankMinLabel = "Gildenrang:";
+	CalendarEventEditor_cNotRightRankMsg = "Dein Gildenrang ist zu niedrig um das Ereigniss anzuzeigen";
 	CalendarEventEditor_cNotTrustedMsg = "Ereignisse können aufgrund von Vertrauenseinstellungen nicht erstellt werden";
 	CalendarEventEditor_cOk = "in Ordnung";
 
