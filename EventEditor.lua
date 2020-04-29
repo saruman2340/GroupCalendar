@@ -217,6 +217,13 @@ function CalendarEventEditor_UpdateControlsFromEvent(pEvent, pExistingValuesOnly
 	elseif not pExistingValuesOnly then
 		CalendarEventDescription:SetText("");
 	end
+	
+	
+	if pEvent.mGuildRank then
+		CalendarDropDown_SetSelectedValue(CalendarEventMinRank, pEvent.mGuildRank);
+	else 
+		CalendarDropDown_SetSelectedValue(CalendarEventMinRank, GuildControlGetNumRanks()-1);
+	end
 
 	if pEvent.mMinLevel then
 		CalendarEventMinLevel:SetText(pEvent.mMinLevel);
@@ -349,6 +356,16 @@ function CalendarEventEditor_UpdateEventFromControls(rEvent, rChangedFields)
 		vChanged = true;
 	end
 	
+	-- Minimum Guild Rank
+
+	vValue = UIDropDownMenu_GetSelectedValue(CalendarEventMinRank);
+
+	if rEvent.mGuildRank ~= vValue then
+		rEvent.mGuildRank = vValue;
+		rChangedFields.mGuildRank = "UPD";
+		vChanged = true;
+	end	
+
 	-- MinLevel
 	
 	if EventDatabase_EventTypeUsesLevelLimits(rEvent.mType) then

@@ -423,7 +423,9 @@ function EventDatabase_NewEvent(pDatabase, pDate, pUserGenerated)
 	vEvent.mTime = 1140;
 	vEvent.mDate = pDate;
 	vEvent.mDuration = 120;
-	
+
+	vEvent.mGuildRank = GuildControlGetNumRanks()-1;
+
 	vEvent.mDescription = nil;
 	
 	vEvent.mMinLevel = 0;
@@ -1978,6 +1980,12 @@ function EventDatabase_RescheduleEvent(pDatabase, pEvent, pNewDate)
 
 	vNewEvent.mTime = pEvent.mTime;
 	vNewEvent.mDuration = pEvent.mDuration;
+
+	if pEvent.mGuildRank then
+		vNewEvent.mGuildRank = pEvent.mGuildRank;
+	else
+		vNewEvent.mGuildRank = GuildControlGetNumRanks()-1;
+	end
 
 	vNewEvent.mDescription = pEvent.mDescription;
 

@@ -253,7 +253,8 @@ function CalendarNetwork_ProcessEventUpdateCommand(pSender, pCommand)
 		local vTime = tonumber(pCommand[7]);
 		local vDuration = tonumber(pCommand[8]);
 		local vMinLevel = tonumber(pCommand[9]);
-		local vMaxLevel = tonumber(pCommand[10]);	
+		local vMaxLevel = tonumber(pCommand[10]);			
+		local vGuildRank = tonumber(pCommand[11]);
 
 		local foundEvent = nil;
 		local updateEvent = false;
@@ -292,6 +293,7 @@ function CalendarNetwork_ProcessEventUpdateCommand(pSender, pCommand)
 			foundEvent.mStatus = vStatus;
 			foundEvent.mTime = vTime;
 			foundEvent.mDuration = vDuration;
+			foundEvent.mGuildRank = vGuildRank;
 			foundEvent.mGUID = vGUID;
 			foundEvent.mMinLevel = vMinLevel;
 			foundEvent.mMaxLevel = vMaxLevel;
@@ -304,6 +306,7 @@ function CalendarNetwork_ProcessEventUpdateCommand(pSender, pCommand)
 			foundEvent.mStatus = vStatus;
 			foundEvent.mTime = vTime;
 			foundEvent.mDuration = vDuration;
+			foundEvent.mGuildRank = vGuildRank;
 			foundEvent.mMinLevel = vMinLevel;
 			foundEvent.mMaxLevel = vMaxLevel;
 
@@ -1319,8 +1322,10 @@ function CalendarNetwork_UserIsInSameGuild(pUserName)
 end
 
 function CalendarNetwork_SendMessage(pMessage, priority)
-	ChatThrottleLib:SendAddonMessage(priority, gGroupCalendar_MessagePrefix0, pMessage, "GUILD");
-	--C_ChatInfo.SendAddonMessage(gGroupCalendar_MessagePrefix0, pMessage, "GUILD");
+	if IsInGuild() then
+		ChatThrottleLib:SendAddonMessage(priority, gGroupCalendar_MessagePrefix0, pMessage, "GUILD");
+		--C_ChatInfo.SendAddonMessage(gGroupCalendar_MessagePrefix0, pMessage, "GUILD");
+	end
 end
 
 function CalendarNetwork_ChannelMessageReceived(pSender, pMessage)
@@ -1745,6 +1750,12 @@ function CalendarNetwork_SendEventUpdate(pEvent, pIncRSVPs, pPriority)
 		cmd1 = cmd1 .. ",".. pEvent.mMaxLevel;
 	else
 		cmd1 = cmd1 .. ",";
+	end
+	
+	if pEvent.mGuildRank then
+		cmd1 = cmd1 .. "," .. pEvent.mGuildRank;
+	else
+		cmd1 = cmd1 .. "," ..  GuildControlGetNumRanks();
 	end
 
 	--if pEvent.mUserName then
