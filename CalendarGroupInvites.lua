@@ -592,51 +592,15 @@ function CalendarGroupInvites_InviteNow()
 			return;
 		end
 		
-		-- See if there's room for more
-
-		if gGroupCalendar_Invites.Group.NumJoinedOrInvited == 5 then
+		-- Convert to a raid		
+		if gGroupCalendar_Invites.Group.NumJoinedOrInvited >= 5 and UnitInRaid("player") == nil then
 			CalendarGroupInvites_SetStatus("ConvertingToRaid");
 			if gGroupCalendar_Settings.DebugInvites then
 				Calendar_DebugMessage("Converting to raid");
 			end
 			ConvertToRaid();
 		end
-
-		--if gGroupCalendar_Invites.Group.NumJoinedOrInvited >= vMaxPartyMembers then
-			
-		--	if GetNumRaidMembers() == 0 then
-				-- Convert to a raid
 				
-		--		if gGroupCalendar_Invites.Group.NumJoinedMembers > 1
-		--		and gGroupCalendar_Invites.PartyFormed then
-		--			CalendarGroupInvites_SetStatus("ConvertingToRaid");
-					
-		--			if gGroupCalendar_Settings.DebugInvites then
-		--				Calendar_DebugMessage("Converting to raid");
-		--			end
-					
-		--			ConvertToRaid();
-				
-				-- Wait for at least one player to accept
-				
-		--		else
-		--			CalendarGroupInvites_SetStatus("AwaitingAcceptance");
-		--			if gGroupCalendar_Settings.DebugInvites then
-		--				Calendar_DebugMessage("Waiting for players to accept");
-		--			end
-		--		end
-			
-			-- self state is only reached if the raid is full and the player
-			-- tries to invite more
-			
-		--	else
-		--		CalendarGroupInvites_SetStatus("RaidFull");
-		--		gGroupCalendar_Invites.Inviting = false;
-		--	end
-			
-		--	return;
-		--end
-		
 		-- Invite the player
 		
 		if gGroupCalendar_Settings.DebugInvites then
