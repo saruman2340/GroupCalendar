@@ -393,6 +393,7 @@ if GetLocale() == "ruRU" then
 	GroupCalendar_cViewByRank = "Просмотр по Званию";
 	GroupCalendar_cViewByName = "Просмотр по Имени";
 	GroupCalendar_cViewByStatus = "Просмотр по Статусу";
+	GroupCalendar_cViewByClass = "Просмотр по Классу";
 	GroupCalendar_cViewByClassRank = "Просмотр по Классу и Званию";
 
 	GroupCalendar_cMaxPartySizeLabel = "Максимальный размер группы:";
@@ -438,6 +439,7 @@ if GetLocale() == "ruRU" then
 	GroupCalendar_cPriorityLabel = "Приоритет:";
 	GroupCalendar_cPriorityDate = "Дата";
 	GroupCalendar_cPriorityRank = "Звание";
+	GroupCalendar_cPriorityClass = "Класс";
 
 	GroupCalendar_cConfrimDeleteRSVP = "Удалить %s из этого события? Они не смогут присоединиться снова, если вы не добавите их обратно вручную.";
 

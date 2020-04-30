@@ -1409,9 +1409,10 @@ end
 
 GroupCalendar_cSortByFlags =
 {
-	Date = {Class = true, Rank = false},
-	Rank = {Class = true, Rank = true},
-	Name = {Class = false, Rank = false, Name = true},
+	Date  = {Class = false, Rank = false, Name = false, Date = true },
+	Rank  = {Class = true, Rank = true},
+	Name  = {Class = false, Rank = false, Name = true},
+	Class = {Class = true, Rank = false, Name = false, Date = true },
 	
 	Status = {Class = true, Rank = false},
 	ClassRank = {Class = true, Rank = true},
@@ -1599,6 +1600,8 @@ function CalendarEvent_SortAttendanceCounts(pAttendanceCounts, pSortBy, pCategor
 		vCompareFunction = EventDatabase_CompareRSVPsByName;
 	elseif vSortByClass and vSortByRank then
 		vCompareFunction = EventDatabase_CompareRSVPsByRankAndDate;
+	elseif vSortByClass then
+		vCompareFunction = EventDatabase_CompareRSVPsByClassAndDate;
 	else
 		vCompareFunction = EventDatabase_CompareRSVPsByDate;
 	end
@@ -1842,6 +1845,19 @@ function EventDatabase_CompareRSVPsByRankAndDate(pRSVP1, pRSVP2)
 		return vRank1 < vRank2;
 	end
 end
+
+
+function EventDatabase_CompareRSVPsByClassAndDate(pRSVP1, pRSVP2)
+	local	vClass1 = pRSVP1.mClassCode;
+	local	vClass2 = pRSVP2.mClassCode;
+	
+	if vClass1 == vClass2 then
+		return EventDatabase_CompareRSVPsByDate(pRSVP1, pRSVP2);
+	else
+		return vClass1 < vClass2;
+	end
+end
+
 
 Calendar_cClassCodeSortOrder =
 {

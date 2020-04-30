@@ -1752,8 +1752,9 @@ function CalendarAttendanceList_SetGroupItem(pAttendanceList, pItemIndex, pCateg
 	-- Set the status
 	
 	local	vStatusColumnFormat = "";
+	local vShouldDisplayRank  = pAttendanceList.ListViewMode == "Rank";
 	
-	if pAttendanceList.ListViewMode == "Rank" then
+	if vShouldDisplayRank then
 		local	vRank = pItem.mGuildRank;
 		
 		if vRank then
@@ -1763,8 +1764,7 @@ function CalendarAttendanceList_SetGroupItem(pAttendanceList, pItemIndex, pCateg
 		end
 		
 		vStatusColumnFormat = "$rank";
-	elseif pAttendanceList.ListViewMode == "Date"
-	or pAttendanceList.ListViewMode == "Name" then
+	else
 		local	vDate, vTime = EventDatabase_GetRSVPOriginalDateTime(pItem);
 		
 		if vDate and vTime then

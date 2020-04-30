@@ -373,6 +373,7 @@
 	GroupCalendar_cViewByRank = "View by Rank";
 	GroupCalendar_cViewByName = "View by Name";
 	GroupCalendar_cViewByStatus = "View by Status";
+	GroupCalendar_cViewByClass = "View by Class";
 	GroupCalendar_cViewByClassRank = "View by Class and Rank";
 
 	GroupCalendar_cMaxPartySizeLabel = "Maximum party size:";
@@ -418,6 +419,7 @@
 	GroupCalendar_cPriorityLabel = "Priority:";
 	GroupCalendar_cPriorityDate = "Date";
 	GroupCalendar_cPriorityRank = "Rank";
+	GroupCalendar_cPriorityClass = "Class";
 
 	GroupCalendar_cConfrimDeleteRSVP = "Remove %s from this event? They can't join again unless you add them back manually.";
 
