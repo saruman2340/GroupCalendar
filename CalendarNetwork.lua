@@ -253,8 +253,11 @@ function CalendarNetwork_ProcessEventUpdateCommand(pSender, pCommand)
 		local vTime = tonumber(pCommand[7]);
 		local vDuration = tonumber(pCommand[8]);
 		local vMinLevel = tonumber(pCommand[9]);
-		local vMaxLevel = tonumber(pCommand[10]);			
-		local vGuildRank = tonumber(pCommand[11]);
+		local vMaxLevel = tonumber(pCommand[10]);
+		local vGuildRank = GuildControlGetNumRanks() - 1;
+		if table.getn(pCommand) > 10 and pCommand[11] ~= nil then
+			vGuildRank = tonumber(pCommand[11]);
+		end
 
 		local foundEvent = nil;
 		local updateEvent = false;
@@ -1750,12 +1753,12 @@ function CalendarNetwork_SendEventUpdate(pEvent, pIncRSVPs, pPriority)
 		cmd1 = cmd1 .. ",".. pEvent.mMaxLevel;
 	else
 		cmd1 = cmd1 .. ",";
-	end
+	end	
 	
 	if pEvent.mGuildRank then
 		cmd1 = cmd1 .. "," .. pEvent.mGuildRank;
 	else
-		cmd1 = cmd1 .. "," ..  GuildControlGetNumRanks();
+		cmd1 = cmd1 .. "," ..  (GuildControlGetNumRanks() - 1);
 	end
 
 	--if pEvent.mUserName then
