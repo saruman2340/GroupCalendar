@@ -53,7 +53,7 @@
         Connected = {mText = "Status: In Verbindung gebracht", mColor = {r = 0.3, g = 1, b = 0.3}},
         Disconnected = {mText = "Status: Getrennt", mColor = {r = 1, g = 0.2, b = 0.4}},
         Initializing = {mText = "Status: Initialisierung", mColor = {r = 1, g = 1, b = 0.3}},
-		Error = {mText = "Error: %s", mColor = {r = 1, g = 0.2, b = 0.4}},
+		Error = {mText = "Fehler: %s", mColor = {r = 1, g = 0.2, b = 0.4}},
     };
 
     GroupCalendar_cConnected = "Verbunden";
@@ -426,8 +426,8 @@
 	GroupCalendar_cConfrimDeleteRSVP = "Spieler %s von diesem Event entfernen? Er kann nicht selbstständig beitreten, es sei denn Du fügst ihn manuell wieder hinzu unless.";
 
 	GroupCalendar_cConfirmSelfUpdateMsg = "%s";
-	GroupCalendar_cConfirmSelfUpdateParamFormat = "A newer copy of the events for $mUserName is available from $mSender.  Do you want to update your events to the newer version? If you update then any events you've added or changed since logging in will be lost.";
-	GroupCalendar_cConfirmSelfRSVPUpdateParamFormat = "A newer copy of the attendance requests for %mUserName is available from $mSender.  Do you wnat to update your attendance requests to the newer version?  If you update then any unconfirmed attendance changes you've made since logging in will be lost.";
+	GroupCalendar_cConfirmSelfUpdateParamFormat = "Eine neuere Version der Events für $mUserName ist von $mSender verfügbar. Willst Du Deine Events auf eine neuere Version aktualisieren? Falls ja, gehen alle von dir (seit dem letzten Login) hinzugefügten oder geänderten Events verloren.";
+	GroupCalendar_cConfirmSelfRSVPUpdateParamFormat = "Eine neuere Version der Teilnehmerliste für $mUserName ist von $mSender verfügbar. Willst Du deine Teilnehmerliste wirklich aktualisieren? Falls ja, gehen alle (seit dem letzten Login) von Dir gemachten Änderungen  an unbestätigten Anmeldungen verloren.";
 	GroupCalendar_cUpdate = "Update";
 
 	GroupCalendar_cConfirmClearWhispers = "Letzten Flüsternachrichten löschen?";
@@ -435,23 +435,23 @@
 	
 	CalendarDatabases_cTitle = "Group Calendar Versionen";
 	CalendarDatabases_cRefresh = "Neu laden";
-	CalendarDatabases_cRefreshDescription = "Requests online players to send their version numbers.  It may take several minutes for version numbers to update.  Updates received while self window is closed will still be recorded and can be viewed at a later time.";
+	CalendarDatabases_cRefreshDescription = "Frage die Versionen der aktiven Spieler ab. Es kann einige Minuten in Anspruch nehmen die Versionsnummern zu updaten. Updates, die erhalten werden, während self Windows geschlossen ist, werden aufgezeichnet und können zu einen späteren Zeitpunkt angesehen werden.";
 
 	GroupCalendar_cVersionFormat = "Group Calendar v%s";
 	GroupCalendar_cShortVersionFormat = "v%s";
-	GroupCalendar_cVersionUpdatedFormat = "as of %s %s (local time)";
-	GroupCalendar_cVersionUpdatedUnknown = "Date version info was last seen is unknown";
+	GroupCalendar_cVersionUpdatedFormat = "Zum Zeitpunkt: %s %s (Lokale Zeit)";
+	GroupCalendar_cVersionUpdatedUnknown = "Status \"Datum/Version/Info zuletzt gesehen\" ist unbekannt";
 
 	GroupCalendar_cToggleVersionsTitle = "Zeige Spieler Versionen";
 	GroupCalendar_cToggleVersionsDescription = "Zeigt die Versionen von Group Calendar von anderen Spielern";
 
 	GroupCalendar_cChangesDelayedMessage = "Group Calendar: Änderungen, die während der Synchronisation mit dem Netzwerk gemacht wurden, werden erst nach dem Abschluss gesendet.";
 
-	GroupCalendar_cConfirmKillMsg = "Are you sure you want to force the events from %s out of the network?";
+	GroupCalendar_cConfirmKillMsg = "Sicher die Events von %s aus dem Netzwerk zu erzwingen?";
 	GroupCalendar_cKill = "Kill";
 
-	GroupCalendar_cNotAnOfficerError = "GroupCalendar: Only guild officers are not allowed to do that";
-	GroupCalendar_cUserNameExpected = "GroupCalendar: Expected user name";
-	GroupCalendar_cDatabaseNotFoundError = "GroupCalendar: Database for %s not found.";
-	GroupCalendar_cCantKillGuildieError = "GroupCalendar: Can't purge a user who's in your guild";
+	GroupCalendar_cNotAnOfficerError = "GroupCalendar: Nur Gilden-Offiziere dürfen das tun!";
+	GroupCalendar_cUserNameExpected = "GroupCalendar: Erwarte Username";
+	GroupCalendar_cDatabaseNotFoundError = "GroupCalendar: Datenbank für %s nicht gefunden.";
+	GroupCalendar_cCantKillGuildieError = "GroupCalendar: Kann Spieler aus Deiner Gilde nicht entfernen";
 end
