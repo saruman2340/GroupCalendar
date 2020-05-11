@@ -1,4 +1,4 @@
-﻿gGroupCalendar_VersionString = "2.0.2";
+﻿gGroupCalendar_VersionString = "2.0.3";
 
 GroupCalendar_cTitle = "Group Calendar v%s";
 
