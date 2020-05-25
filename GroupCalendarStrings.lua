@@ -188,6 +188,7 @@ GroupCalendar_cSaltShakerCooldownEventName = "Salt Shaker Available";
 GroupCalendar_cMoonclothCooldownEventName = "Mooncloth Available";
 GroupCalendar_cSnowmasterCooldownEventName = "SnowMaster 9000 Available";
 GroupCalendar_cGadgetzanCooldownEventName = "Gadgetzan Transporter Available";
+GroupCalendar_cEverlookCooldownEventName = "Everlook Transporter Available";
 
 GroupCalendar_cPersonalEventOwner = "Private";
 

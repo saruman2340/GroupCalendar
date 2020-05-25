@@ -214,6 +214,7 @@ gGroupCalendar_EventTypes =
 			{id="RSMoon", name=GroupCalendar_cMoonclothCooldownEventName}, -- Mooncloth
 			{id="RSSnow", name=GroupCalendar_cSnowmasterCooldownEventName}, -- Snowmaster 9000
 			{id="RSGadget", name=GroupCalendar_cGadgetzanCooldownEventName}, -- Gadgetzan Transporter
+			{id="RSEverlook", name=GroupCalendar_cEverlookCooldownEventName}, -- Everlook Transporter
 		},
 		
 		ResetEventInfo =
@@ -229,7 +230,8 @@ gGroupCalendar_EventTypes =
 			RSSalt = {left = 0.25, top = 0, right = 0.5, bottom = 0.25, isTradeskill = true, id="Leatherworking", largeSysIcon="Interface\\Icons\\Trade_Leatherworking"},
 			RSMoon = {left = 0, top = 0, right = 0.25, bottom = 0.25, isTradeskill = true, id="Tailoring", largeSysIcon="Interface\\Icons\\Trade_Tailoring"},
 			RSSnow = {left = 0.75, top = 0, right = 1.0, bottom = 0.25, isTradeskill = true, id="Snowmaster", largeSysIcon="Interface\\Icons\\Spell_Frost_WindWalkOn"},
-			RSGadget = {left = 0.25, top = 0.5, right = 0.5, bottom = 0.25, isTradeskill = true, name="Gadgetzan Transporter", id="Engineering", largeSysIcon="Interface\\Icons\\Trade_Engineering"},
+			RSGadget = {left = 0.25, top = 0.5, right = 0.5, bottom = 0.25, isTradeskill = true, name="Gadgetzan Transporter", id="EngineeringGadgetzan", largeSysIcon="Interface\\Icons\\Trade_Engineering"},
+			RSEverlook = {left = 0.25, top = 0.5, right = 0.5, bottom = 0.25, isTradeskill = true, name="Everlook Transporter", id="EngineeringEverlook", largeSysIcon="Interface\\Icons\\Trade_Engineering"},
 		},
 	},
 };
@@ -709,8 +711,8 @@ function EventDatabase_FindEventByID(pDatabase, pGUID)
 	return nil;
 end
 
-function EventDatabase_DeleteEvent(pDatabase, pEvent, vForce)
-	if not vForce and not pEvent.mPrivate then
+function EventDatabase_DeleteEvent(pDatabase, pEvent, pForce)
+	if not pForce and not pEvent.mPrivate then
 		-- Mark the event as deleted and remove the attendance
 		local	vDate, vTime60 = EventDatabase_GetServerDateTime60Stamp();	
 		pEvent.mStatus = "D";
@@ -738,8 +740,8 @@ function EventDatabase_DeleteEvent(pDatabase, pEvent, vForce)
 	
 		if vEventIndex == 0 then			
 			return false;
-		end	
-	
+		end			
+		
 		-- Remove any pending RSVPs for the event
 		if pEvent.mAttendance then
 			pEvent.mAttendance = {};
@@ -2049,6 +2051,7 @@ function EventDatabase_DeleteOldEvents(pDatabase)
 				--		vEventIndex = vEventIndex + 1;
 				--	end
 				--else
+
 				if not EventDatabase_DeleteEvent(pDatabase, vEvent, true) then
 
 					Calendar_DebugMessage("GroupCalendar: Can't delete old event: Unknown error");
@@ -2073,7 +2076,18 @@ function EventDatabase_RemoveSavedInstanceEvents(pDatabase)
 					local	vEvent = vSchedule[vEventIndex];
 
 					if not pCutoffDate or vDate < pCutoffDate or (vDate == pCutoffDate and vEvent.mTime < pCutoffTime) then -- EventDatabase_IsDungeonResetEventType(vEvent.mType)
-					
+						
+						-- Notify user of it being removed
+						if vEvent.mPrivate then
+							local mResetInfo = gGroupCalendar_EventTypes.Reset.ResetEventInfo[vEvent.mType];
+							if mResetInfo ~= nil then
+								local mResetName = mResetInfo.name;
+								if mResetName ~= nil then
+									print("|cff30A2FFCalendar Reset: " .. mResetName);
+								end
+							end
+						end
+
 						EventDatabase_DeleteEvent(pDatabase, vEvent, true);
 						vNumEvents = vNumEvents - 1;
 					else
@@ -2095,7 +2109,6 @@ function EventDatabase_RemoveSavedInstanceEventsByType(pDatabase, pType)
 				local	vEvent = vSchedule[vEventIndex];
 
 				if vEvent.mType == pType then
-					
 					EventDatabase_DeleteEvent(pDatabase, vEvent, true);
 					vNumEvents = vNumEvents - 1;
 				else
@@ -2114,7 +2127,8 @@ function EventDatabase_RemoveTradeskillEventByType(pDatabase, pEventType)
 		while vEventIndex <= vNumEvents do
 			local	vEvent = vSchedule[vEventIndex];
 			
-			if vEvent.mType == pEventType then
+			if vEvent.mType == pEventType then				
+								
 				EventDatabase_DeleteEvent(pDatabase, vEvent, true);
 				vNumEvents = vNumEvents - 1;
 			else
@@ -2132,8 +2146,7 @@ function EventDatabase_ScheduleResetEvent(pDatabase, pType, pResetDate, pResetTi
 		for vEventIndex, vEvent in pairs(vSchedule) do
 			if vEvent.mType == pType then
 				-- Just return if it's already the right time
-				
-				if vEvent.mTime == pResetTime then
+				if math.abs(vEvent.mTime - pResetTime) <= 1 then				
 					return;
 				
 				-- Otherwise delete it and schedule a new one
@@ -2210,9 +2223,12 @@ end
 
 function EventDatabase_ScheduleTradeskillCooldownEvent(pDatabase, pTradeskillID, pCooldownSeconds)
 	local	vType = EventDatabase_LookupTradeskillEventTypeByID(pTradeskillID);
-	local	vResetDate, vResetTime = Calendar_GetServerDateTimeFromSecondsOffset(pCooldownSeconds);
+	local	vResetDate, vResetTime = Calendar_GetServerDateTimeFromSecondsOffset(pCooldownSeconds);	
 	
+	EventDatabase_RemoveSavedInstanceEvents(gGroupCalendar_UserDatabase);
+
 	EventDatabase_RemoveTradeskillEventByType(pDatabase, vType);
+		
 	EventDatabase_ScheduleResetEvent(pDatabase, vType, vResetDate, vResetTime);
 end
 
