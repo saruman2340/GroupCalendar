@@ -492,7 +492,8 @@ GroupCalendar_cCooldownItemInfo =
 {
 	[15846] = {EventID = "Leatherworking"}, -- Salt Shaker
 	[17716] = {EventID = "Snowmaster"}, -- Snowmaster 9000
-	[18986] = {EventID = "Engineering"}, -- Ultrasafe Transporter: Gadgetzan
+	[18986] = {EventID = "EngineeringGadgetzan"}, -- Ultrasafe Transporter: Gadgetzan
+	[18984] = {EventID = "EngineeringEverlook"}, -- Dimensional Ripper - Everlook
 };
 
 function GroupCalendar_CheckItemCooldowns()	
