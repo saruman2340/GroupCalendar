@@ -334,7 +334,7 @@ function EventDatabase_GetPlayerDatabase(pPlayerName, pCreate)
 	return vDatabase;
 end
 
-function EventDatabase_GetEventRSVP(pEvent)
+function EventDatabase_GetPlayerEventRSVP(pEvent)
 	for DBindex, vPlayerDB in pairs (EventDatabase_GetPlayerDatabases()) do
 		for vAttendeeName, vRSVP in pairs(pEvent.mAttendance) do
 			if vAttendeeName == vPlayerDB.UserName and (vRSVP.mStatus == "Y" or vRSVP.mStatus == "S") then
@@ -342,6 +342,14 @@ function EventDatabase_GetEventRSVP(pEvent)
 			end
 		end
 	end
+end
+
+function EventDatabase_GetEventRSVP(pEvent, pAttendeeName)	
+	for vAttendeeName, vRSVP in pairs(pEvent.mAttendance) do
+		if vAttendeeName == pAttendeeName and (vRSVP.mStatus == "Y" or vRSVP.mStatus == "S") then
+			return vRSVP;
+		end
+	end	
 end
 
 function EventDatabase_GetDatabase(pGuildName, pCreate, pRealmName)

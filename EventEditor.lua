@@ -244,7 +244,7 @@ function CalendarEventEditor_UpdateControlsFromEvent(pEvent, pExistingValuesOnly
 	end
 
 	-- Get the RSVP/Role selected
-	local vPlayerName, vRSVP = EventDatabase_GetEventRSVP(pEvent);	
+	local vPlayerName, vRSVP = EventDatabase_GetPlayerEventRSVP(pEvent);	
 	
 	if vRSVP then
 		CalendarDropDown_SetSelectedValue(CalendarEventEditorCharacterMenu, vPlayerName);	
@@ -2257,7 +2257,14 @@ function CalendarAddPlayer_Save(pPlayerInfo)
 							vGuildRank,
 							vRoleCode);
 	
-	
+	-- Keep the original signup time if it exists
+	local vRSVP_old = EventDatabase_GetEventRSVP(gCalendarEventEditor_Event, vName)
+
+	if vRSVP_old then
+		vRSVP.mOriginalDate = vRSVP_old.mOriginalDate;
+		vRSVP.mOriginalTime = vRSVP_old.mOriginalTime;
+	end
+
 	gCalendarEventEditor_Event.mAttendance[vName] = vRSVP;
 	
 	CalendarNetwork_SendRSVPUpdate(gCalendarEventEditor_Event, vRSVP, "ALERT");
