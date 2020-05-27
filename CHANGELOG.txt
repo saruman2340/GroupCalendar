@@ -1,0 +1,3 @@
+v2.0.4-Alpha
+- Fix: Signups now keep their original time when modifying the attendee
+- New: Added a chat message when a cooldown elapses (e.g. Mooncloth)
