@@ -1,4 +1,4 @@
-Next Release
+v2.0.6-Alpha
 - Event editor now saves attending like on the non-trusted tab to avoid setting the user as not attending by default.
 - Comment is preserved when saving on event editor.
 
