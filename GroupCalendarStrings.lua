@@ -28,6 +28,8 @@ GroupCalendar_Settings_Use24HrTime = "Use 24hr Time";
 GroupCalendar_Settings_Use24HrTimeTip = "Use 24hr Time";
 
 GroupCalendar_cSelfWillAttend = "Attending";
+CalendarEventEditor_cYes = "Yes";
+CalendarEventEditor_cNo = "No";
 
 GroupCalendar_cMonthNames = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
 GroupCalendar_cDayOfWeekNames = {GroupCalendar_cSunday, GroupCalendar_cMonday, GroupCalendar_cTuesday, GroupCalendar_cWednesday, GroupCalendar_cThursday, GroupCalendar_cFriday, GroupCalendar_cSaturday};
@@ -112,6 +114,8 @@ CalendarEventViewer_cSingleLevel = "Level %i only";
 
 CalendarEventViewer_cYes = "Yes! I will attend this event";
 CalendarEventViewer_cNo = "No. I won't attend this event";
+
+
 
 CalendarEventViewer_cResponseMessage =
 {

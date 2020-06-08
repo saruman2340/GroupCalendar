@@ -339,7 +339,7 @@ end
 function EventDatabase_GetPlayerEventRSVP(pEvent)
 	for DBindex, vPlayerDB in pairs (EventDatabase_GetPlayerDatabases()) do
 		for vAttendeeName, vRSVP in pairs(pEvent.mAttendance) do
-			if vAttendeeName == vPlayerDB.UserName and (vRSVP.mStatus == "Y" or vRSVP.mStatus == "S") then
+			if vAttendeeName == vPlayerDB.UserName then
 				return vAttendeeName, vRSVP;
 			end
 		end
