@@ -31,7 +31,9 @@ if GetLocale() == "zhTW" then
 	GroupCalendar_Settings_Use24HrTime = "使用24小時制";
 	GroupCalendar_Settings_Use24HrTimeTip = "使用24小時制";
 
-	GroupCalendar_cSelfWillAttend = "%s會出席";
+	GroupCalendar_cSelfWillAttend = "參加";
+	CalendarEventEditor_cYes = "是";
+	CalendarEventEditor_cNo = "沒有";
 
 	GroupCalendar_cMonthNames = {"1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"};
 	GroupCalendar_cDayOfWeekNames = {GroupCalendar_cSunday, GroupCalendar_cMonday, GroupCalendar_cTuesday, GroupCalendar_cWednesday, GroupCalendar_cThursday, GroupCalendar_cFriday, GroupCalendar_cSaturday};
@@ -386,6 +388,7 @@ if GetLocale() == "zhTW" then
 	GroupCalendar_cViewByRank = "檢視階級";
 	GroupCalendar_cViewByName = "檢視名稱";
 	GroupCalendar_cViewByStatus = "檢視狀態";
+	GroupCalendar_cViewByClass = "檢視職業";
 	GroupCalendar_cViewByClassRank = "檢視職業階級";
 
 	GroupCalendar_cMaxPartySizeLabel = "隊伍人數上限:";
@@ -431,6 +434,7 @@ if GetLocale() == "zhTW" then
 	GroupCalendar_cPriorityLabel = "優先權:";
 	GroupCalendar_cPriorityDate = "時間";
 	GroupCalendar_cPriorityRank = "階級";
+	GroupCalendar_cPriorityClass = "職業";
 
 	GroupCalendar_cConfrimDeleteRSVP = "將 %s 從此活動中移除? 除非你手動把他們重新加入，否則他們將無法再參加。";
 

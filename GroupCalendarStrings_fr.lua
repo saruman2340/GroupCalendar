@@ -26,7 +26,9 @@ if GetLocale() == "frFR" then
 	GroupCalendar_Settings_Use24HrTime = "Utiliser le temps de 24 heures";
 	GroupCalendar_Settings_Use24HrTimeTip = "Utiliser le temps de 24 heures";
 
-	GroupCalendar_cSelfWillAttend = "%s sera présent";
+	GroupCalendar_cSelfWillAttend = "Participer";
+	CalendarEventEditor_cYes = "Oui";
+	CalendarEventEditor_cNo = "Non";
 
 	GroupCalendar_cMonthNames = {"Janvier", "Fevrier", "Mars", "Avril", "Mai", "Juin", "Juillet", "Aout", "Septembre", "Octobre", "Novembre", "Decembre"};
 	GroupCalendar_cDayOfWeekNames = {GroupCalendar_cSunday, GroupCalendar_cMonday, GroupCalendar_cTuesday, GroupCalendar_cWednesday, GroupCalendar_cThursday, GroupCalendar_cFriday, GroupCalendar_cSaturday};
@@ -366,10 +368,11 @@ if GetLocale() == "frFR" then
 
 	GroupCalendar_cClassLimitDescription = "Utilisez les champs ci dessous pour définir les minimums et maximums pour chaque classe. Les classes n'ayant pas atteint leur 	minimum seront remplie en premier, les places suivantes seront remplies par ordre de réponse.";
 
-	GroupCalendar_cViewByDate = "trier par date";
+	GroupCalendar_cViewByDate = "Trier par date";
 	GroupCalendar_cViewByRank = "Trier par rang";
 	GroupCalendar_cViewByName = "Trier par nom";
 	GroupCalendar_cViewByStatus = "Trier par statut";
+	GroupCalendar_cViewByClass = "Trier par classe";
 	GroupCalendar_cViewByClassRank = "Trier par classe et rang";
 
 	GroupCalendar_cMaxPartySizeLabel = "Taille Maximum du groupe:";
@@ -415,6 +418,7 @@ if GetLocale() == "frFR" then
 	GroupCalendar_cPriorityLabel = "Priorité:";
 	GroupCalendar_cPriorityDate = "Date";
 	GroupCalendar_cPriorityRank = "Rang";
+	GroupCalendar_cPriorityClass = "Classe";
 
 	GroupCalendar_cConfrimDeleteRSVP = "Remove %s from self event? They can't join again unless you add them back manually.";
 

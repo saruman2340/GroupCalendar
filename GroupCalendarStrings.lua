@@ -1,4 +1,4 @@
-﻿gGroupCalendar_VersionString = "2.0.1";
+﻿gGroupCalendar_VersionString = "2.0.6";
 
 GroupCalendar_cTitle = "Group Calendar v%s";
 
@@ -28,6 +28,8 @@ GroupCalendar_Settings_Use24HrTime = "Use 24hr Time";
 GroupCalendar_Settings_Use24HrTimeTip = "Use 24hr Time";
 
 GroupCalendar_cSelfWillAttend = "Attending";
+CalendarEventEditor_cYes = "Yes";
+CalendarEventEditor_cNo = "No";
 
 GroupCalendar_cMonthNames = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
 GroupCalendar_cDayOfWeekNames = {GroupCalendar_cSunday, GroupCalendar_cMonday, GroupCalendar_cTuesday, GroupCalendar_cWednesday, GroupCalendar_cThursday, GroupCalendar_cFriday, GroupCalendar_cSaturday};
@@ -113,6 +115,8 @@ CalendarEventViewer_cSingleLevel = "Level %i only";
 CalendarEventViewer_cYes = "Yes! I will attend this event";
 CalendarEventViewer_cNo = "No. I won't attend this event";
 
+
+
 CalendarEventViewer_cResponseMessage =
 {
 	"Status: No response sent",
@@ -188,6 +192,7 @@ GroupCalendar_cSaltShakerCooldownEventName = "Salt Shaker Available";
 GroupCalendar_cMoonclothCooldownEventName = "Mooncloth Available";
 GroupCalendar_cSnowmasterCooldownEventName = "SnowMaster 9000 Available";
 GroupCalendar_cGadgetzanCooldownEventName = "Gadgetzan Transporter Available";
+GroupCalendar_cEverlookCooldownEventName = "Everlook Transporter Available";
 
 GroupCalendar_cPersonalEventOwner = "Private";
 
@@ -275,6 +280,8 @@ GroupCalendar_cCommentLabel = "Comment:";
 CalendarEditor_cNewEvent = "New Event...";
 CalendarEditor_cEventsTitle = "Events";
 
+GroupCalendar_cRankMinLabel = "Guild rank:";
+CalendarEventEditor_cNotRightRankMsg = "You don't meet the guild rank requirement to show the event";
 CalendarEventEditor_cNotTrustedMsg = "Cannot create events due to trust settings.";
 CalendarEventEditor_cOk = "OKAY";
 
@@ -397,6 +404,7 @@ GroupCalendar_cViewByDate = "View by Date";
 GroupCalendar_cViewByRank = "View by Rank";
 GroupCalendar_cViewByName = "View by Name";
 GroupCalendar_cViewByStatus = "View by Status";
+GroupCalendar_cViewByClass = "View by Class";
 GroupCalendar_cViewByClassRank = "View by Class and Rank";
 
 GroupCalendar_cMaxPartySizeLabel = "Maximum party size:";
@@ -442,6 +450,7 @@ GroupCalendar_cLeftGroupStatus = "Left group";
 GroupCalendar_cPriorityLabel = "Priority:";
 GroupCalendar_cPriorityDate = "Date";
 GroupCalendar_cPriorityRank = "Rank";
+GroupCalendar_cPriorityClass = "Class";
 
 GroupCalendar_cConfrimDeleteRSVP = "Remove %s from this event? They can't join again unless you add them back manually.";
 

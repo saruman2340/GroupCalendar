@@ -27,7 +27,9 @@ if GetLocale() == "ruRU" then
 	GroupCalendar_Settings_Use24HrTime = "Используйте 24-часовое время";
 	GroupCalendar_Settings_Use24HrTimeTip = "Используйте 24-часовое время";
 
-	GroupCalendar_cSelfWillAttend = "%s будет присутствовать";
+	GroupCalendar_cSelfWillAttend = "Присутствовавший";
+	CalendarEventEditor_cYes = "да";
+	CalendarEventEditor_cNo = "нет";
 
 	GroupCalendar_cMonthNames = {"Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"};
 	GroupCalendar_cDayOfWeekNames = {GroupCalendar_cSunday, GroupCalendar_cMonday, GroupCalendar_cTuesday, GroupCalendar_cWednesday, GroupCalendar_cThursday, GroupCalendar_cFriday, GroupCalendar_cSaturday};
@@ -393,6 +395,7 @@ if GetLocale() == "ruRU" then
 	GroupCalendar_cViewByRank = "Просмотр по Званию";
 	GroupCalendar_cViewByName = "Просмотр по Имени";
 	GroupCalendar_cViewByStatus = "Просмотр по Статусу";
+	GroupCalendar_cViewByClass = "Просмотр по Классу";
 	GroupCalendar_cViewByClassRank = "Просмотр по Классу и Званию";
 
 	GroupCalendar_cMaxPartySizeLabel = "Максимальный размер группы:";
@@ -438,6 +441,7 @@ if GetLocale() == "ruRU" then
 	GroupCalendar_cPriorityLabel = "Приоритет:";
 	GroupCalendar_cPriorityDate = "Дата";
 	GroupCalendar_cPriorityRank = "Звание";
+	GroupCalendar_cPriorityClass = "Класс";
 
 	GroupCalendar_cConfrimDeleteRSVP = "Удалить %s из этого события? Они не смогут присоединиться снова, если вы не добавите их обратно вручную.";
 

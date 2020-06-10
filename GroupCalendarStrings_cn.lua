@@ -31,7 +31,9 @@ if GetLocale() == "zhCN" then
 	GroupCalendar_Settings_Use24HrTime = "使用24小时制";
 	GroupCalendar_Settings_Use24HrTimeTip = "使用24小时制";
 
-	GroupCalendar_cSelfWillAttend = "%s会出席";
+	GroupCalendar_cSelfWillAttend = "参加";
+	CalendarEventEditor_cYes = "是";
+	CalendarEventEditor_cNo = "没有";
 
 	GroupCalendar_cMonthNames = {"1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"};
 	GroupCalendar_cDayOfWeekNames = {GroupCalendar_cSunday, GroupCalendar_cMonday, GroupCalendar_cTuesday, GroupCalendar_cWednesday, GroupCalendar_cThursday, GroupCalendar_cFriday, GroupCalendar_cSaturday};
@@ -387,6 +389,7 @@ if GetLocale() == "zhCN" then
 	GroupCalendar_cViewByRank = "检视阶级";
 	GroupCalendar_cViewByName = "检视名称";
 	GroupCalendar_cViewByStatus = "检视状态";
+	GroupCalendar_cViewByClass = "检视职业";
 	GroupCalendar_cViewByClassRank = "检视职业阶级";
 
 	GroupCalendar_cMaxPartySizeLabel = "队伍人数上限:";
@@ -432,6 +435,7 @@ if GetLocale() == "zhCN" then
 	GroupCalendar_cPriorityLabel = "优先权:";
 	GroupCalendar_cPriorityDate = "时间";
 	GroupCalendar_cPriorityRank = "阶级";
+	GroupCalendar_cPriorityClass = "职业";
 
 	GroupCalendar_cConfrimDeleteRSVP = "将 %s 从此活动中移除? 除非你手动把他们重新加入，否则他们将无法再参加。";
 
