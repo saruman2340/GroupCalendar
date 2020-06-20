@@ -226,10 +226,10 @@ gGroupCalendar_EventTypes =
 			RSAQT = {left = 0.0, top = 0.5, right = 0.25, bottom = 0.75, isDungeon = true, name=GroupCalendar_cRaidInfoAQTName, largeIcon="AQT", frequency=7},
 			RSAQR = {left = 0.25, top = 0.5, right = 0.5, bottom = 0.75, isDungeon = true, name=GroupCalendar_cRaidInfoAQRName, largeIcon="AQR", frequency=3},
 			RSNaxx = {left = 0.5, top = 0.5, right = 0.75, bottom = 0.75, isDungeon = true, name=GroupCalendar_cRaidInfoNaxxName, largeIcon="Naxx", frequency=7},
-			RSXmut = {left = 0.50, top = 0, right = 0.75, bottom = 0.25, isTradeskill = true, id="Alchemy", largeSysIcon="Interface\\Icons\\Trade_Alchemy"},
-			RSSalt = {left = 0.25, top = 0, right = 0.5, bottom = 0.25, isTradeskill = true, id="Leatherworking", largeSysIcon="Interface\\Icons\\Trade_Leatherworking"},
-			RSMoon = {left = 0, top = 0, right = 0.25, bottom = 0.25, isTradeskill = true, id="Tailoring", largeSysIcon="Interface\\Icons\\Trade_Tailoring"},
-			RSSnow = {left = 0.75, top = 0, right = 1.0, bottom = 0.25, isTradeskill = true, id="Snowmaster", largeSysIcon="Interface\\Icons\\Spell_Frost_WindWalkOn"},
+			RSXmut = {left = 0.50, top = 0, right = 0.75, bottom = 0.25, isTradeskill = true, name=GroupCalendar_cTransmuteCooldownEventName, id="Alchemy", largeSysIcon="Interface\\Icons\\Trade_Alchemy"},
+			RSSalt = {left = 0.25, top = 0, right = 0.5, bottom = 0.25, isTradeskill = true, name=GroupCalendar_cSaltShakerCooldownEventName, id="Leatherworking", largeSysIcon="Interface\\Icons\\Trade_Leatherworking"},
+			RSMoon = {left = 0, top = 0, right = 0.25, bottom = 0.25, isTradeskill = true, name=GroupCalendar_cMoonclothCooldownEventName, id="Tailoring", largeSysIcon="Interface\\Icons\\Trade_Tailoring"},
+			RSSnow = {left = 0.75, top = 0, right = 1.0, bottom = 0.25, isTradeskill = true, name=GroupCalendar_cSnowmasterCooldownEventName, id="Snowmaster", largeSysIcon="Interface\\Icons\\Spell_Frost_WindWalkOn"},
 			RSGadget = {left = 0.25, top = 0.5, right = 0.5, bottom = 0.25, isTradeskill = true, name="Gadgetzan Transporter", id="EngineeringGadgetzan", largeSysIcon="Interface\\Icons\\Trade_Engineering"},
 			RSEverlook = {left = 0.25, top = 0.5, right = 0.5, bottom = 0.25, isTradeskill = true, name="Everlook Transporter", id="EngineeringEverlook", largeSysIcon="Interface\\Icons\\Trade_Engineering"},
 		},
@@ -2051,7 +2051,6 @@ function EventDatabase_DeleteOldEvents(pDatabase)
 				--		vEventIndex = vEventIndex + 1;
 				--	end
 				--else
-
 				if not EventDatabase_DeleteEvent(pDatabase, vEvent, true) then
 
 					Calendar_DebugMessage("GroupCalendar: Can't delete old event: Unknown error");
@@ -2062,11 +2061,12 @@ function EventDatabase_DeleteOldEvents(pDatabase)
 	end
 end
 
-function EventDatabase_RemoveSavedInstanceEvents(pDatabase)
-	if pDatabase then
-		local pCutoffDate, pCutoffTime = Calendar_GetCurrentServerDateTime();
+function EventDatabase_RemoveSavedInstanceEvents()
 
-		for vDate, vSchedule in pairs(pDatabase.Events) do
+	local pCutoffDate, pCutoffTime = Calendar_GetCurrentServerDateTime();
+
+	for vRealmUser, vDatabase in pairs(gGroupCalendar_PlayerDatabases.Databases) do
+		for vDate, vSchedule in pairs(vDatabase.Events) do
 			if not pCutoffDate or vDate <= pCutoffDate then
 			
 				local	vEventIndex = 1;
@@ -2083,12 +2083,12 @@ function EventDatabase_RemoveSavedInstanceEvents(pDatabase)
 							if mResetInfo ~= nil then
 								local mResetName = mResetInfo.name;
 								if mResetName ~= nil then
-									print("|cff30A2FFCalendar Reset: " .. mResetName);
+									GroupCalendar_wait(5, print, "|cff30A2FFCalendar Reset: " .. mResetName .. " - " .. vDatabase.UserName .. " (" .. vDatabase.Realm .. ")");
+									--print("|cff30A2FFCalendar Reset: " .. mResetName);
 								end
 							end
 						end
-
-						EventDatabase_DeleteEvent(pDatabase, vEvent, true);
+						EventDatabase_DeleteEvent(vDatabase, vEvent, true);
 						vNumEvents = vNumEvents - 1;
 					else
 						vEventIndex = vEventIndex + 1;
@@ -2097,6 +2097,37 @@ function EventDatabase_RemoveSavedInstanceEvents(pDatabase)
 			end
 		end
 	end
+end
+
+local waitTable = {};
+local waitFrame = nil;
+
+function GroupCalendar_wait(delay, func, ...)
+  if(type(delay)~="number" or type(func)~="function") then
+    return false;
+  end
+  if(waitFrame == nil) then
+    waitFrame = CreateFrame("Frame","WaitFrame", UIParent);
+    waitFrame:SetScript("onUpdate",function (self,elapse)
+      local count = #waitTable;
+      local i = 1;
+      while(i<=count) do
+        local waitRecord = tremove(waitTable,i);
+        local d = tremove(waitRecord,1);
+        local f = tremove(waitRecord,1);
+        local p = tremove(waitRecord,1);
+        if(d>elapse) then
+          tinsert(waitTable,i,{d-elapse,f,p});
+          i = i + 1;
+        else
+          count = count - 1;
+          f(unpack(p));
+        end
+      end
+    end);
+  end
+  tinsert(waitTable,{delay,func,{...}});
+  return true;
 end
 
 function EventDatabase_RemoveSavedInstanceEventsByType(pDatabase, pType)	
@@ -2128,7 +2159,7 @@ function EventDatabase_RemoveTradeskillEventByType(pDatabase, pEventType)
 			local	vEvent = vSchedule[vEventIndex];
 			
 			if vEvent.mType == pEventType then				
-								
+			
 				EventDatabase_DeleteEvent(pDatabase, vEvent, true);
 				vNumEvents = vNumEvents - 1;
 			else
@@ -2173,9 +2204,7 @@ end
 
 function EventDatabase_ScheduleSavedInstanceEvents()
 	
-	EventDatabase_RemoveSavedInstanceEvents(gGroupCalendar_UserDatabase);
-	
-	--
+	EventDatabase_RemoveSavedInstanceEvents();
 	
 	local	vNumSavedInstances = GetNumSavedInstances();
 
@@ -2196,6 +2225,8 @@ function EventDatabase_ScheduleSavedInstanceEvent(pDatabase, pName, pResetDate, 
 		return;
 	end
 	
+	EventDatabase_RemoveSavedInstanceEvents();
+
 	-- Clear all existing entries
 	EventDatabase_RemoveSavedInstanceEventsByType(gGroupCalendar_UserDatabase, vType);
 
@@ -2225,7 +2256,7 @@ function EventDatabase_ScheduleTradeskillCooldownEvent(pDatabase, pTradeskillID,
 	local	vType = EventDatabase_LookupTradeskillEventTypeByID(pTradeskillID);
 	local	vResetDate, vResetTime = Calendar_GetServerDateTimeFromSecondsOffset(pCooldownSeconds);	
 	
-	EventDatabase_RemoveSavedInstanceEvents(gGroupCalendar_UserDatabase);
+	EventDatabase_RemoveSavedInstanceEvents();
 
 	EventDatabase_RemoveTradeskillEventByType(pDatabase, vType);
 		

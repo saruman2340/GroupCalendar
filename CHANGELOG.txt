@@ -1,3 +1,7 @@
+- Event reset notification now has a delay at login to make sure the text displays after UI load.
+- Added event names to the trade cooldowns to fix issue where they weren't displaying.
+- Events from all characters are now checked.
+
 v2.0.6-Alpha
 - Event editor now saves attending like on the non-trusted tab to avoid setting the user as not attending by default.
 - Comment is preserved when saving on event editor.
