@@ -1,3 +1,6 @@
+v2.0.9-alpha
+- Added alert for new events
+
 v2.0.8
 - Event reset notification now has a delay at login to make sure the text displays after UI load.
 - Added event names to the trade cooldowns to fix issue where they weren't displaying.
