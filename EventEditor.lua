@@ -554,7 +554,8 @@ function CalendarEventEditor_SaveEvent(pChangedFieldsExternal)
 	if gCalendarEventEditor_IsNewEvent then
 		if (gCalendarEventEditor_Event.mTitle ~= nil and gCalendarEventEditor_Event.mTitle ~= "")
 		or gCalendarEventEditor_Event.mType ~= nil then
-			EventDatabase_AddEvent(gCalendarEventEditor_Database, gCalendarEventEditor_Event);			
+			EventDatabase_AddEvent(gCalendarEventEditor_Database, gCalendarEventEditor_Event);		
+			gCalendarEventEditor_Event.mNotified = true;
 		end
 	else
 		EventDatabase_EventChanged(gCalendarEventEditor_Database, gCalendarEventEditor_Event, vChangedFields);

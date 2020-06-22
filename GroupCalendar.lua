@@ -892,9 +892,20 @@ end
 
 gGroupCalendar_QueueElapsedTime = 0;
 gGroupCalendar_ExpiredEventsTime = 0;
+gGroupCalendar_NewEventsTime = 0;
 
 function GroupCalendar_Update(self, pElapsed)
 	
+	gGroupCalendar_NewEventsTime = gGroupCalendar_NewEventsTime + pElapsed;
+
+	if gGroupCalendar_NewEventsTime >= 15 then
+		gGroupCalendar_NewEventsTime = 0;
+		
+		-- Remove the existing saved info	
+		EventDatabase_AlertNewEvents();
+
+	end
+
 	gGroupCalendar_ExpiredEventsTime = gGroupCalendar_ExpiredEventsTime + pElapsed;
 
 	if gGroupCalendar_ExpiredEventsTime >= 10 then

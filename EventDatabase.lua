@@ -2061,6 +2061,27 @@ function EventDatabase_DeleteOldEvents(pDatabase)
 	end
 end
 
+function EventDatabase_AlertNewEvents()
+	local pCutoffDate, pCutoffTime = Calendar_GetCurrentServerDateTime();
+
+	for vRealmGuild, vDatabase in pairs(gGroupCalendar_Database2.Databases) do
+		for vDate, vSchedule in pairs(vDatabase.Events) do
+			if vDate >= pCutoffDate then
+				for vEventID, vEvent in pairs(vSchedule) do
+					if not vEvent.mNotified then
+						local vYear = string.sub(vEvent.mDate, 1, 4)
+						local vMonth = string.sub(vEvent.mDate, 5, 6)
+						local vDay = string.sub(vEvent.mDate, 7, 8)
+						local vEventName = EventDatabase_GetEventNameByID(vEvent.mType);
+						GroupCalendar_wait(5, print, "|cff30A2FFNew Event: " .. vDatabase.Realm .. " " .. vDatabase.Guild .. " " .. vYear .. "-" .. vMonth .."-" .. vDay .. " " .. vEventName);
+						vEvent.mNotified = true;
+					end
+				end
+			end
+		end
+	end
+end
+
 function EventDatabase_RemoveSavedInstanceEvents()
 
 	local pCutoffDate, pCutoffTime = Calendar_GetCurrentServerDateTime();
